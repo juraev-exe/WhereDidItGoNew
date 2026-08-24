@@ -1,0 +1,88 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Logs & Debugging
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
+
+# Diagnostic & Environment Files
+.env
+.env.local
+.env.*.local
+*.env
+*.env.*
+
+# Secrets, Keys & Signing Credentials
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+*.pub
+*.asc
+google-services.json
+GoogleService-Info.plist
+credentials.json
+secrets.json
+
+# Build & Web Dist Artifacts
+dist/
+dist-ssr/
+.output/
+.vite/
+.cache/
+.vercel/
+*.tsbuildinfo
+*.map
+.sourcemaps
+coverage/
+.nyc_output/
+
+# Android Native Build & Artifacts
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/.idea/
+android/.cxx/
+android/app/release/
+android/captures/
+*.apk
+*.aab
+*.dex
+
+# iOS Native Build & Artifacts (Capacitor)
+ios/App/Pods/
+ios/App/App.xcworkspace/
+*.ipa
+*.xcarchive
+
+# IDE & Editor Files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+*~
+*.tmp
+*.bak
+
+# OS System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini

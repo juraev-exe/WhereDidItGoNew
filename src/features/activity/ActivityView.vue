@@ -1,0 +1,324 @@
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { Search } from '@lucide/vue'
+import AppSelect from '@/components/ui/AppSelect.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import Snackbar from '@/components/ui/Snackbar.vue'
+import SwipeToDelete from '@/components/ui/SwipeToDelete.vue'
+import TransactionRow from '@/components/ui/TransactionRow.vue'
+import { dayKey, monthKey, monthLabel, todayISO, weekdayDayLabel, yesterdayISO } from '@/lib/dates'
+import { successFeedback, warningFeedback } from '@/services/native/haptics'
+import { useCategoriesStore } from '@/stores/categories'
+import { useSettingsStore } from '@/stores/settings'
+import { useTransactionsStore } from '@/stores/transactions'
+import { useUiStore } from '@/stores/ui'
+import { useRoute } from 'vue-router'
+import HeaderActions from '@/components/ui/HeaderActions.vue'
+import type { Transaction } from '@/types/finance'
+
+const { t } = useI18n()
+const route = useRoute()
+const transactions = useTransactionsStore()
+const categories = useCategoriesStore()
+const settings = useSettingsStore()
+const ui = useUiStore()
+
+const query = ref('')
+const month = ref(monthKey())
+const typeFilter = ref('all')
+const categoryFilter = ref('all')
+const openSwipeId = ref<string | null>(null)
+const snackOpen = ref(false)
+const pendingUndo = ref<Transaction | null>(null)
+
+watch(
+  () => route.query,
+  (q) => {
+    if (typeof q.month === 'string' && q.month) month.value = q.month
+    if (typeof q.category === 'string' && q.category) categoryFilter.value = q.category
+  },
+  { immediate: true },
+)
+
+const months = computed(() => {
+  const set = new Set(transactions.transactions.map((tx) => tx.date.slice(0, 7)))
+  set.add(monthKey())
+  return [...set].sort().reverse()
+})
+
+const monthOptions = computed(() =>
+  months.value.map((m) => ({
+    value: m,
+    label: monthLabel(m, settings.intlLocale),
+  })),
+)
+
+const typeOptions = computed(() => [
+  { value: 'all', label: t('activity.allTypes') },
+  { value: 'expense', label: t('txTypes.expense') },
+  { value: 'income', label: t('txTypes.income') },
+  { value: 'transfer', label: t('txTypes.transfer') },
+])
+
+const categoryOptions = computed(() => [
+  { value: 'all', label: t('activity.allCategories') },
+  ...categories.categories.map((c) => ({ value: c.id, label: c.name })),
+])
+
+const filtered = computed(() => {
+  const q = query.value.trim().toLowerCase()
+  return transactions.transactions.filter((tx) => {
+    if (month.value && !tx.date.startsWith(month.value)) return false
+    if (typeFilter.value !== 'all' && tx.type !== typeFilter.value) return false
+    if (categoryFilter.value !== 'all' && tx.categoryId !== categoryFilter.value) return false
+    if (!q) return true
+    const cat = tx.categoryId ? (categories.byId(tx.categoryId)?.name ?? '') : ''
+    return (
+      tx.note.toLowerCase().includes(q) ||
+      cat.toLowerCase().includes(q) ||
+      tx.type.includes(q)
+    )
+  })
+})
+
+function dayHeading(iso: string): string {
+  const key = dayKey(iso)
+  if (key === todayISO()) return t('activity.today')
+  if (key === yesterdayISO()) return t('activity.yesterday')
+  return weekdayDayLabel(key, settings.intlLocale)
+}
+
+const grouped = computed(() => {
+  const map = new Map<string, Transaction[]>()
+  for (const tx of filtered.value) {
+    const key = dayKey(tx.date)
+    const items = map.get(key)
+    if (items) items.push(tx)
+    else map.set(key, [tx])
+  }
+  return [...map.entries()].map(([date, items]) => ({
+    date,
+    label: dayHeading(date),
+    items,
+  }))
+})
+
+function setOpen(id: string, open: boolean) {
+  openSwipeId.value = open ? id : openSwipeId.value === id ? null : openSwipeId.value
+}
+
+async function remove(id: string) {
+  const existing = transactions.byId(id)
+  if (!existing) return
+  const snapshot: Transaction = { ...existing }
+  openSwipeId.value = null
+  await transactions.deleteTransaction(id)
+  pendingUndo.value = snapshot
+  snackOpen.value = true
+  void warningFeedback()
+}
+
+async function undoDelete() {
+  const tx = pendingUndo.value
+  if (!tx) return
+  snackOpen.value = false
+  pendingUndo.value = null
+  await transactions.restoreTransaction(tx)
+  void successFeedback()
+}
+
+function onSnackOpen(open: boolean) {
+  snackOpen.value = open
+  if (!open) pendingUndo.value = null
+}
+</script>
+
+<template>
+  <div class="activity">
+    <header class="header">
+      <div class="header-title-row">
+        <div>
+          <h1>{{ t('activity.title') }}</h1>
+          <p class="sub">{{ t('activity.transactionsCount', { count: filtered.length }) }}</p>
+        </div>
+        <HeaderActions />
+      </div>
+    </header>
+
+    <div class="filters">
+      <label class="search">
+        <Search :size="18" aria-hidden="true" />
+        <input v-model="query" type="search" :placeholder="t('activity.searchPlaceholder')" />
+      </label>
+
+      <div class="filter-row">
+        <AppSelect
+          v-model="month"
+          :options="monthOptions"
+          :aria-label="t('activity.month')"
+        />
+        <AppSelect
+          v-model="typeFilter"
+          :options="typeOptions"
+          :aria-label="t('activity.type')"
+        />
+      </div>
+
+      <AppSelect
+        v-model="categoryFilter"
+        :options="categoryOptions"
+        :aria-label="t('activity.category')"
+      />
+    </div>
+
+    <EmptyState
+      v-if="!filtered.length"
+      :title="t('activity.emptyTitle')"
+      :description="t('activity.emptyDesc')"
+      :action-label="t('nav.addTransaction')"
+      @action="ui.openAdd()"
+    />
+
+    <div v-else class="list">
+      <section
+        v-for="group in grouped"
+        :key="group.date"
+        class="day-group"
+        :aria-labelledby="`day-${group.date}`"
+      >
+        <h2 :id="`day-${group.date}`" class="day-label">{{ group.label }}</h2>
+        <SwipeToDelete
+          v-for="tx in group.items"
+          :key="tx.id"
+          :open="openSwipeId === tx.id"
+          @update:open="setOpen(tx.id, $event)"
+          @delete="remove(tx.id)"
+        >
+          <TransactionRow hide-date :transaction="tx" @select="ui.openAdd(tx)" />
+        </SwipeToDelete>
+      </section>
+    </div>
+
+    <Snackbar
+      :open="snackOpen"
+      :message="t('activity.deleted')"
+      :action-label="t('common.undo')"
+      :nonce="pendingUndo?.id ?? ''"
+      @update:open="onSnackOpen"
+      @action="undoDelete"
+    />
+  </div>
+</template>
+
+<style scoped>
+.activity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-bottom: var(--space-6);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
+}
+
+.header-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+h1 {
+  font-size: var(--text-headline);
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  margin: 0;
+  color: var(--color-on-surface);
+}
+
+.sub {
+  color: var(--color-muted);
+  font-size: var(--text-label);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
+  animation-delay: 80ms;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-outline-variant);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-muted);
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast), transform var(--duration-fast);
+}
+
+.search:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+}
+
+.search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  min-height: 40px;
+  outline: none;
+  font-size: var(--text-body);
+  color: var(--color-on-surface);
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--space-2);
+}
+
+.list {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 14%, transparent);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-2);
+  overflow: hidden;
+  animation: scaleSpring var(--duration-entrance) var(--ease-emphasized) both;
+  animation-delay: 100ms;
+}
+
+.day-group {
+  animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
+}
+
+.day-group + .day-group {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-outline-variant);
+}
+
+.day-label {
+  font-size: var(--text-caption);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+  padding: var(--space-2) var(--space-2) var(--space-1);
+}
+</style>

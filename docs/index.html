@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WhereDidItGo — local-first money tracker</title>
+    <meta
+      name="description"
+      content="Know where every dollar went. A local-first personal finance app for Android: quick logging, budgets, savings goals, and insights — stored only on your device."
+    />
+    <meta name="theme-color" content="#f3f0ea" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="canonical" href="https://juraev-exe.github.io/wherediditgo/" />
+    <link rel="alternate" hreflang="en" href="https://juraev-exe.github.io/wherediditgo/?lang=en" />
+    <link rel="alternate" hreflang="ru" href="https://juraev-exe.github.io/wherediditgo/?lang=ru" />
+    <link rel="alternate" hreflang="tg" href="https://juraev-exe.github.io/wherediditgo/?lang=tj" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="WhereDidItGo" />
+    <meta
+      property="og:description"
+      content="Local-first personal finance for Android. Your data stays on the phone."
+    />
+    <meta property="og:url" content="https://juraev-exe.github.io/wherediditgo/" />
+    <meta name="twitter:card" content="summary" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('wdg-theme')
+          var dark =
+            saved === 'dark' ||
+            (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        } catch (e) {
+          document.documentElement.dataset.theme = 'light'
+        }
+        try {
+          var q = new URLSearchParams(location.search).get('lang')
+          var loc = q || localStorage.getItem('wdg-locale') || ''
+          if (loc === 'ru' || loc === 'tj' || loc === 'en') {
+            document.documentElement.lang = loc === 'tj' ? 'tg' : loc
+            document.documentElement.dataset.locale = loc
+          }
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#content" data-i18n="skip">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="./">
+          <img src="./logo.png" width="32" height="32" alt="" />
+          WhereDidItGo
+        </a>
+        <nav class="header-nav" data-i18n-aria="nav.page" aria-label="Page">
+          <a href="#features" data-i18n="nav.features">Features</a>
+          <a href="#privacy" data-i18n="nav.privacy">Privacy</a>
+          <a href="#source" data-i18n="nav.source">Source</a>
+          <div class="lang" role="group" data-i18n-aria="lang.label" aria-label="Language">
+            <button type="button" data-lang="en" aria-pressed="true">EN</button>
+            <button type="button" data-lang="ru" aria-pressed="false">RU</button>
+            <button type="button" data-lang="tj" aria-pressed="false">TJ</button>
+          </div>
+          <button type="button" class="theme-btn" id="theme-toggle" data-i18n-aria="theme.toggle" aria-label="Toggle dark theme">
+            <span class="theme-btn__sun" aria-hidden="true">☀</span>
+            <span class="theme-btn__moon" aria-hidden="true">☾</span>
+          </button>
+          <a class="btn btn--small" href="https://github.com/juraev-exe/wherediditgo">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="content">
+      <section class="hero">
+        <div class="wrap hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow" data-i18n="hero.eyebrow">Android · local-first</p>
+            <h1 data-i18n="hero.title">Know where every dollar went.</h1>
+            <p class="lede" data-i18n="hero.lede">
+              Log spending in a few taps, keep simple monthly budgets, and watch savings goals fill
+              up. Nothing is uploaded. Backup is a JSON file you own.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn--primary" href="https://github.com/juraev-exe/wherediditgo" data-i18n="hero.viewSource">
+                View source
+              </a>
+              <a class="btn btn--ghost" href="#source" data-i18n="hero.build">Build it yourself</a>
+            </div>
+            <ul class="hero-perks">
+              <li data-i18n="hero.perk1">English, Русский, Тоҷикӣ</li>
+              <li data-i18n="hero.perk2">Light, dark, or system theme</li>
+              <li data-i18n="hero.perk3">Hide amounts when you share the screen</li>
+            </ul>
+          </div>
+
+          <div class="hero-device">
+            <div class="phone">
+              <div class="phone__bezel">
+                <img
+                  class="phone__preview"
+                  src="./preview.png"
+                  width="452"
+                  height="922"
+                  alt="WhereDidItGo home screen with available balance, spending categories, and bottom navigation"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="privacy" class="privacy">
+        <div class="wrap privacy-inner">
+          <h2 data-i18n="privacy.title">Your money never leaves this phone.</h2>
+          <p data-i18n="privacy.body">
+            Transactions live in a local database on the device. There is no account to create, no
+            cloud sync, and no analytics. Switch phones with a full JSON backup — or export
+            transactions as CSV.
+          </p>
+        </div>
+      </section>
+
+      <section id="features" class="features">
+        <div class="wrap">
+          <p class="eyebrow" data-i18n="features.eyebrow">What it does</p>
+          <h2 data-i18n="features.title">Built for the way you actually spend.</h2>
+
+          <div class="bento">
+            <article class="card card--wide">
+              <h3 data-i18n="keypad.title">Amount-first keypad</h3>
+              <p data-i18n="keypad.body" data-i18n-html>
+                Open +, type the amount, optionally add <code>13+24+50</code> on the keypad, then
+                pick category and account. Fast enough for the checkout line.
+              </p>
+              <div class="keypad" aria-hidden="true">
+                <span>1</span><span>2</span><span>3</span><span class="op">+</span>
+                <span>4</span><span>5</span><span>6</span><span class="op">−</span>
+                <span>7</span><span>8</span><span>9</span><span class="op">C</span>
+                <span>.</span><span>0</span><span>⌫</span><span class="ok">✓</span>
+              </div>
+            </article>
+
+            <article class="card">
+              <h3 data-i18n="budgets.title">Budgets that stay monthly</h3>
+              <p data-i18n="budgets.body">
+                Cap groceries, bills, or transport. See what’s left this month — not a lifetime
+                envelope mixed in with savings.
+              </p>
+            </article>
+
+            <article class="card">
+              <h3 data-i18n="goals.title">Savings goals</h3>
+              <p data-i18n="goals.body">
+                A trip, a gadget, an emergency fund. Move money from an account into a goal. It is
+                not logged as a spend, and you pick any icon you like.
+              </p>
+            </article>
+
+            <article class="card">
+              <h3 data-i18n="insights.title">Insights that aren’t a chart dump</h3>
+              <p data-i18n="insights.body">
+                Pace vs the calendar, vs last month, biggest expense, weekdays vs weekends, budget
+                health, and per-account in/out — plus category, daily, and six-month charts.
+              </p>
+            </article>
+
+            <article class="card">
+              <h3 data-i18n="activity.title">Activity you can trust</h3>
+              <p data-i18n="activity.body">
+                Search notes and categories, filter by month and type, swipe left to delete. Same
+                compact rows as Home.
+              </p>
+            </article>
+
+            <article class="card">
+              <h3 data-i18n="hide.title">Share the screen, not the numbers</h3>
+              <p data-i18n="hide.body">
+                One tap hides amounts behind a spoiler. It stays hidden after you leave the app —
+                until you choose to show them again.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="stack">
+        <div class="wrap stack-grid">
+          <div>
+            <p class="eyebrow" data-i18n="stack.eyebrow">Stack</p>
+            <h2 data-i18n="stack.title">Vue on the phone, SQLite-free on purpose.</h2>
+            <p class="lede" data-i18n="stack.lede">
+              Vue 3, Pinia, Dexie (IndexedDB), vue-i18n, and Capacitor for Android. Light enough to
+              reason about, offline by default.
+            </p>
+          </div>
+          <ul class="pills">
+            <li>Vue 3</li>
+            <li>TypeScript</li>
+            <li>Pinia</li>
+            <li>Dexie</li>
+            <li>Capacitor 8</li>
+            <li>Chart.js</li>
+            <li>English</li>
+            <li>Русский</li>
+            <li>Тоҷикӣ</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="source" class="source">
+        <div class="wrap source-card">
+          <p class="eyebrow" data-i18n="source.eyebrow">Open source</p>
+          <h2 data-i18n="source.title">Clone it, run it, ship it to your phone.</h2>
+          <pre><code>git clone https://github.com/juraev-exe/wherediditgo.git
+cd wherediditgo
+npm install
+npm run dev
+npm run sync</code></pre>
+          <p data-i18n="source.body" data-i18n-html>
+            Open the <code>android/</code> folder in Android Studio to install on a device. ISC
+            licensed.
+          </p>
+          <a class="btn btn--primary" href="https://github.com/juraev-exe/wherediditgo">
+            github.com/juraev-exe/wherediditgo
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-inner">
+        <span>WhereDidItGo</span>
+        <span data-i18n="footer.tagline">Local-first personal finance</span>
+        <a href="https://github.com/juraev-exe/wherediditgo" data-i18n="footer.source">Source</a>
+      </div>
+    </footer>
+
+    <script src="./i18n.js"></script>
+    <script>
+      (function () {
+        var root = document.documentElement
+        var toggle = document.getElementById('theme-toggle')
+        var i18n = window.WDG_I18N
+
+        i18n.apply(i18n.detect(), false)
+        document.querySelectorAll('[data-lang]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            i18n.apply(btn.getAttribute('data-lang'), true)
+          })
+        })
+
+        function isDark() {
+          return root.dataset.theme === 'dark'
+        }
+
+        function applyTheme(dark) {
+          root.dataset.theme = dark ? 'dark' : 'light'
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#121413' : '#f3f0ea')
+          toggle.setAttribute('aria-pressed', dark ? 'true' : 'false')
+          try {
+            localStorage.setItem('wdg-theme', dark ? 'dark' : 'light')
+          } catch (e) {}
+        }
+
+        applyTheme(isDark())
+        toggle.addEventListener('click', function () {
+          applyTheme(!isDark())
+        })
+      })()
+    </script>
+  </body>
+</html>

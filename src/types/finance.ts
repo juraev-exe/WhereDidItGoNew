@@ -1,0 +1,133 @@
+export type AccountType = 'cash' | 'checking' | 'savings' | 'credit' | 'other'
+export type CategoryKind = 'expense' | 'income'
+export type TransactionType = 'expense' | 'income' | 'transfer'
+export type ThemeMode = 'light' | 'dark' | 'oled'
+
+export interface Account {
+  id: string
+  name: string
+  type: AccountType
+  balance: number
+  currency: string
+  color: string
+  archived: boolean
+  createdAt: string
+}
+
+export interface Subcategory {
+  id: string
+  name: string
+  icon?: string
+}
+
+export interface Category {
+  id: string
+  name: string
+  kind: CategoryKind
+  icon: string
+  color: string
+  sortOrder: number
+  subcategories?: Subcategory[]
+}
+
+export interface Budget {
+  id: string
+  categoryId: string
+  month: string
+  limitAmount: number
+}
+
+/** Savings target that is not a monthly spending limit. */
+export interface Goal {
+  id: string
+  name: string
+  targetAmount: number
+  currentAmount: number
+  deadline?: string
+  color: string
+  icon: string
+  createdAt: string
+}
+
+export interface Transaction {
+  id: string
+  type: TransactionType
+  amount: number
+  accountId: string
+  toAccountId?: string
+  categoryId?: string
+  subcategoryId?: string
+  note: string
+  date: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** Monthly bill or salary template that posts a normal transaction on app open. */
+export interface Recurring {
+  id: string
+  type: 'expense' | 'income'
+  amount: number
+  accountId: string
+  categoryId: string
+  note: string
+  dayOfMonth: number
+  lastPostedMonth?: string
+  createdAt: string
+}
+
+export type DebtType = 'lent' | 'borrowed'
+export type DebtStatus = 'active' | 'settled'
+
+export interface Debt {
+  id: string
+  type: DebtType
+  personName: string
+  amount: number
+  paidAmount: number
+  status: DebtStatus
+  dueDate?: string
+  note?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type AppLocale = 'en' | 'tj' | 'ru'
+export type CurrencyPosition = 'before' | 'after'
+/** Home hero: account balance vs remaining category budgets */
+export type HeroMetric = 'balance' | 'budget'
+/** none = visible, hero = blur home balance/budget, all = hide every amount */
+export type PrivacyMode = 'none' | 'hero' | 'all'
+export type ColorScheme = 'teal' | 'blue' | 'purple' | 'rose' | 'amber' | 'obsidian'
+
+export interface AppMeta {
+  onboardingDone: boolean
+  currency: string
+  theme: ThemeMode
+  locale: AppLocale
+  currencyPosition: CurrencyPosition
+  heroMetric: HeroMetric
+  hideAmounts: boolean
+  privacyMode: PrivacyMode
+  /** ISO timestamp of last successful JSON backup export. */
+  lastBackupAt?: string
+  pinEnabled?: boolean
+  pinHash?: string
+  biometricEnabled?: boolean
+}
+
+export interface BackupPayload {
+  version: 1
+  exportedAt: string
+  meta: AppMeta
+  accounts: Account[]
+  categories: Category[]
+  budgets: Budget[]
+  transactions: Transaction[]
+  goals?: Goal[]
+  recurring?: Recurring[]
+  debts?: Debt[]
+}
+
+export const BACKUP_VERSION = 1 as const
+

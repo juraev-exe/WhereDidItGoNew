@@ -8,7 +8,7 @@ import { monthKey } from '@/lib/dates'
 import { createId } from '@/lib/id'
 import { getCurrencySymbol } from '@/lib/money'
 import { applyStatusBar } from '@/services/native/chrome'
-import type { ColorScheme, CurrencyPosition, HeroMetric, PrivacyMode, ThemeMode } from '@/types/finance'
+import type { AppFont, ColorScheme, CurrencyPosition, HeroMetric, PrivacyMode, ThemeMode } from '@/types/finance'
 
 function resolveTheme(mode: ThemeMode): 'light' | 'dark' | 'oled' {
   return mode
@@ -44,6 +44,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const theme = ref<ThemeMode>('dark')
   const resolvedTheme = ref<'light' | 'dark' | 'oled'>('dark')
   const colorScheme = ref<ColorScheme>('teal')
+  const fontFamily = ref<AppFont>('system')
   const lastAccountId = ref('')
   const lastToAccountId = ref('')
   const lastExpenseCategoryId = ref('')
@@ -121,10 +122,12 @@ export const useSettingsStore = defineStore('settings', () => {
       isUnlocked.value = true
     }
     colorScheme.value = (map.colorScheme as ColorScheme) || 'teal'
+    fontFamily.value = (map.fontFamily as AppFont) || 'system'
     locale.value = localeCode
     setI18nLocale(locale.value)
     applyTheme(theme.value)
     applyColorScheme(colorScheme.value)
+    applyFontFamily(fontFamily.value)
     ready.value = true
   }
 
@@ -221,6 +224,16 @@ export const useSettingsStore = defineStore('settings', () => {
   async function setColorScheme(scheme: ColorScheme) {
     applyColorScheme(scheme)
     await db.meta.put({ key: 'colorScheme', value: scheme })
+  }
+
+  function applyFontFamily(font: AppFont) {
+    fontFamily.value = font
+    document.documentElement.setAttribute('data-font', font)
+  }
+
+  async function setFontFamily(font: AppFont) {
+    applyFontFamily(font)
+    await db.meta.put({ key: 'fontFamily', value: font })
   }
 
   async function setCurrency(code: string) {
@@ -371,6 +384,7 @@ export const useSettingsStore = defineStore('settings', () => {
     theme,
     resolvedTheme,
     colorScheme,
+    fontFamily,
     lastAccountId,
     lastToAccountId,
     lastExpenseCategoryId,
@@ -395,6 +409,8 @@ export const useSettingsStore = defineStore('settings', () => {
     setTheme,
     applyColorScheme,
     setColorScheme,
+    applyFontFamily,
+    setFontFamily,
     setCurrency,
     setCurrencyPosition,
     setHeroMetric,

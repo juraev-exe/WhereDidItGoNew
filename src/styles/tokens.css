@@ -349,3 +349,75 @@
   --color-tertiary: #cbd5e1;
   --glow-primary: 0 0 0 3px color-mix(in srgb, var(--color-primary) 40%, transparent), 0 4px 20px color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
+
+[data-color-scheme='luxury-navy'] {
+  --color-primary: #ff6e42;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #003550;
+  --color-on-primary-container: #ffded4;
+  --color-tertiary: #004e72;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #ff6e42 28%, transparent), 0 4px 16px color-mix(in srgb, #ff6e42 22%, transparent);
+}
+[data-theme='dark'][data-color-scheme='luxury-navy'] {
+  --color-primary: #ff6e42;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #092634;
+  --color-on-primary-container: #ffded4;
+  --color-tertiary: #004e72;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #ff6e42 35%, transparent), 0 4px 20px color-mix(in srgb, #ff6e42 28%, transparent);
+}
+[data-theme='oled'][data-color-scheme='luxury-navy'] {
+  --color-primary: #ff6e42;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #092634;
+  --color-on-primary-container: #ffded4;
+  --color-tertiary: #004e72;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #ff6e42 40%, transparent), 0 4px 20px color-mix(in srgb, #ff6e42 35%, transparent);
+}
+
+[data-color-scheme='violet-peach'] {
+  --color-primary: #a855f7;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #f3e8ff;
+  --color-on-primary-container: #3b0764;
+  --color-tertiary: #fcc2eb;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #a855f7 28%, transparent), 0 4px 16px color-mix(in srgb, #a855f7 22%, transparent);
+}
+[data-theme='dark'][data-color-scheme='violet-peach'] {
+  --color-primary: #c084fc;
+  --color-on-primary: #2e1065;
+  --color-primary-container: #391a77;
+  --color-on-primary-container: #fedfcb;
+  --color-tertiary: #fcc2eb;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #c084fc 32%, transparent), 0 4px 18px color-mix(in srgb, #c084fc 26%, transparent);
+}
+[data-theme='oled'][data-color-scheme='violet-peach'] {
+  --color-primary: #c084fc;
+  --color-on-primary: #000000;
+  --color-primary-container: #261152;
+  --color-on-primary-container: #fedfcb;
+  --color-tertiary: #fcc2eb;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #c084fc 40%, transparent), 0 4px 20px color-mix(in srgb, #c084fc 35%, transparent);
+}
+
+/* Custom Global Font Families */
+[data-font='system'] {
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+}
+[data-font='outfit'] {
+  --font-display: 'Outfit', -apple-system, sans-serif;
+  --font-body: 'Outfit', -apple-system, sans-serif;
+}
+[data-font='inter'] {
+  --font-display: 'Inter', -apple-system, sans-serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+}
+[data-font='jakarta'] {
+  --font-display: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
+}
+[data-font='caveat'] {
+  --font-display: 'Caveat', 'Outfit', cursive, sans-serif;
+  --font-body: 'Outfit', -apple-system, sans-serif;
+}

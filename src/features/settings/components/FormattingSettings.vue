@@ -515,7 +515,7 @@ input:checked + .slider:before {
   color: var(--color-on-surface);
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--duration-fast);
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast) var(--ease-spring-snappy);
 }
 
 .day-btn:active,

@@ -241,7 +241,7 @@ async function onRestore() {
   border: 1.5px solid var(--color-outline);
   cursor: pointer;
   text-align: left;
-  transition: all var(--duration-fast) var(--ease-spring);
+  transition: transform var(--duration-fast) var(--ease-spring-snappy), background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
 }
 
 .plan-card:active {

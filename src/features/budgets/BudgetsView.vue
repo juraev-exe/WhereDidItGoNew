@@ -430,13 +430,15 @@ h1 {
   font-size: var(--text-label);
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-spring-snappy);
+  transition: transform var(--duration-fast) var(--ease-spring-snappy), background var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
 }
 
-.chip:hover {
-  background: var(--color-surface-container-high);
-  transform: translateY(-1px);
-  border-color: var(--color-primary);
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover {
+    background: var(--color-surface-container-high);
+    transform: translateY(-1px);
+    border-color: var(--color-primary);
+  }
 }
 
 .chip:active {

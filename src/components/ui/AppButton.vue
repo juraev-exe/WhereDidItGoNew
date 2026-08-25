@@ -52,8 +52,36 @@ defineEmits<{ click: [MouseEvent] }>()
   -webkit-tap-highlight-color: transparent;
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .btn--filled:hover:not(:disabled)::after {
+    opacity: 1;
+    animation: shimmer 1.2s ease-in-out;
+  }
+
+  .btn--filled:hover:not(:disabled) {
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--color-primary) 40%, transparent);
+  }
+
+  .btn--tonal:hover:not(:disabled) {
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  }
+
+  .btn--outline:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    box-shadow: inset 0 0 0 1.5px var(--color-primary), 0 2px 8px color-mix(in srgb, var(--color-primary) 16%, transparent);
+  }
+
+  .btn--ghost:hover:not(:disabled) {
+    background: var(--color-surface-container);
+  }
+
+  .btn--danger:hover:not(:disabled) {
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--color-error) 40%, transparent);
+  }
 }
 
 .btn:active:not(:disabled) {
@@ -111,22 +139,9 @@ defineEmits<{ click: [MouseEvent] }>()
   pointer-events: none;
 }
 
-.btn--filled:hover:not(:disabled)::after {
-  opacity: 1;
-  animation: shimmer 1.2s ease-in-out;
-}
-
-.btn--filled:hover:not(:disabled) {
-  box-shadow: 0 6px 20px color-mix(in srgb, var(--color-primary) 40%, transparent);
-}
-
 .btn--tonal {
   background: var(--color-primary-container);
   color: var(--color-on-primary-container);
-}
-
-.btn--tonal:hover:not(:disabled) {
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 22%, transparent);
 }
 
 .btn--outline {
@@ -135,27 +150,14 @@ defineEmits<{ click: [MouseEvent] }>()
   box-shadow: inset 0 0 0 1.5px var(--color-outline-variant);
 }
 
-.btn--outline:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-  box-shadow: inset 0 0 0 1.5px var(--color-primary), 0 2px 8px color-mix(in srgb, var(--color-primary) 16%, transparent);
-}
-
 .btn--ghost {
   background: transparent;
   color: var(--color-on-surface);
-}
-
-.btn--ghost:hover:not(:disabled) {
-  background: var(--color-surface-container);
 }
 
 .btn--danger {
   background: var(--color-error);
   color: var(--color-on-error);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--color-error) 28%, transparent);
-}
-
-.btn--danger:hover:not(:disabled) {
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-error) 40%, transparent);
 }
 </style>

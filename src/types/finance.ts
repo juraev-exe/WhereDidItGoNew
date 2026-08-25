@@ -98,7 +98,8 @@ export type CurrencyPosition = 'before' | 'after'
 export type HeroMetric = 'balance' | 'budget'
 /** none = visible, hero = blur home balance/budget, all = hide every amount */
 export type PrivacyMode = 'none' | 'hero' | 'all'
-export type ColorScheme = 'teal' | 'blue' | 'purple' | 'rose' | 'amber' | 'obsidian'
+export type ColorScheme = 'teal' | 'blue' | 'purple' | 'rose' | 'amber' | 'obsidian' | 'luxury-navy' | 'violet-peach'
+export type AppFont = 'system' | 'outfit' | 'inter' | 'jakarta' | 'caveat'
 
 export interface AppMeta {
   onboardingDone: boolean

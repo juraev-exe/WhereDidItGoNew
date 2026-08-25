@@ -108,11 +108,14 @@ async function finish(skipBudgets = false) {
   <div class="onboarding">
     <div class="hero">
       <p class="brand">{{ t('onboarding.brand') }}</p>
-      <p class="steps" aria-hidden="true">
-        <span :class="{ on: stepIndex >= 0 }" />
-        <span :class="{ on: stepIndex >= 1 }" />
-        <span :class="{ on: stepIndex >= 2 }" />
-      </p>
+      <div class="steps-wrapper" aria-hidden="true">
+        <p class="steps">
+          <span :class="{ active: stepIndex === 0, on: stepIndex >= 0 }" />
+          <span :class="{ active: stepIndex === 1, on: stepIndex >= 1 }" />
+          <span :class="{ active: stepIndex === 2, on: stepIndex >= 2 }" />
+        </p>
+        <span class="step-label">Step {{ stepIndex + 1 }} of 3</span>
+      </div>
       <h1 v-if="step === 'currency'">{{ t('onboarding.title') }}</h1>
       <h1 v-else-if="step === 'accounts'">{{ t('onboarding.accountsTitle') }}</h1>
       <h1 v-else>{{ t('onboarding.budgetsTitle') }}</h1>
@@ -210,20 +213,46 @@ async function finish(skipBudgets = false) {
   letter-spacing: -0.02em;
 }
 
+.steps-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: 2px;
+}
+
 .steps {
   display: flex;
+  align-items: center;
   gap: var(--space-2);
+  margin: 0;
 }
 
 .steps span {
-  width: 28px;
-  height: 4px;
+  width: 20px;
+  height: 5px;
   border-radius: var(--radius-full);
-  background: var(--color-surface-container-highest);
+  background: color-mix(in srgb, var(--color-outline) 25%, transparent);
+  transition:
+    width var(--duration-normal) var(--ease-spring-snappy),
+    background-color var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard);
 }
 
 .steps span.on {
+  background: color-mix(in srgb, var(--color-primary) 60%, var(--color-surface-container-high));
+}
+
+.steps span.active {
+  width: 38px;
   background: var(--color-primary);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-primary) 45%, transparent);
+}
+
+.step-label {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-muted);
+  letter-spacing: 0.02em;
 }
 
 h1 {

@@ -6,7 +6,7 @@ import AppSelect from '@/components/ui/AppSelect.vue'
 import { APP_LOCALES } from '@/i18n'
 import { tickFeedback, toggleOffFeedback, toggleOnFeedback } from '@/services/native/haptics'
 import { useSettingsStore } from '@/stores/settings'
-import type { AppLocale, ColorScheme, ThemeMode } from '@/types/finance'
+import type { AppFont, AppLocale, ColorScheme, ThemeMode } from '@/types/finance'
 
 const emit = defineEmits<{
   (e: 'back'): void
@@ -18,11 +18,21 @@ const settings = useSettingsStore()
 
 const COLOR_SCHEMES: { id: ColorScheme; label: string; gradient: string; color: string }[] = [
   { id: 'teal', label: 'Emerald Teal', gradient: 'linear-gradient(135deg, #0b6e6a, #2a9d8f)', color: '#0b6e6a' },
+  { id: 'luxury-navy', label: 'Midnight Coral', gradient: 'linear-gradient(135deg, #004e72, #ff6e42)', color: '#ff6e42' },
+  { id: 'violet-peach', label: 'Celestial Peach', gradient: 'linear-gradient(135deg, #391a77, #fedfcb)', color: '#a855f7' },
   { id: 'blue', label: 'Ocean Blue', gradient: 'linear-gradient(135deg, #2563eb, #3b82f6)', color: '#2563eb' },
   { id: 'purple', label: 'Royal Purple', gradient: 'linear-gradient(135deg, #7c3aed, #c084fc)', color: '#7c3aed' },
   { id: 'rose', label: 'Rose Coral', gradient: 'linear-gradient(135deg, #e11d48, #f43f5e)', color: '#e11d48' },
   { id: 'amber', label: 'Sunset Amber', gradient: 'linear-gradient(135deg, #d97706, #f59e0b)', color: '#d97706' },
   { id: 'obsidian', label: 'Obsidian Slate', gradient: 'linear-gradient(135deg, #374151, #6b7280)', color: '#475569' },
+]
+
+const FONT_FAMILIES: { id: AppFont; label: string; fontStyle: string; sample: string }[] = [
+  { id: 'system', label: 'SF Pro / System', fontStyle: '-apple-system, sans-serif', sample: 'Aa 123' },
+  { id: 'outfit', label: 'Outfit (Modern)', fontStyle: "'Outfit', sans-serif", sample: 'Aa 123' },
+  { id: 'inter', label: 'Inter (Crisp UI)', fontStyle: "'Inter', sans-serif", sample: 'Aa 123' },
+  { id: 'jakarta', label: 'Plus Jakarta', fontStyle: "'Plus Jakarta Sans', sans-serif", sample: 'Aa 123' },
+  { id: 'caveat', label: 'Caveat (Script)', fontStyle: "'Caveat', cursive", sample: 'Aa 123' },
 ]
 
 const languageOptions = computed(() =>
@@ -43,6 +53,12 @@ async function onColorScheme(scheme: ColorScheme) {
   if (settings.colorScheme === scheme) return
   void tickFeedback()
   await settings.setColorScheme(scheme)
+}
+
+async function onFontFamily(font: AppFont) {
+  if (settings.fontFamily === font) return
+  void tickFeedback()
+  await settings.setFontFamily(font)
 }
 
 async function onLocale(code: string) {
@@ -115,6 +131,25 @@ async function onLocale(code: string) {
             <Check v-if="settings.colorScheme === s.id" :size="16" class="scheme-check" />
           </span>
           <span class="scheme-label">{{ s.label }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Font Family Selector -->
+    <div class="field">
+      <span class="label">App Font Family</span>
+      <div class="font-grid">
+        <button
+          v-for="f in FONT_FAMILIES"
+          :key="f.id"
+          type="button"
+          class="font-btn"
+          :class="{ 'font-btn--active': settings.fontFamily === f.id }"
+          @click="onFontFamily(f.id)"
+        >
+          <span class="font-sample" :style="{ fontFamily: f.fontStyle }">{{ f.sample }}</span>
+          <span class="font-label">{{ f.label }}</span>
+          <Check v-if="settings.fontFamily === f.id" :size="14" class="font-check" />
         </button>
       </div>
     </div>
@@ -300,5 +335,62 @@ async function onLocale(code: string) {
   font-weight: 600;
   color: var(--color-on-surface);
   text-align: center;
+}
+
+.font-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: var(--space-2);
+}
+
+.font-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-container);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  position: relative;
+  transition: transform var(--duration-fast) var(--ease-spring-snappy),
+              border-color var(--duration-fast) var(--ease-standard),
+              background-color var(--duration-fast) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .font-btn:hover {
+    background: var(--color-surface-container-high);
+  }
+}
+
+.font-btn:active {
+  transform: scale(0.96);
+}
+
+.font-btn--active {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface-container));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.font-sample {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.font-label {
+  font-size: var(--text-caption);
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.font-check {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  color: var(--color-primary);
 }
 </style>

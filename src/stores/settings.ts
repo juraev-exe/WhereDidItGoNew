@@ -1,3 +1,6 @@
+/**
+ * Settings Store — manages theme, locale, privacy mode, and application preferences.
+ */
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { db } from '@/db'

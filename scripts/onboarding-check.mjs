@@ -141,6 +141,27 @@ for (const dropped of droppedNames) {
 check('landed on the app', !page.url().includes('/onboarding'), page.url())
 await shot('onb-5-home')
 
+// ── Empty states, which only render on a fresh database ──────────────────────
+// An EmptyState with no icon slot used to paint a blank coloured tile.
+state.stage = 'empty-states'
+for (const route of ['/', '/activity', '/budgets', '/debts', '/insights']) {
+  await page.goto(`${BASE}${route}`, { waitUntil: 'domcontentloaded' })
+  await page.waitForTimeout(1300)
+  const empties = await page.evaluate(() =>
+    [...document.querySelectorAll('.empty')].map((el) => {
+      const art = el.querySelector('.empty-art')
+      return {
+        title: el.querySelector('h3')?.textContent?.trim() ?? '',
+        blankArt: Boolean(art) && !art.querySelector('svg'),
+      }
+    }),
+  )
+  for (const e of empties) {
+    check(`${route} empty state "${e.title}" has an icon`, !e.blankArt)
+  }
+  if (empties.length) await shot(`onb-empty${route.replace(/\//g, '-') || '-home'}`)
+}
+
 await browser.close()
 console.log(problems.length ? `\n${problems.length} problems:\n${problems.join('\n')}` : '\nOnboarding walk passed.')
 process.exit(problems.length ? 1 : 0)

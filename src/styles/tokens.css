@@ -427,6 +427,34 @@
   --font-body: 'Outfit', -apple-system, sans-serif !important;
 }
 
+/* ── Navy Cyan ────────────────────────────────────────────────────────────
+   Deep Navy #1C1C28 · Cyan #1EC1CB · Burgundy #1A0A0F · Blush Pink #F6E6EA
+   Cyan is a light accent, so text on it is near-black rather than white. */
+[data-color-scheme='navy-cyan'] {
+  --color-primary: #1ec1cb;
+  --color-on-primary: #08202a;
+  --color-primary-container: #f6e6ea;
+  --color-on-primary-container: #1a0a0f;
+  --color-tertiary: #1c1c28;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #1ec1cb 28%, transparent), 0 4px 16px color-mix(in srgb, #1ec1cb 22%, transparent);
+}
+[data-theme='dark'][data-color-scheme='navy-cyan'] {
+  --color-primary: #1ec1cb;
+  --color-on-primary: #08202a;
+  --color-primary-container: #1c1c28;
+  --color-on-primary-container: #a5edf2;
+  --color-tertiary: #f6e6ea;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #1ec1cb 35%, transparent), 0 4px 20px color-mix(in srgb, #1ec1cb 28%, transparent);
+}
+[data-theme='oled'][data-color-scheme='navy-cyan'] {
+  --color-primary: #1ec1cb;
+  --color-on-primary: #08202a;
+  --color-primary-container: #1a0a0f;
+  --color-on-primary-container: #a5edf2;
+  --color-tertiary: #f6e6ea;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #1ec1cb 40%, transparent), 0 4px 20px color-mix(in srgb, #1ec1cb 35%, transparent);
+}
+
 /* ═══════════════════════════════════════════════
    Activity heatmap scale
    Declared here (not in the scoped component) because Vue's scoped-style

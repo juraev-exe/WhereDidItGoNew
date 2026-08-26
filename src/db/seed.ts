@@ -14,26 +14,40 @@ function seedMessages(locale: AppLocale): SeedMessages {
   return LOCALES[locale].seed as SeedMessages
 }
 
-const EXPENSE_DEFS: Array<Omit<Category, 'id' | 'name'> & { nameKey: keyof SeedMessages['categories'] }> = [
+type CategoryDef = Omit<Category, 'id' | 'name'> & { nameKey: keyof SeedMessages['categories'] }
+
+/**
+ * What a fresh install gets: the categories almost everyone uses. Niche ones
+ * (education, freelance) are left to the onboarding picker and the category
+ * editor, so the starter list stays short enough to scan.
+ */
+const EXPENSE_DEFS: CategoryDef[] = [
   { nameKey: 'food', kind: 'expense', icon: 'utensils', color: '#e07a5f', sortOrder: 0 },
   { nameKey: 'transport', kind: 'expense', icon: 'car', color: '#3d5a80', sortOrder: 1 },
   { nameKey: 'housing', kind: 'expense', icon: 'home', color: '#81b29a', sortOrder: 2 },
   { nameKey: 'shopping', kind: 'expense', icon: 'shopping-bag', color: '#f2cc8f', sortOrder: 3 },
-  { nameKey: 'entertainment', kind: 'expense', icon: 'clapperboard', color: '#9b5de5', sortOrder: 4 },
-  { nameKey: 'health', kind: 'expense', icon: 'heart-pulse', color: '#ef476f', sortOrder: 5 },
-  { nameKey: 'bills', kind: 'expense', icon: 'receipt', color: '#118ab2', sortOrder: 6 },
-  { nameKey: 'education', kind: 'expense', icon: 'graduation-cap', color: '#073b4c', sortOrder: 7 },
-  { nameKey: 'other', kind: 'expense', icon: 'circle-ellipsis', color: '#6c757d', sortOrder: 8 },
+  { nameKey: 'bills', kind: 'expense', icon: 'receipt', color: '#118ab2', sortOrder: 4 },
+  { nameKey: 'entertainment', kind: 'expense', icon: 'clapperboard', color: '#9b5de5', sortOrder: 5 },
+  { nameKey: 'health', kind: 'expense', icon: 'heart-pulse', color: '#ef476f', sortOrder: 6 },
+  { nameKey: 'other', kind: 'expense', icon: 'circle-ellipsis', color: '#6c757d', sortOrder: 7 },
 ]
 
-const INCOME_DEFS: Array<Omit<Category, 'id' | 'name'> & { nameKey: keyof SeedMessages['categories'] }> = [
+const INCOME_DEFS: CategoryDef[] = [
   { nameKey: 'salary', kind: 'income', icon: 'briefcase', color: '#2a9d8f', sortOrder: 0 },
-  { nameKey: 'freelance', kind: 'income', icon: 'laptop', color: '#264653', sortOrder: 1 },
-  { nameKey: 'gifts', kind: 'income', icon: 'gift', color: '#e9c46a', sortOrder: 2 },
-  { nameKey: 'otherIncome', kind: 'income', icon: 'plus-circle', color: '#6c757d', sortOrder: 3 },
+  { nameKey: 'gifts', kind: 'income', icon: 'gift', color: '#e9c46a', sortOrder: 1 },
+  { nameKey: 'otherIncome', kind: 'income', icon: 'plus-circle', color: '#6c757d', sortOrder: 2 },
 ]
 
-const ALL_DEFS = [...EXPENSE_DEFS, ...INCOME_DEFS]
+/**
+ * No longer seeded, but still present in databases created by earlier versions.
+ * Kept so a language switch relabels them like any other starter category.
+ */
+const RETIRED_DEFS: CategoryDef[] = [
+  { nameKey: 'education', kind: 'expense', icon: 'graduation-cap', color: '#073b4c', sortOrder: 7 },
+  { nameKey: 'freelance', kind: 'income', icon: 'laptop', color: '#264653', sortOrder: 1 },
+]
+
+const ALL_DEFS = [...EXPENSE_DEFS, ...INCOME_DEFS, ...RETIRED_DEFS]
 
 /** Every localised spelling a seeded name can have, keyed by its definition. */
 function defaultNamesFor(nameKey: keyof SeedMessages['categories']): string[] {

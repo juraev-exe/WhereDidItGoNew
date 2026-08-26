@@ -194,6 +194,8 @@ export default {
     yesterday: 'Дирӯз',
     clearFilters: 'Тоза кардани филтрҳо',
     filteredTotal: 'Ҷамъи филтршуда',
+    emptyMonthTitle: 'Дар ин моҳ чизе нест',
+    emptyMonthDesc: 'Хароҷот ё даромад илова кунед — дар ин ҷо пайдо мешавад.',
   },
   budgets: {
     title: 'Буҷаҳо',
@@ -445,6 +447,8 @@ export default {
     subcategoriesCount: '{count} зеркатегория',
     subcategories: 'Зеркатегорияҳо',
     subcategoryPlaceholder: 'Илова кардани зеркатегория (мас. Электроника)',
+    categoriesEmptyTitle: 'Дар ин ҷо категория нест',
+    categoriesEmptyDesc: 'Категория илова кунед ё варақаи дигарро интихоб кунед.',
   },
   accounts: {
     title: 'Ҳисобҳо',
@@ -592,5 +596,6 @@ export default {
     paymentTooLarge: 'Ин аз боқимонда зиёд аст.',
     amountRequired: 'Маблағи аз сифр калон ворид кунед',
     nameRequired: 'Ном ворид кунед',
+    emptyTitle: 'Қарз ё вом нест',
   },
 }

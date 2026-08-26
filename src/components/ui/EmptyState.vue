@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useSlots } from 'vue'
+
 defineProps<{
   title: string
   description?: string
@@ -6,11 +8,16 @@ defineProps<{
 }>()
 
 defineEmits<{ action: [] }>()
+
+// The art tile is a filled 72px square; painting it with an empty slot leaves a
+// blank coloured blob, so only render it when a caller supplies an icon.
+const slots = useSlots()
+const hasIcon = () => Boolean(slots.icon)
 </script>
 
 <template>
   <div class="empty">
-    <div class="empty-art" aria-hidden="true">
+    <div v-if="hasIcon()" class="empty-art" aria-hidden="true">
       <slot name="icon" />
     </div>
     <h3>{{ title }}</h3>

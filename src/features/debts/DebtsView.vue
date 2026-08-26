@@ -216,7 +216,7 @@ async function confirmDelete() {
 
     <EmptyState
       v-if="!rows.length"
-      :title="t('debts.title')"
+      :title="t('debts.emptyTitle')"
       :description="t('debts.empty')"
       :action-label="t('debts.addDebt')"
       @action="openNew"

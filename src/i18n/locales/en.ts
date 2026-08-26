@@ -194,6 +194,8 @@ export default {
     yesterday: 'Yesterday',
     clearFilters: 'Clear filters',
     filteredTotal: 'Total in view',
+    emptyMonthTitle: 'Nothing logged this month',
+    emptyMonthDesc: 'Add an expense or income and it will show up here.',
   },
   budgets: {
     title: 'Budgets',
@@ -409,6 +411,8 @@ export default {
     subcategoriesCount: '{count} subcategories',
     subcategories: 'Subcategories',
     subcategoryPlaceholder: 'Add subcategory (e.g. Electronics)',
+    categoriesEmptyTitle: 'No categories here',
+    categoriesEmptyDesc: 'Add one, or switch to another tab above.',
   },
   accounts: {
     title: 'Accounts',
@@ -556,6 +560,7 @@ export default {
     paymentTooLarge: 'That is more than what is left.',
     amountRequired: 'Enter an amount greater than zero',
     nameRequired: 'Enter a name',
+    emptyTitle: 'No debts or loans',
   },
 }
 

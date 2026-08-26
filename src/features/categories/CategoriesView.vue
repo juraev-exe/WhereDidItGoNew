@@ -151,8 +151,8 @@ async function confirmDeleteCategory() {
     <!-- Empty State -->
     <EmptyState
       v-if="!filteredCategories.length"
-      :title="t('nav.categories')"
-      :description="t('activity.emptyDesc')"
+      :title="t('settings.categoriesEmptyTitle')"
+      :description="t('settings.categoriesEmptyDesc')"
       :action-label="t('settings.addCategory')"
       @action="openAddCategory"
     >

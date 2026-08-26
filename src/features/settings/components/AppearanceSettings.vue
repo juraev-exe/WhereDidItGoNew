@@ -20,6 +20,7 @@ const COLOR_SCHEMES: { id: ColorScheme; label: string; gradient: string; color: 
   { id: 'teal', label: 'Emerald Teal', gradient: 'linear-gradient(135deg, #0b6e6a, #2a9d8f)', color: '#0b6e6a' },
   { id: 'luxury-navy', label: 'Midnight Coral', gradient: 'linear-gradient(135deg, #004e72, #ff6e42)', color: '#ff6e42' },
   { id: 'violet-peach', label: 'Celestial Peach', gradient: 'linear-gradient(135deg, #391a77, #fedfcb)', color: '#a855f7' },
+  { id: 'navy-cyan', label: 'Navy Cyan', gradient: 'linear-gradient(135deg, #1c1c28, #1ec1cb)', color: '#1ec1cb' },
   { id: 'blue', label: 'Ocean Blue', gradient: 'linear-gradient(135deg, #2563eb, #3b82f6)', color: '#2563eb' },
   { id: 'purple', label: 'Royal Purple', gradient: 'linear-gradient(135deg, #7c3aed, #c084fc)', color: '#7c3aed' },
   { id: 'rose', label: 'Rose Coral', gradient: 'linear-gradient(135deg, #e11d48, #f43f5e)', color: '#e11d48' },

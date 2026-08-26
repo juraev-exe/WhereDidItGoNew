@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search } from '@lucide/vue'
+import { ListPlus, Search, SearchX } from '@lucide/vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
@@ -222,13 +222,30 @@ function onSnackOpen(open: boolean) {
       </div>
     </div>
 
+    <!-- "nothing logged yet" and "your filters match nothing" want different answers -->
     <EmptyState
-      v-if="!filtered.length"
+      v-if="!filtered.length && hasNarrowedFilters"
       :title="t('activity.emptyTitle')"
       :description="t('activity.emptyDesc')"
+      :action-label="t('activity.clearFilters')"
+      @action="clearFilters"
+    >
+      <template #icon>
+        <SearchX :size="28" />
+      </template>
+    </EmptyState>
+
+    <EmptyState
+      v-else-if="!filtered.length"
+      :title="t('activity.emptyMonthTitle')"
+      :description="t('activity.emptyMonthDesc')"
       :action-label="t('nav.addTransaction')"
       @action="ui.openAdd()"
-    />
+    >
+      <template #icon>
+        <ListPlus :size="28" />
+      </template>
+    </EmptyState>
 
     <div v-else class="list">
       <section

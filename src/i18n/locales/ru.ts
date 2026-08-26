@@ -194,6 +194,8 @@ export default {
     yesterday: 'Вчера',
     clearFilters: 'Сбросить фильтры',
     filteredTotal: 'Итого по фильтру',
+    emptyMonthTitle: 'В этом месяце пусто',
+    emptyMonthDesc: 'Добавьте расход или доход — он появится здесь.',
   },
   budgets: {
     title: 'Бюджеты',
@@ -426,6 +428,8 @@ export default {
     subcategoriesCount: '{count} подкатегорий',
     subcategories: 'Подкатегории',
     subcategoryPlaceholder: 'Добавить подкатегорию (напр. Электроника)',
+    categoriesEmptyTitle: 'Здесь нет категорий',
+    categoriesEmptyDesc: 'Добавьте категорию или переключите вкладку выше.',
   },
   accounts: {
     title: 'Счета',
@@ -573,5 +577,6 @@ export default {
     paymentTooLarge: 'Это больше, чем остаток.',
     amountRequired: 'Введите сумму больше нуля',
     nameRequired: 'Введите имя',
+    emptyTitle: 'Нет долгов и займов',
   },
 }

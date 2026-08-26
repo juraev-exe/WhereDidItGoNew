@@ -229,6 +229,9 @@ export const useSettingsStore = defineStore('settings', () => {
   function applyFontFamily(font: AppFont) {
     fontFamily.value = font
     document.documentElement.setAttribute('data-font', font)
+    if (document.body) {
+      document.body.setAttribute('data-font', font)
+    }
   }
 
   async function setFontFamily(font: AppFont) {

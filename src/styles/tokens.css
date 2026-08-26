@@ -401,23 +401,28 @@
 }
 
 /* Custom Global Font Families */
+:root[data-font='system'],
 [data-font='system'] {
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", system-ui, sans-serif;
-  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", system-ui, sans-serif !important;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif !important;
 }
+:root[data-font='outfit'],
 [data-font='outfit'] {
-  --font-display: 'Outfit', -apple-system, sans-serif;
-  --font-body: 'Outfit', -apple-system, sans-serif;
+  --font-display: 'Outfit', -apple-system, sans-serif !important;
+  --font-body: 'Outfit', -apple-system, sans-serif !important;
 }
+:root[data-font='inter'],
 [data-font='inter'] {
-  --font-display: 'Inter', -apple-system, sans-serif;
-  --font-body: 'Inter', -apple-system, sans-serif;
+  --font-display: 'Inter', -apple-system, sans-serif !important;
+  --font-body: 'Inter', -apple-system, sans-serif !important;
 }
+:root[data-font='jakarta'],
 [data-font='jakarta'] {
-  --font-display: 'Plus Jakarta Sans', -apple-system, sans-serif;
-  --font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-display: 'Plus Jakarta Sans', -apple-system, sans-serif !important;
+  --font-body: 'Plus Jakarta Sans', -apple-system, sans-serif !important;
 }
+:root[data-font='caveat'],
 [data-font='caveat'] {
-  --font-display: 'Caveat', 'Outfit', cursive, sans-serif;
-  --font-body: 'Outfit', -apple-system, sans-serif;
+  --font-display: 'Caveat', cursive, sans-serif !important;
+  --font-body: 'Outfit', -apple-system, sans-serif !important;
 }

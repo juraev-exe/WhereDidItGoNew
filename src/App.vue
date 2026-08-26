@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Toaster } from 'vue-sonner'
 import 'vue-sonner/style.css'
 import { App } from '@capacitor/app'
@@ -19,6 +20,7 @@ import { useTransactionsStore } from '@/stores/transactions'
 import { useUiStore } from '@/stores/ui'
 import { isNative } from '@/lib/platform'
 
+const { t } = useI18n()
 const settings = useSettingsStore()
 const accounts = useAccountsStore()
 const categories = useCategoriesStore()
@@ -85,6 +87,14 @@ onMounted(async () => {
         ui.closeAdd()
         return
       }
+      if (ui.categoriesSheetOpen) {
+        ui.closeCategories()
+        return
+      }
+      if (ui.settingsSubpage !== 'root') {
+        ui.setSettingsSubpage('root')
+        return
+      }
       if (router.currentRoute.value.meta.hideNav) {
         router.back()
         return
@@ -127,7 +137,7 @@ watch(
 </script>
 
 <template>
-  <div v-if="!settings.ready" class="boot" aria-busy="true" aria-label="Loading…">
+  <div v-if="!settings.ready" class="boot" aria-busy="true" :aria-label="t('common.loading')">
     <p class="brand">WhereDidItGo</p>
   </div>
   <div v-else class="app-root" :class="{ 'app-obscured': isObscured && settings.hideInRecents }">

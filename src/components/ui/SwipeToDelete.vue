@@ -104,14 +104,20 @@ function onFrontClick(e: MouseEvent) {
 </template>
 
 <style scoped>
+/*
+ * Both layers occupy the same grid cell so the reveal is exactly as tall as the
+ * row — absolute positioning left a 1px sliver of the action colour on each edge.
+ */
 .swipe {
   position: relative;
   overflow: hidden;
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
 }
 
 .action {
-  position: absolute;
-  inset: 0 0 0 auto;
+  grid-area: 1 / 1;
+  justify-self: end;
   width: 76px;
   display: grid;
   place-items: center;
@@ -121,6 +127,7 @@ function onFrontClick(e: MouseEvent) {
 }
 
 .front {
+  grid-area: 1 / 1;
   position: relative;
   z-index: 1;
   background: var(--color-surface);

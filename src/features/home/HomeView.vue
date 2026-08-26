@@ -11,7 +11,7 @@ import ProgressBar from '@/components/ui/ProgressBar.vue'
 import HeaderActions from '@/components/ui/HeaderActions.vue'
 import Snackbar from '@/components/ui/Snackbar.vue'
 import TransactionRow from '@/components/ui/TransactionRow.vue'
-import { monthKey } from '@/lib/dates'
+import { isInMonth, monthKey } from '@/lib/dates'
 import { accountStatsInMonth, buildMonthInsights, spendByCategory, summarizeMonth } from '@/services/stats'
 import { useAccountsStore } from '@/stores/accounts'
 import { useBudgetsStore } from '@/stores/budgets'
@@ -42,10 +42,9 @@ const summary = computed(() =>
 const tops = computed(() =>
   spendByCategory(transactions.transactions, categories.categories, month.value).slice(0, 4),
 )
-const recent = computed(() => {
-  const rows = transactions.transactions.filter((tx) => tx.date.startsWith(month.value))
-  return rows.slice(0, 5)
-})
+const recent = computed(() =>
+  transactions.transactions.filter((tx) => isInMonth(tx.date, month.value)).slice(0, 5),
+)
 const isCurrentMonth = computed(() => month.value === thisMonth.value)
 
 const monthAccountStats = computed(() => {
@@ -425,21 +424,6 @@ onUnmounted(() => {
   animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
 }
 
-.actions {
-  display: flex;
-  gap: var(--space-1);
-}
-
-.icon-btn {
-  width: var(--touch-min);
-  height: var(--touch-min);
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-full);
-  color: var(--color-on-surface-variant);
-  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
-}
-
 .hero-card {
   padding: var(--space-5);
   border-radius: var(--radius-xl);
@@ -644,8 +628,6 @@ onUnmounted(() => {
   animation-delay: 180ms;
 }
 
-.section:nth-child(2) { animation-delay: 260ms; }
-.section:nth-child(3) { animation-delay: 340ms; }
 
 .section-head {
   display: flex;
@@ -731,89 +713,4 @@ onUnmounted(() => {
   padding: var(--space-2) var(--space-2);
 }
 
-.panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-}
-
-.panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.panel-head h2 {
-  font-size: var(--text-title);
-  font-weight: 600;
-}
-
-.dash-add-cat-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--text-caption);
-  font-weight: 600;
-  color: var(--color-primary);
-  background: var(--color-primary-container);
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  transition: transform var(--duration-fast);
-}
-
-.dash-add-cat-btn:active {
-  transform: scale(0.96);
-}
-
-.dash-cats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-2);
-}
-
-@media (min-width: 480px) {
-  .dash-cats-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.dash-cat-chip {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-container);
-  text-align: left;
-  font-size: var(--text-label);
-  font-weight: 550;
-  color: var(--color-on-surface);
-  transition: background var(--duration-fast), transform var(--duration-fast);
-}
-
-.dash-cat-chip:hover {
-  background: var(--color-surface-container-high);
-}
-
-.dash-cat-chip:active {
-  transform: scale(0.98);
-}
-
-.dash-cat-chip--add {
-  border: 1.5px dashed var(--color-outline);
-  background: var(--color-surface-container-highest);
-  color: var(--color-primary);
-  justify-content: center;
-  font-weight: 600;
-}
-
-.dash-cat-chip--add:hover {
-  background: var(--color-primary-container);
-  border-color: var(--color-primary);
-}
 </style>

@@ -83,7 +83,9 @@ export interface Debt {
   id: string
   type: DebtType
   personName: string
+  /** Minor units (cents), like every other money field. */
   amount: number
+  /** Minor units (cents). */
   paidAmount: number
   status: DebtStatus
   dueDate?: string
@@ -118,7 +120,7 @@ export interface AppMeta {
 }
 
 export interface BackupPayload {
-  version: 1
+  version: 2
   exportedAt: string
   meta: AppMeta
   accounts: Account[]
@@ -130,5 +132,6 @@ export interface BackupPayload {
   debts?: Debt[]
 }
 
-export const BACKUP_VERSION = 1 as const
+/** v1 stored debt amounts in major units; v2 uses minor units throughout. */
+export const BACKUP_VERSION = 2 as const
 

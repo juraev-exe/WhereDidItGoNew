@@ -21,7 +21,7 @@ function toggleAdd() {
 </script>
 
 <template>
-  <nav class="nav" :aria-label="t('nav.main')">
+  <nav class="nav" :class="{ 'nav--hidden': ui.isAnyModalOpen }" :aria-label="t('nav.main')">
     <div class="nav-inner">
       <!-- Left side tabs (3 tabs) -->
       <div class="nav-side nav-side--left">
@@ -132,8 +132,6 @@ function toggleAdd() {
   transition: opacity 0.28s var(--ease-standard), transform 0.32s var(--ease-emphasized), visibility 0.32s;
 }
 
-:global(body.has-open-modal) .nav,
-:global(body:has(.sheet-root)) .nav,
 .nav--hidden {
   opacity: 0 !important;
   transform: translateY(140%) scale(0.94) !important;
@@ -166,24 +164,28 @@ function toggleAdd() {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  padding: 0 4px;
+  padding: 0 2px;
 }
 
+/* Content-sized rather than equal-width: short labels give their slack to long
+   ones, which is what keeps Russian/Tajik names from truncating. */
 .tab {
-  flex: 1;
+  flex: 0 1 auto;
+  min-width: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
   min-height: 44px;
-  max-width: 72px;
-  padding: 3px 4px;
+  max-width: 84px;
+  padding: 3px 1px;
   border-radius: var(--radius-lg);
   color: var(--color-muted);
-  font-size: 0.6875rem;
+  /* Scales down on narrow screens so Russian/Tajik labels stay readable. */
+  font-size: clamp(0.5625rem, 2.55vw, 0.6875rem);
   font-weight: 600;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   transition: color var(--duration-fast) var(--ease-standard),
               background var(--duration-fast) var(--ease-standard),
               transform var(--duration-fast) var(--ease-spring-snappy);
@@ -207,6 +209,13 @@ function toggleAdd() {
 
 .tab:active {
   transform: scale(0.92) translateY(0);
+}
+
+.tab span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tab--active {

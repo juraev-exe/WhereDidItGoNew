@@ -79,6 +79,7 @@ const unbudgeted = computed(() => {
 
 const totalLimit = computed(() => rows.value.reduce((s, r) => s + r.budget.limitAmount, 0))
 const totalSpent = computed(() => rows.value.reduce((s, r) => s + r.spent, 0))
+const totalRemaining = computed(() => totalLimit.value - totalSpent.value)
 
 function openEdit(categoryId: string, currentLimit = 0) {
   editCategoryId.value = categoryId
@@ -147,6 +148,12 @@ const editCategory = computed(() => categories.byId(editCategoryId.value))
       <div>
         <span>{{ t('budgets.budgeted') }}</span>
         <strong><MoneyText :amount="totalLimit" /></strong>
+      </div>
+      <div>
+        <span>{{ totalRemaining < 0 ? t('budgets.over') : t('budgets.remainingLabel') }}</span>
+        <strong :class="totalRemaining < 0 ? 'over' : 'under'">
+          <MoneyText :amount="Math.abs(totalRemaining)" />
+        </strong>
       </div>
     </div>
 
@@ -240,6 +247,14 @@ const editCategory = computed(() => categories.byId(editCategoryId.value))
 </template>
 
 <style scoped>
+.summary strong.over {
+  color: var(--color-expense);
+}
+
+.summary strong.under {
+  color: var(--color-income);
+}
+
 .budgets {
   display: flex;
   flex-direction: column;
@@ -309,8 +324,8 @@ h1 {
 
 .summary {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
   padding: var(--space-4);
   border-radius: var(--radius-xl);
   background: var(--color-surface);
@@ -328,6 +343,9 @@ h1 {
 }
 
 .summary strong {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-family: var(--font-display);
   font-size: var(--text-title);
 }

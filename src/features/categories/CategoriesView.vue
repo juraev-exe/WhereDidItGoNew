@@ -3,12 +3,13 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Edit2, FolderKanban, Plus, Search, Trash2 } from '@lucide/vue'
-import AppButton from '@/components/ui/AppButton.vue'
+import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import IconByName from '@/components/ui/IconByName.vue'
 import { tickFeedback, warningFeedback } from '@/services/native/haptics'
 import { useBudgetsStore } from '@/stores/budgets'
 import { useCategoriesStore } from '@/stores/categories'
+import { useRecurringStore } from '@/stores/recurring'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useUiStore } from '@/stores/ui'
 import HeaderActions from '@/components/ui/HeaderActions.vue'
@@ -19,6 +20,7 @@ const router = useRouter()
 const categoriesStore = useCategoriesStore()
 const transactionsStore = useTransactionsStore()
 const budgetsStore = useBudgetsStore()
+const recurringStore = useRecurringStore()
 const ui = useUiStore()
 
 const filter = ref<'all' | CategoryKind>('all')
@@ -68,15 +70,25 @@ function openEditCategory(cat: Category) {
   ui.openCategories(cat)
 }
 
-async function handleDeleteCategory(cat: Category) {
-  const used = transactionsStore.transactions.some((tx) => tx.categoryId === cat.id)
+const pendingDelete = ref<Category | null>(null)
+const blockedCategory = ref<Category | null>(null)
+
+function askDeleteCategory(cat: Category) {
+  const used =
+    transactionsStore.transactions.some((tx) => tx.categoryId === cat.id) ||
+    recurringStore.items.some((r) => r.categoryId === cat.id)
   if (used) {
-    window.alert(t('settings.categoryInUse', { name: cat.name }))
+    blockedCategory.value = cat
+    void warningFeedback()
     return
   }
-  const ok = window.confirm(t('settings.deleteCategoryConfirm', { name: cat.name }))
-  if (!ok) return
+  pendingDelete.value = cat
+}
 
+async function confirmDeleteCategory() {
+  const cat = pendingDelete.value
+  if (!cat) return
+  pendingDelete.value = null
   void warningFeedback()
   await categoriesStore.removeCategory(cat.id)
   const relatedBudgets = budgetsStore.budgets.filter((b) => b.categoryId === cat.id)
@@ -90,13 +102,7 @@ async function handleDeleteCategory(cat: Category) {
     <header class="header">
       <div class="header-title-row">
         <h1>{{ t('nav.categories') }}</h1>
-        <div class="header-right-group">
-          <AppButton size="sm" variant="filled" class="add-btn" @click="openAddCategory">
-            <Plus :size="16" />
-            <span>{{ t('settings.addCategory') }}</span>
-          </AppButton>
-          <HeaderActions />
-        </div>
+        <HeaderActions />
       </div>
 
       <!-- Segmented Control Tabs -->
@@ -178,7 +184,7 @@ async function handleDeleteCategory(cat: Category) {
                 {{ cat.kind === 'income' ? t('settings.income') : t('settings.expense') }}
               </span>
               <span v-if="cat.subcategories?.length" class="subcat-badge">
-                {{ cat.subcategories.length }} subcategories
+                {{ t('settings.subcategoriesCount', { count: cat.subcategories.length }) }}
               </span>
             </div>
             <div v-if="cat.subcategories?.length" class="card-subcats">
@@ -209,13 +215,41 @@ async function handleDeleteCategory(cat: Category) {
             type="button"
             class="action-icon delete-icon"
             :title="t('common.delete')"
-            @click.stop.prevent="handleDeleteCategory(cat)"
+            @click.stop.prevent="askDeleteCategory(cat)"
           >
             <Trash2 :size="16" />
           </button>
         </div>
       </div>
     </div>
+
+    <section v-if="filteredCategories.length" class="section">
+      <div class="chips">
+        <button type="button" class="chip" @click="openAddCategory">
+          <Plus :size="16" />
+          {{ t('settings.addCategory') }}
+        </button>
+      </div>
+    </section>
+
+    <ConfirmSheet
+      :open="Boolean(pendingDelete)"
+      :title="t('common.delete')"
+      :message="t('settings.deleteCategoryConfirm', { name: pendingDelete?.name ?? '' })"
+      :confirm-label="t('common.delete')"
+      destructive
+      @confirm="confirmDeleteCategory"
+      @close="pendingDelete = null"
+    />
+
+    <ConfirmSheet
+      :open="Boolean(blockedCategory)"
+      :title="t('common.delete')"
+      :message="t('settings.categoryInUse', { name: blockedCategory?.name ?? '' })"
+      acknowledge-only
+      @confirm="blockedCategory = null"
+      @close="blockedCategory = null"
+    />
   </div>
 </template>
 
@@ -241,12 +275,6 @@ async function handleDeleteCategory(cat: Category) {
   gap: var(--space-2);
 }
 
-.header-right-group {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 h1 {
   font-size: var(--text-headline);
   font-family: var(--font-display);
@@ -256,10 +284,46 @@ h1 {
   color: var(--color-on-surface);
 }
 
-.add-btn {
+h1 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container);
+  color: var(--color-on-surface);
+  font-size: var(--text-label);
+  font-weight: 600;
+  transition: background var(--duration-fast) var(--ease-standard),
+              transform var(--duration-fast) var(--ease-standard);
+}
+
+.chip:hover {
+  background: var(--color-surface-container-high);
+}
+
+.chip:active {
+  transform: scale(0.97);
 }
 
 .seg {

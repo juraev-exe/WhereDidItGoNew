@@ -44,7 +44,7 @@
   --font-mono: -apple-system, "SF Pro Rounded", "SF Mono", Menlo, Consolas, monospace;
 
   --text-display: 2.375rem;
-  --text-headline: 1.75rem;
+  --text-headline: clamp(1.375rem, 6.2vw, 1.75rem);
   --text-title: 1.25rem;
   --text-body: 1.0625rem;
   --text-label: 0.875rem;
@@ -425,4 +425,40 @@
 [data-font='caveat'] {
   --font-display: 'Caveat', cursive, sans-serif !important;
   --font-body: 'Outfit', -apple-system, sans-serif !important;
+}
+
+/* ═══════════════════════════════════════════════
+   Activity heatmap scale
+   Declared here (not in the scoped component) because Vue's scoped-style
+   compiler cannot express "ancestor [data-theme] + scoped descendant".
+   ═══════════════════════════════════════════════ */
+
+:root {
+  --heat-0: #ebedf0;
+  --heat-1: #9be9a8;
+  --heat-2: #40c463;
+  --heat-3: #30a14e;
+  --heat-4: #216e39;
+  --heat-border: rgba(27, 31, 35, 0.08);
+  --heat-focus: #0969da;
+}
+
+[data-theme='dark'] {
+  --heat-0: #161b22;
+  --heat-1: #0e4429;
+  --heat-2: #006d32;
+  --heat-3: #26a641;
+  --heat-4: #39d353;
+  --heat-border: rgba(255, 255, 255, 0.05);
+  --heat-focus: #58a6ff;
+}
+
+[data-theme='oled'] {
+  --heat-0: #0d1117;
+  --heat-1: #0e4429;
+  --heat-2: #006d32;
+  --heat-3: #26a641;
+  --heat-4: #39d353;
+  --heat-border: rgba(255, 255, 255, 0.08);
+  --heat-focus: #58a6ff;
 }

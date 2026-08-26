@@ -5,6 +5,7 @@ import { Pencil, Trash2 } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
+import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import IconByName from '@/components/ui/IconByName.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
@@ -84,8 +85,12 @@ async function save() {
   sheetOpen.value = false
 }
 
-async function remove(id: string) {
-  if (!window.confirm(t('recurring.deleteConfirm'))) return
+const pendingDeleteId = ref('')
+
+async function remove() {
+  const id = pendingDeleteId.value
+  pendingDeleteId.value = ''
+  if (!id) return
   void warningFeedback()
   await recurring.removeRecurring(id)
 }
@@ -128,7 +133,7 @@ async function remove(id: string) {
           type="button"
           class="icon-btn"
           :aria-label="t('recurring.deleteAria')"
-          @click="remove(row.id)"
+          @click="pendingDeleteId = row.id"
         >
           <Trash2 :size="16" />
         </button>
@@ -169,6 +174,16 @@ async function remove(id: string) {
       <AppButton block size="lg" @click="save">{{ t('common.save') }}</AppButton>
     </div>
   </BottomSheet>
+
+  <ConfirmSheet
+    :open="Boolean(pendingDeleteId)"
+    :title="t('common.delete')"
+    :message="t('recurring.deleteConfirm')"
+    :confirm-label="t('common.delete')"
+    destructive
+    @confirm="remove"
+    @close="pendingDeleteId = ''"
+  />
 </template>
 
 <style scoped>

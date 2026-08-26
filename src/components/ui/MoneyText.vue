@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import NumberFlow from '@number-flow/vue'
-import { formatMoney } from '@/lib/money'
+import { formatMoney, getCurrencySymbol } from '@/lib/money'
 import { useSettingsStore } from '@/stores/settings'
 import type { TransactionType } from '@/types/finance'
 
@@ -28,20 +28,36 @@ const { t } = useI18n()
 const settings = useSettingsStore()
 const hidden = computed(() => settings.hideAmounts)
 
-const numericValue = computed(() => (props.amount ?? 0) / 100)
+// NumberFlow renders the magnitude; the sign lives in the prefix.
+const numericValue = computed(() => Math.abs(props.amount ?? 0) / 100)
 
+/**
+ * NumberFlow animates a plain number, so the currency has to be supplied as
+ * affixes — otherwise the animated hero would ignore the currency-position
+ * setting and the custom symbols that `formatMoney` applies.
+ */
 const formatOptions = computed(() => ({
-  style: 'currency' as const,
-  currency: settings.currency,
   minimumFractionDigits: settings.hideCents ? 0 : 2,
   maximumFractionDigits: settings.hideCents ? 0 : 2,
 }))
 
-const prefix = computed(() => {
+const symbol = computed(() => getCurrencySymbol(settings.currency, settings.intlLocale))
+
+const sign = computed(() => {
   if (props.signed === 'income') return '+'
   if (props.signed === 'expense') return '−'
-  return ''
+  return (props.amount ?? 0) < 0 ? '−' : ''
 })
+
+const prefix = computed(() => {
+  if (settings.currencyPosition === 'after') return sign.value
+  const sym = symbol.value
+  return `${sign.value}${sym}${sym.endsWith('.') ? ' ' : ''}`
+})
+
+const suffix = computed(() =>
+  settings.currencyPosition === 'after' ? ` ${symbol.value}` : '',
+)
 
 const display = computed(() => {
   if (props.text) return props.text
@@ -71,6 +87,7 @@ const display = computed(() => {
         :format="formatOptions"
         :locales="settings.intlLocale"
         :prefix="prefix"
+        :suffix="suffix"
       />
       <template v-else>{{ display }}</template>
     </span>

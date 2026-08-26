@@ -3,14 +3,9 @@ import {
   eachDayOfInterval,
   eachMonthOfInterval,
   eachWeekOfInterval,
-  endOfMonth,
   endOfWeek,
-  format,
-  getDate,
   getDay,
-  getDaysInMonth,
   startOfDay,
-  startOfMonth,
   startOfWeek,
   subDays,
   subMonths,
@@ -19,9 +14,11 @@ import {
 import type { Account, Budget, Category, Transaction } from '@/types/finance'
 import {
   dayKey,
+  daysInMonthKey,
   isInMonth,
   isInRange,
   monthKey,
+  monthRange,
   parseLocalDay,
   shortDayLabel,
   shortMonthLabel,
@@ -52,9 +49,7 @@ export function previousEquivalentRange(range: StatsRange): StatsRange | null {
 }
 
 function monthToRange(month: string): StatsRange {
-  const [y, m] = month.split('-').map(Number)
-  const start = startOfMonth(new Date(y, m - 1, 1))
-  return { start: dayKey(start), end: dayKey(endOfMonth(start)) }
+  return monthRange(month)
 }
 
 function inStatsRange(isoDate: string, range: StatsRange): boolean {
@@ -160,53 +155,6 @@ export interface DaySpend {
   label: string
   expense: number
   income: number
-}
-
-export function dailySpendInMonth(transactions: Transaction[], month = monthKey()): DaySpend[] {
-  const [y, m] = month.split('-').map(Number)
-  const start = startOfMonth(new Date(y, m - 1, 1))
-  const end = endOfMonth(start)
-  const days = eachDayOfInterval({ start, end })
-  const byDay = new Map<string, { expense: number; income: number }>()
-  for (const t of transactions) {
-    if (!isInMonth(t.date, month)) continue
-    const key = t.date.slice(0, 10)
-    const cur = byDay.get(key) ?? { expense: 0, income: 0 }
-    if (t.type === 'expense') cur.expense += t.amount
-    if (t.type === 'income') cur.income += t.amount
-    byDay.set(key, cur)
-  }
-  return days.map((d) => {
-    const key = format(d, 'yyyy-MM-dd')
-    const v = byDay.get(key) ?? { expense: 0, income: 0 }
-    return {
-      date: key,
-      label: format(d, 'd'),
-      expense: v.expense,
-      income: v.income,
-    }
-  })
-}
-
-export function recentMonthsTrend(
-  transactions: Transaction[],
-  count = 6,
-  locale = 'en',
-): Array<{ month: string; label: string; expense: number; income: number }> {
-  const now = new Date()
-  const result = []
-  for (let i = count - 1; i >= 0; i--) {
-    const d = subMonths(now, i)
-    const key = monthKey(d)
-    const monthTx = transactions.filter((t) => isInMonth(t.date, key))
-    result.push({
-      month: key,
-      label: shortMonthLabel(d, locale),
-      expense: monthTx.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
-      income: monthTx.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0),
-    })
-  }
-  return result
 }
 
 export function budgetProgress(
@@ -334,10 +282,11 @@ export function buildMonthInsights(
   const expense = expenses.reduce((s, t) => s + t.amount, 0)
 
   const [y, m] = month.split('-').map(Number)
-  const monthDate = new Date(y, m - 1, 1)
-  const daysInMonth = getDaysInMonth(monthDate)
+  const monthDate = new Date(y!, m! - 1, 1)
+  const daysInMonth = daysInMonthKey(month)
   const isCurrent = monthKey(now) === month
-  const day = isCurrent ? Math.min(getDate(now), daysInMonth) : daysInMonth
+  const elapsed = differenceInCalendarDays(now, parseLocalDay(monthRange(month).start)) + 1
+  const day = isCurrent ? Math.min(Math.max(1, elapsed), daysInMonth) : daysInMonth
   const daysLeft = Math.max(0, daysInMonth - day)
   const avgDaily = day > 0 ? Math.round(expense / day) : 0
   const projected = avgDaily * daysInMonth

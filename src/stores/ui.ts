@@ -9,6 +9,8 @@ export const useUiStore = defineStore('ui', () => {
   const categoryToEdit = ref<Category | null>(null)
   const categoryDefaultKind = ref<CategoryKind>('expense')
   const budgetCopiedMonth = ref('')
+  /** Settings renders its sub-pages in place; the back gesture needs to see them. */
+  const settingsSubpage = ref('root')
   const activeModalCount = ref(0)
 
   const isAnyModalOpen = computed(
@@ -45,6 +47,10 @@ export const useUiStore = defineStore('ui', () => {
     categoryDefaultKind.value = 'expense'
   }
 
+  function setSettingsSubpage(page: string) {
+    settingsSubpage.value = page
+  }
+
   function notifyBudgetCopied(month: string) {
     budgetCopiedMonth.value = month
   }
@@ -60,6 +66,7 @@ export const useUiStore = defineStore('ui', () => {
     categoryToEdit,
     categoryDefaultKind,
     budgetCopiedMonth,
+    settingsSubpage,
     activeModalCount,
     isAnyModalOpen,
     registerModalOpen,
@@ -68,6 +75,7 @@ export const useUiStore = defineStore('ui', () => {
     closeAdd,
     openCategories,
     closeCategories,
+    setSettingsSubpage,
     notifyBudgetCopied,
     clearBudgetCopied,
   }

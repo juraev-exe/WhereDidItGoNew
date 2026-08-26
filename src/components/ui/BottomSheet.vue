@@ -108,7 +108,6 @@ watch(
 
     if (v) {
       ui.registerModalOpen()
-      document.body.classList.add('has-open-modal')
       previouslyFocusedElement = document.activeElement as HTMLElement | null
       void openFeedback()
       await nextTick()
@@ -129,9 +128,6 @@ watch(
       }
     } else {
       ui.registerModalClose()
-      if (!ui.isAnyModalOpen) {
-        document.body.classList.remove('has-open-modal')
-      }
       void closeFeedback()
       if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
         previouslyFocusedElement.focus()
@@ -146,9 +142,6 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onKey)
   if (props.open) {
     ui.registerModalClose()
-    if (!ui.isAnyModalOpen) {
-      document.body.classList.remove('has-open-modal')
-    }
   }
   document.body.style.overflow = ''
 })
@@ -173,7 +166,7 @@ onUnmounted(() => {
           :style="dragY ? { transform: `translateY(${dragY}px)` } : undefined"
           role="dialog"
           aria-modal="true"
-          :aria-label="title || 'Dialog'"
+          :aria-label="title || t('common.close')"
           tabindex="-1"
         >
           <div

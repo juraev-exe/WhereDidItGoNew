@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { ArrowLeft } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import { db } from '@/db'
@@ -62,12 +63,19 @@ watch(
 
 const stepIndex = computed(() => (step.value === 'currency' ? 0 : step.value === 'accounts' ? 1 : 2))
 
+const STEPS: Step[] = ['currency', 'accounts', 'budgets']
+
 function goAccounts() {
   step.value = 'accounts'
 }
 
 function goBudgets() {
   step.value = 'budgets'
+}
+
+function goBack() {
+  const i = STEPS.indexOf(step.value)
+  if (i > 0) step.value = STEPS[i - 1]!
 }
 
 async function finish(skipBudgets = false) {
@@ -107,14 +115,25 @@ async function finish(skipBudgets = false) {
 <template>
   <div class="onboarding">
     <div class="hero">
-      <p class="brand">{{ t('onboarding.brand') }}</p>
-      <div class="steps-wrapper" aria-hidden="true">
-        <p class="steps">
+      <div class="hero-top">
+        <button
+          v-if="stepIndex > 0"
+          type="button"
+          class="back-btn"
+          :aria-label="t('common.back')"
+          @click="goBack"
+        >
+          <ArrowLeft :size="20" />
+        </button>
+        <p class="brand">{{ t('onboarding.brand') }}</p>
+      </div>
+      <div class="steps-wrapper" role="status" aria-live="polite">
+        <p class="steps" aria-hidden="true">
           <span :class="{ active: stepIndex === 0, on: stepIndex >= 0 }" />
           <span :class="{ active: stepIndex === 1, on: stepIndex >= 1 }" />
           <span :class="{ active: stepIndex === 2, on: stepIndex >= 2 }" />
         </p>
-        <span class="step-label">Step {{ stepIndex + 1 }} of 3</span>
+        <span class="step-label">{{ t('onboarding.stepOf', { current: stepIndex + 1, total: 3 }) }}</span>
       </div>
       <h1 v-if="step === 'currency'">{{ t('onboarding.title') }}</h1>
       <h1 v-else-if="step === 'accounts'">{{ t('onboarding.accountsTitle') }}</h1>
@@ -190,6 +209,27 @@ async function finish(skipBudgets = false) {
 </template>
 
 <style scoped>
+.hero-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.back-btn {
+  width: 36px;
+  height: 36px;
+  margin-left: calc(var(--space-2) * -1);
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  color: var(--color-on-surface-variant);
+  transition: background var(--duration-fast) var(--ease-standard);
+}
+
+.back-btn:hover {
+  background: var(--color-surface-container);
+}
+
 .onboarding {
   min-height: calc(100vh - var(--safe-top) - var(--safe-bottom));
   display: flex;

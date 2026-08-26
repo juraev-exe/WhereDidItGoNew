@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
+  ArrowLeft,
   ChevronRight,
   Crown,
   Eye,
@@ -24,6 +25,7 @@ import SecuritySettings from './components/SecuritySettings.vue'
 import Snackbar from '@/components/ui/Snackbar.vue'
 import { tickFeedback } from '@/services/native/haptics'
 import { useAccountsStore } from '@/stores/accounts'
+import { useUiStore } from '@/stores/ui'
 import { usePremiumStore } from '@/stores/premium'
 import pkg from '../../../package.json'
 
@@ -36,6 +38,7 @@ const { t } = useI18n()
 const router = useRouter()
 const accounts = useAccountsStore()
 const premium = usePremiumStore()
+const ui = useUiStore()
 
 const activeSubpage = ref<Subpage>('root')
 const message = ref('')
@@ -48,6 +51,24 @@ function openSubpage(page: Subpage) {
   activeSubpage.value = page
   void tickFeedback()
 }
+
+function goBack() {
+  if (window.history.length > 1) router.back()
+  else void router.replace('/')
+}
+
+/**
+ * Sub-pages are local state rather than routes, so publish the current one to the
+ * UI store: the platform back gesture (App.vue) closes it before leaving Settings.
+ */
+watch(activeSubpage, (page) => ui.setSettingsSubpage(page), { immediate: true })
+watch(
+  () => ui.settingsSubpage,
+  (page) => {
+    if (page === 'root') activeSubpage.value = 'root'
+  },
+)
+onUnmounted(() => ui.setSettingsSubpage('root'))
 </script>
 
 <template>
@@ -92,6 +113,9 @@ function openSubpage(page: Subpage) {
     <!-- Main Apple Inset Grouped Settings Hub -->
     <div v-else class="hub-container">
       <header class="hub-header">
+        <button type="button" class="hub-back" :aria-label="t('common.back')" @click="goBack">
+          <ArrowLeft :size="22" />
+        </button>
         <h1>{{ t('settings.title', 'Settings') }}</h1>
       </header>
 
@@ -274,6 +298,28 @@ function openSubpage(page: Subpage) {
   flex-direction: column;
   gap: var(--space-4);
   animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
+}
+
+.hub-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.hub-back {
+  width: 40px;
+  height: 40px;
+  margin-left: calc(var(--space-2) * -1);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  color: var(--color-on-surface-variant);
+  transition: background var(--duration-fast) var(--ease-standard);
+}
+
+.hub-back:hover {
+  background: var(--color-surface-container);
 }
 
 .hub-header h1 {

@@ -6,6 +6,7 @@ import { ArrowLeft, Plus } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
+import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 import IconByName from '@/components/ui/IconByName.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
 import { parseMoneyToMinor } from '@/lib/money'
@@ -88,10 +89,17 @@ async function save() {
   sheetOpen.value = false
 }
 
+const archiveTarget = ref<Account | null>(null)
+
+function askArchive() {
+  archiveTarget.value = editing.value
+}
+
 async function archive() {
-  if (!editing.value) return
-  if (!window.confirm(t('accounts.archiveConfirm', { name: editing.value.name }))) return
-  await accounts.archiveAccount(editing.value.id)
+  const target = archiveTarget.value
+  archiveTarget.value = null
+  if (!target) return
+  await accounts.archiveAccount(target.id)
   sheetOpen.value = false
 }
 </script>
@@ -165,11 +173,21 @@ async function archive() {
           <input v-model="color" type="color" />
         </label>
         <AppButton block size="lg" @click="save">{{ t('common.save') }}</AppButton>
-        <AppButton v-if="editing" variant="danger" block @click="archive">
+        <AppButton v-if="editing" variant="danger" block @click="askArchive">
           {{ t('accounts.archive') }}
         </AppButton>
       </div>
     </BottomSheet>
+
+    <ConfirmSheet
+      :open="Boolean(archiveTarget)"
+      :title="t('accounts.archive')"
+      :message="t('accounts.archiveConfirm', { name: archiveTarget?.name ?? '' })"
+      :confirm-label="t('accounts.archive')"
+      destructive
+      @confirm="archive"
+      @close="archiveTarget = null"
+    />
   </div>
 </template>
 

@@ -99,7 +99,7 @@ ul {
 
 .row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1.1fr) minmax(3.5rem, 1fr) 2.6rem auto;
+  grid-template-columns: auto minmax(0, 1.6fr) minmax(2.5rem, 0.8fr) 2.4rem auto;
   gap: var(--space-2);
   align-items: center;
   width: 100%;
@@ -131,9 +131,15 @@ ul {
 
 .name {
   font-weight: 550;
+  min-width: 0;
+  line-height: 1.25;
+  /* Two lines beats an ellipsis: category names carry the meaning here. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .bar {

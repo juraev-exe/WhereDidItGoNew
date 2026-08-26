@@ -14,6 +14,7 @@ export interface TxInput {
   accountId: string
   toAccountId?: string
   categoryId?: string
+  subcategoryId?: string
   note?: string
   date?: string
 }
@@ -105,6 +106,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
       accountId: input.accountId,
       toAccountId: input.type === 'transfer' ? input.toAccountId : undefined,
       categoryId: input.type === 'transfer' ? undefined : input.categoryId,
+      subcategoryId: input.type === 'transfer' ? undefined : input.subcategoryId || undefined,
       note: input.note?.trim() ?? '',
       date: input.date ?? todayISO(),
       createdAt: nowISO(),
@@ -137,6 +139,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
       accountId: input.accountId,
       toAccountId: input.type === 'transfer' ? input.toAccountId : undefined,
       categoryId: input.type === 'transfer' ? undefined : input.categoryId,
+      subcategoryId: input.type === 'transfer' ? undefined : input.subcategoryId || undefined,
       note: input.note?.trim() ?? '',
       date: input.date ?? existing.date,
       updatedAt: nowISO(),

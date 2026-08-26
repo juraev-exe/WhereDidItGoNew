@@ -5,6 +5,7 @@ import { ArrowLeft, Fingerprint, Lock } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import PinLockModal from '@/components/PinLockModal.vue'
 import { useSettingsStore } from '@/stores/settings'
+import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 
 const emit = defineEmits<{
   (e: 'back'): void
@@ -23,10 +24,11 @@ async function onPinSetupSuccess(newPin?: string) {
   pinSetupOpen.value = false
 }
 
+const confirmRemoveOpen = ref(false)
+
 async function disablePinLock() {
-  if (confirm(t('security.removePin') + '?')) {
-    await settings.removePin()
-  }
+  confirmRemoveOpen.value = false
+  await settings.removePin()
 }
 
 async function toggleBiometrics() {
@@ -64,7 +66,7 @@ async function toggleBiometrics() {
           <AppButton variant="outline" @click="pinSetupOpen = true">
             {{ t('security.changePin') }}
           </AppButton>
-          <AppButton variant="ghost" @click="disablePinLock">
+          <AppButton variant="ghost" @click="confirmRemoveOpen = true">
             {{ t('security.removePin') }}
           </AppButton>
         </div>
@@ -98,6 +100,16 @@ async function toggleBiometrics() {
     />
     </section>
   </div>
+
+  <ConfirmSheet
+    :open="confirmRemoveOpen"
+    :title="t('security.removePin')"
+    :message="t('security.removePinConfirm')"
+    :confirm-label="t('security.removePin')"
+    destructive
+    @confirm="disablePinLock"
+    @close="confirmRemoveOpen = false"
+  />
 </template>
 
 <style scoped>

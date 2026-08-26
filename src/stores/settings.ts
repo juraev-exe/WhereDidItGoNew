@@ -4,7 +4,7 @@ import { db } from '@/db'
 import { ensureSeeded } from '@/db/seed'
 import { detectDefaultLocale, isAppLocale, setI18nLocale, toIntlLocale, type AppLocale } from '@/i18n'
 import { defaultCurrencyForLocale } from '@/lib/currencies'
-import { monthKey } from '@/lib/dates'
+import { monthKey, setCycleStartDay } from '@/lib/dates'
 import { createId } from '@/lib/id'
 import { getCurrencySymbol } from '@/lib/money'
 import { applyStatusBar } from '@/services/native/chrome'
@@ -63,7 +63,6 @@ export const useSettingsStore = defineStore('settings', () => {
   const startOfMonth = ref(1)
   const firstDayOfWeek = ref<0 | 1>(1)
   const hideInRecents = ref(false)
-  const numberFormat = ref<'standard' | 'space' | 'comma'>('standard')
 
   const intlLocale = computed(() => toIntlLocale(locale.value))
 
@@ -113,9 +112,9 @@ export const useSettingsStore = defineStore('settings', () => {
     showInsightsTab.value = map.showInsightsTab !== 'false'
     hideCents.value = map.hideCents === 'true'
     startOfMonth.value = Number.parseInt(map.startOfMonth || '1', 10) || 1
+    setCycleStartDay(startOfMonth.value)
     firstDayOfWeek.value = map.firstDayOfWeek === '0' ? 0 : 1
     hideInRecents.value = map.hideInRecents === 'true'
-    numberFormat.value = (map.numberFormat as 'standard' | 'space' | 'comma') || 'standard'
     if (pinEnabled.value && pinHash.value) {
       isUnlocked.value = false
     } else {
@@ -351,6 +350,7 @@ export const useSettingsStore = defineStore('settings', () => {
   async function setStartOfMonth(val: number) {
     const clamped = Math.max(1, Math.min(28, val))
     startOfMonth.value = clamped
+    setCycleStartDay(clamped)
     await db.meta.put({ key: 'startOfMonth', value: String(clamped) })
   }
 
@@ -362,11 +362,6 @@ export const useSettingsStore = defineStore('settings', () => {
   async function setHideInRecents(val: boolean) {
     hideInRecents.value = val
     await db.meta.put({ key: 'hideInRecents', value: val ? 'true' : 'false' })
-  }
-
-  async function setNumberFormat(val: 'standard' | 'space' | 'comma') {
-    numberFormat.value = val
-    await db.meta.put({ key: 'numberFormat', value: val })
   }
 
   const currencySymbol = computed(() =>
@@ -406,7 +401,6 @@ export const useSettingsStore = defineStore('settings', () => {
     startOfMonth,
     firstDayOfWeek,
     hideInRecents,
-    numberFormat,
     currencySymbol,
     load,
     setTheme,
@@ -436,7 +430,6 @@ export const useSettingsStore = defineStore('settings', () => {
     setStartOfMonth,
     setFirstDayOfWeek,
     setHideInRecents,
-    setNumberFormat,
     unlockApp,
     lockApp,
   }

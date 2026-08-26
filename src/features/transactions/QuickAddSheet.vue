@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Calendar, Plus } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -7,7 +7,8 @@ import AppSelect from '@/components/ui/AppSelect.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import DatePickerModal from '@/components/ui/DatePickerModal.vue'
 import CategoryFormSheet from '@/components/CategoryFormSheet.vue'
-import { parseMoneyToMinor } from '@/lib/money'
+import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
+import { amountHasExpression, formatMoney, parseMoneyToMinor } from '@/lib/money'
 import { monthKey, todayDayOfMonth, todayISO, yesterdayISO } from '@/lib/dates'
 import { confirmFeedback, errorFeedback, successFeedback, tickFeedback, warningFeedback } from '@/services/native/haptics'
 import { useAccountsStore } from '@/stores/accounts'
@@ -89,6 +90,20 @@ const dayOptions = computed(() =>
   })),
 )
 
+const parsedAmount = computed(() => parseMoneyToMinor(amountStr.value))
+
+/** Live total while the amount field holds a running sum like "12+8+3.50". */
+const amountPreview = computed(() => {
+  if (!amountHasExpression(amountStr.value) || parsedAmount.value <= 0) return ''
+  return formatMoney(
+    parsedAmount.value,
+    settings.currency,
+    settings.intlLocale,
+    settings.currencyPosition,
+    settings.hideCents,
+  )
+})
+
 const showRepeat = computed(() => !ui.editingTx && type.value !== 'transfer')
 const isGoalMove = computed(
   () => Boolean(ui.editingTx && ui.editingTx.type === 'transfer' && !ui.editingTx.toAccountId),
@@ -134,10 +149,13 @@ function resetForm() {
   dayOfMonth.value = String(todayDayOfMonth())
 }
 
+let prefilling = false
+
 watch(
   [() => ui.addSheetOpen, () => ui.editingTx],
   ([open, tx]) => {
     if (!open) return
+    prefilling = true
     if (tx) {
       type.value = tx.type
       amountStr.value = (tx.amount / 100).toFixed(2)
@@ -147,20 +165,31 @@ watch(
       toAccountId.value = tx.toAccountId ?? ''
       note.value = tx.note
       date.value = tx.date
+      error.value = ''
+      saving.value = false
+      repeatMonthly.value = false
     } else {
       resetForm()
     }
+    void nextTick(() => {
+      prefilling = false
+    })
   },
   { immediate: true },
 )
 
 watch(categoryId, () => {
+  // Prefilling an existing transaction assigns categoryId and subcategoryId in the
+  // same tick; without this guard the (deferred) watcher would clear the subcategory.
+  if (prefilling) return
   subcategoryId.value = ''
 })
 
 watch(type, (txType) => {
+  if (prefilling) return
   if (txType === 'transfer') {
     categoryId.value = ''
+    subcategoryId.value = ''
     return
   }
   const list = txType === 'income' ? categories.income : categories.expense
@@ -171,7 +200,7 @@ watch(type, (txType) => {
 })
 
 async function save() {
-  const amount = parseMoneyToMinor(amountStr.value)
+  const amount = parsedAmount.value
   if (amount <= 0) {
     error.value = t('quickAdd.amountRequired')
     void errorFeedback()
@@ -248,9 +277,11 @@ async function save() {
   }
 }
 
+const confirmDeleteOpen = ref(false)
+
 async function remove() {
+  confirmDeleteOpen.value = false
   if (!ui.editingTx) return
-  if (!window.confirm(t('activity.deleteConfirm'))) return
   saving.value = true
   try {
     await transactions.deleteTransaction(ui.editingTx.id)
@@ -290,14 +321,13 @@ async function remove() {
 
             <!-- Amount Input -->
             <label class="field">
-              <span>{{ t('quickAdd.amountRequired') }} ({{ settings.currencySymbol }})</span>
+              <span>{{ t('quickAdd.amount') }} ({{ settings.currencySymbol }})</span>
               <input
                 v-model="amountStr"
-                type="number"
+                type="text"
                 inputmode="decimal"
-                step="any"
+                autocomplete="off"
                 required
-                min="0.01"
                 placeholder="0.00"
                 class="amount-input"
               />
@@ -341,7 +371,7 @@ async function remove() {
 
             <!-- Subcategories Chips -->
             <div v-if="type !== 'transfer' && activeSubcategories.length" class="field">
-              <span>Subcategory ({{ t('common.optional') }})</span>
+              <span>{{ t('quickAdd.subcategoryOptional') }}</span>
               <div class="subcat-pills">
                 <button
                   type="button"
@@ -349,7 +379,7 @@ async function remove() {
                   :class="{ 'subcat-pill--active': !subcategoryId }"
                   @click="subcategoryId = ''; tickFeedback()"
                 >
-                  {{ t('common.all') }}
+                  {{ t('quickAdd.subcategoryNone') }}
                 </button>
                 <button
                   v-for="sub in activeSubcategories"
@@ -376,7 +406,7 @@ async function remove() {
 
             <!-- Note -->
             <label class="field">
-              <span>{{ t('common.optional') }} Note</span>
+              <span>{{ t('quickAdd.noteOptional') }}</span>
               <input
                 v-model="note"
                 type="text"
@@ -409,6 +439,8 @@ async function remove() {
               />
             </label>
 
+            <p v-if="amountPreview" class="amount-preview">= {{ amountPreview }}</p>
+
             <p v-if="error" class="error-msg" role="alert">{{ error }}</p>
 
             <!-- Actions -->
@@ -418,7 +450,7 @@ async function remove() {
                 type="button"
                 class="delete-btn"
                 :disabled="saving"
-                @click="remove"
+                @click="confirmDeleteOpen = true"
               >
                 {{ t('common.delete') }}
               </button>
@@ -427,7 +459,7 @@ async function remove() {
               </button>
               <AppButton
                 type="submit"
-                :disabled="saving || !amountStr || Number(amountStr) <= 0"
+                :disabled="saving || parsedAmount <= 0"
               >
                 {{ saving ? t('quickAdd.saving') : ui.editingTx ? t('quickAdd.saveChanges') : t('common.save') }}
               </AppButton>
@@ -447,6 +479,16 @@ async function remove() {
     v-model="date"
     :open="datePickerOpen"
     @close="datePickerOpen = false"
+  />
+
+  <ConfirmSheet
+    :open="confirmDeleteOpen"
+    :title="t('common.delete')"
+    :message="t('activity.deleteConfirm')"
+    :confirm-label="t('common.delete')"
+    destructive
+    @confirm="remove"
+    @close="confirmDeleteOpen = false"
   />
 </template>
 
@@ -718,6 +760,14 @@ async function remove() {
 
 .switch--on::after {
   transform: translateX(20px);
+}
+
+.amount-preview {
+  margin-top: calc(var(--space-2) * -1);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .error-msg {

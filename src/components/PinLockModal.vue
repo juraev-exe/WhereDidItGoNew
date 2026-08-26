@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Lock, Fingerprint, Delete, ShieldAlert } from '@lucide/vue'
 import { useSettingsStore } from '@/stores/settings'
+import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 
 const props = defineProps<{
   mode?: 'unlock' | 'setup'
@@ -86,11 +87,12 @@ async function handleBiometrics() {
   }
 }
 
+const confirmResetOpen = ref(false)
+
 async function handleResetLock() {
-  if (confirm(t('security.resetSecurity') + '?')) {
-    await settings.removePin()
-    emit('cancel')
-  }
+  confirmResetOpen.value = false
+  await settings.removePin()
+  emit('cancel')
 }
 </script>
 
@@ -154,7 +156,7 @@ async function handleResetLock() {
       </div>
 
       <div v-if="mode !== 'setup'" class="pin-footer">
-        <button type="button" class="reset-link" @click="handleResetLock">
+        <button type="button" class="reset-link" @click="confirmResetOpen = true">
           <ShieldAlert class="w-4 h-4 mr-1" />
           {{ t('security.forgotPin') }}
         </button>
@@ -166,6 +168,16 @@ async function handleResetLock() {
       </div>
     </div>
   </div>
+
+  <ConfirmSheet
+    :open="confirmResetOpen"
+    :title="t('security.resetSecurity')"
+    :message="t('security.resetSecurityConfirm')"
+    :confirm-label="t('security.resetSecurity')"
+    destructive
+    @confirm="handleResetLock"
+    @close="confirmResetOpen = false"
+  />
 </template>
 
 <style scoped>

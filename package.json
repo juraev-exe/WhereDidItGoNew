@@ -15,7 +15,15 @@
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "sync": "npm run build && npx cap sync android",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "check:i18n": "tsx scripts/i18n-check.mjs",
+    "check:unit": "tsx scripts/unit-check.mjs",
+    "check": "npm run typecheck && npm run check:i18n && npm run check:unit",
+    "audit": "node scripts/audit.mjs",
+    "audit:backup": "node scripts/backup-check.mjs",
+    "audit:migration": "node scripts/migration-check.mjs",
+    "screens": "node scripts/screens.mjs",
+    "verify": "npm run check && npm run audit && npm run audit:backup && npm run audit:migration"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
@@ -44,6 +52,7 @@
     "@types/node": "^26.2.0",
     "@vitejs/plugin-vue": "^6.0.8",
     "playwright": "^1.62.1",
+    "tsx": "^4.23.12",
     "typescript": "~5.9.0",
     "vite": "^7.3.1",
     "vue-tsc": "^3.3.9"

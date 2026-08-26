@@ -14,9 +14,13 @@ import {
   Bus,
   Cake,
   Calculator,
+  Calendar,
   Camera,
   Car,
   ChartPie,
+  Check,
+  CheckCircle2,
+  ChevronRight,
   Circle,
   CircleEllipsis,
   Clapperboard,
@@ -64,11 +68,13 @@ import {
   Pill,
   Pizza,
   Plane,
+  Plus,
   Plug,
   PlusCircle,
   Receipt,
   Repeat,
   Sandwich,
+  Sailboat,
   Scissors,
   ShieldCheck,
   Shirt,
@@ -83,6 +89,7 @@ import {
   Target,
   Tent,
   Ticket,
+  Trash2,
   Train,
   TreePine,
   TrendingDown,
@@ -98,6 +105,7 @@ import {
   Wifi,
   Wine,
   Wrench,
+  X,
   Zap,
 } from '@lucide/vue'
 import { computed, type Component } from 'vue'
@@ -130,6 +138,7 @@ const map: Record<string, Component> = {
   plane: Plane,
   bike: Bike,
   train: Train,
+  ship: Sailboat,
   navigation: Navigation,
   compass: Compass,
   'map-pin': MapPin,
@@ -231,9 +240,24 @@ const map: Record<string, Component> = {
   'plus-circle': PlusCircle,
   'circle-ellipsis': CircleEllipsis,
   circle: Circle,
+
+  // UI affordances (used by action buttons, not the category picker)
+  plus: Plus,
+  x: X,
+  check: Check,
+  'check-circle-2': CheckCircle2,
+  'chevron-right': ChevronRight,
+  'trash-2': Trash2,
+  calendar: Calendar,
 }
 
-const icon = computed(() => map[props.name] ?? Circle)
+const icon = computed(() => {
+  const found = map[props.name]
+  if (!found && import.meta.env.DEV) {
+    console.warn(`[IconByName] no icon mapped for "${props.name}" — falling back to a plain circle`)
+  }
+  return found ?? Circle
+})
 </script>
 
 <template>

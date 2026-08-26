@@ -380,21 +380,16 @@ watch(() => props.heatmap.start, scrollToEnd)
 }
 
 .square:focus-visible {
-  outline: 2px solid #0969da;
+  outline: 2px solid var(--heat-focus);
   outline-offset: 1px;
   z-index: 6;
 }
 
 .square.active {
-  outline: 2px solid #0969da;
+  outline: 2px solid var(--heat-focus);
   outline-offset: 1px;
   transform: scale(1.2);
   z-index: 5;
-}
-
-:global([data-theme='dark']) .square.active,
-:global([data-theme='oled']) .square.active {
-  outline-color: #58a6ff;
 }
 
 .square.future {
@@ -403,73 +398,21 @@ watch(() => props.heatmap.start, scrollToEnd)
 }
 
 /* ═══════════════════════════════════════════════
-   Authentic GitHub Contribution Color Palette
+   Heat scale — see --heat-* in tokens.css
    ═══════════════════════════════════════════════ */
 
-/* Light mode (GitHub Light) */
-.lvl-0 {
-  background-color: #ebedf0;
-  border: 1px solid rgba(27, 31, 35, 0.06);
-}
-.lvl-1 {
-  background-color: #9be9a8;
-  border: 1px solid rgba(27, 31, 35, 0.08);
-}
-.lvl-2 {
-  background-color: #40c463;
-  border: 1px solid rgba(27, 31, 35, 0.08);
-}
-.lvl-3 {
-  background-color: #30a14e;
-  border: 1px solid rgba(27, 31, 35, 0.08);
-}
+.lvl-0 { background-color: var(--heat-0); }
+.lvl-1 { background-color: var(--heat-1); }
+.lvl-2 { background-color: var(--heat-2); }
+.lvl-3 { background-color: var(--heat-3); }
+.lvl-4 { background-color: var(--heat-4); }
+
+.lvl-0,
+.lvl-1,
+.lvl-2,
+.lvl-3,
 .lvl-4 {
-  background-color: #216e39;
-  border: 1px solid rgba(27, 31, 35, 0.08);
-}
-
-/* Dark mode (GitHub Dark) */
-:global([data-theme='dark']) .lvl-0 {
-  background-color: #161b22;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-:global([data-theme='dark']) .lvl-1 {
-  background-color: #0e4429;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-:global([data-theme='dark']) .lvl-2 {
-  background-color: #006d32;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-:global([data-theme='dark']) .lvl-3 {
-  background-color: #26a641;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-:global([data-theme='dark']) .lvl-4 {
-  background-color: #39d353;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* OLED mode (GitHub High Contrast Dark) */
-:global([data-theme='oled']) .lvl-0 {
-  background-color: #0d1117;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-:global([data-theme='oled']) .lvl-1 {
-  background-color: #0e4429;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-:global([data-theme='oled']) .lvl-2 {
-  background-color: #006d32;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-:global([data-theme='oled']) .lvl-3 {
-  background-color: #26a641;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-:global([data-theme='oled']) .lvl-4 {
-  background-color: #39d353;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--heat-border);
 }
 
 /* Foot Bar */

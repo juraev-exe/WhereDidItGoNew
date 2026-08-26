@@ -147,7 +147,7 @@ const shareRows = computed(() => {
     ...head,
     {
       categoryId: OTHER_ID,
-      name: t('insights.other'),
+      name: t('insights.otherCategories'),
       color: 'var(--color-outline)',
       amount,
       percent: (amount / total) * 100,

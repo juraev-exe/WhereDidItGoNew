@@ -86,3 +86,6 @@ ios/App/App.xcworkspace/
 ehthumbs.db
 Thumbs.db
 [Dd]esktop.ini
+
+# Audit walk output (screenshots + report)
+audit-out/

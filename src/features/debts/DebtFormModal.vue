@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppButton from '@/components/ui/AppButton.vue'
 import IconByName from '@/components/ui/IconByName.vue'
 import { useDebtsStore } from '@/stores/debts'
 import { useSettingsStore } from '@/stores/settings'
-import { tickFeedback } from '@/services/native/haptics'
+import { tickFeedback, errorFeedback } from '@/services/native/haptics'
 import DatePickerModal from '@/components/ui/DatePickerModal.vue'
-import type { DebtType } from '@/types/finance'
+import { parseMoneyToMinor } from '@/lib/money'
+import { shortDayLabel } from '@/lib/dates'
+import type { Debt, DebtType } from '@/types/finance'
 
-const datePickerOpen = ref(false)
+const props = defineProps<{ debt?: Debt | null }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -20,27 +22,50 @@ const { t } = useI18n()
 const debtsStore = useDebtsStore()
 const settingsStore = useSettingsStore()
 
-const type = ref<DebtType>('lent')
-const personName = ref('')
-const amount = ref<number | ''>('')
-const dueDate = ref('')
-const note = ref('')
+const datePickerOpen = ref(false)
+const type = ref<DebtType>(props.debt?.type ?? 'lent')
+const personName = ref(props.debt?.personName ?? '')
+const amountStr = ref(props.debt ? (props.debt.amount / 100).toFixed(2) : '')
+const dueDate = ref(props.debt?.dueDate ?? '')
+const note = ref(props.debt?.note ?? '')
 const isSubmitting = ref(false)
+const error = ref('')
+
+const isEditing = computed(() => Boolean(props.debt))
+const parsedAmount = computed(() => parseMoneyToMinor(amountStr.value))
+const dueDateLabel = computed(() =>
+  dueDate.value ? shortDayLabel(dueDate.value, settingsStore.intlLocale) : t('debts.noDueDate'),
+)
 
 async function handleSubmit() {
-  if (!personName.value.trim() || !amount.value || amount.value <= 0) return
+  if (!personName.value.trim()) {
+    error.value = t('debts.nameRequired')
+    void errorFeedback()
+    return
+  }
+  if (parsedAmount.value <= 0) {
+    error.value = t('debts.amountRequired')
+    void errorFeedback()
+    return
+  }
   isSubmitting.value = true
+  error.value = ''
   try {
-    await debtsStore.addDebt({
+    const payload = {
       type: type.value,
       personName: personName.value.trim(),
-      amount: Number(amount.value),
+      amount: parsedAmount.value,
       dueDate: dueDate.value || undefined,
       note: note.value.trim() || undefined,
-    })
+    }
+    if (props.debt) await debtsStore.updateDebt(props.debt.id, payload)
+    else await debtsStore.addDebt(payload)
     void tickFeedback()
     emit('saved')
     emit('close')
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : t('quickAdd.saveFail')
+    void errorFeedback()
   } finally {
     isSubmitting.value = false
   }
@@ -49,21 +74,21 @@ async function handleSubmit() {
 
 <template>
   <div class="modal-backdrop" @click.self="emit('close')">
-    <div class="modal-card">
+    <div class="modal-card" role="dialog" aria-modal="true">
       <div class="modal-header">
-        <h3 class="modal-title">{{ t('debts.addDebt') }}</h3>
-        <button type="button" class="icon-btn" @click="emit('close')">
+        <h3 class="modal-title">{{ isEditing ? t('debts.editDebt') : t('debts.addDebt') }}</h3>
+        <button type="button" class="icon-btn" :aria-label="t('common.close')" @click="emit('close')">
           <IconByName name="x" :size="20" />
         </button>
       </div>
 
-      <form @submit.prevent="handleSubmit" class="modal-body">
-        <!-- Segmented Type Switcher -->
-        <div class="seg" role="tablist">
+      <form class="modal-body" @submit.prevent="handleSubmit">
+        <div class="seg" role="tablist" :aria-label="t('debts.title')">
           <button
             type="button"
             role="tab"
             :class="{ active: type === 'lent' }"
+            :aria-selected="type === 'lent'"
             @click="type = 'lent'"
           >
             {{ t('debts.lent') }}
@@ -72,64 +97,60 @@ async function handleSubmit() {
             type="button"
             role="tab"
             :class="{ active: type === 'borrowed' }"
+            :aria-selected="type === 'borrowed'"
             @click="type = 'borrowed'"
           >
             {{ t('debts.borrowed') }}
           </button>
         </div>
 
-        <!-- Person Name -->
         <label class="field">
           <span>{{ t('debts.personName') }}</span>
           <input
             v-model="personName"
             type="text"
-            required
+            maxlength="40"
             autocomplete="off"
-            placeholder="e.g. Farrukh, Alex"
+            :placeholder="t('debts.namePlaceholder')"
           />
         </label>
 
-        <!-- Amount -->
         <label class="field">
           <span>{{ t('debts.amount') }} ({{ settingsStore.currencySymbol }})</span>
           <input
-            v-model.number="amount"
-            type="number"
+            v-model="amountStr"
+            type="text"
             inputmode="decimal"
-            step="any"
-            required
-            min="0.01"
+            autocomplete="off"
             placeholder="0.00"
           />
         </label>
 
-        <!-- Due Date -->
         <label class="field">
           <span>{{ t('debts.dueDate') }} ({{ t('common.optional') }})</span>
-          <button
-            type="button"
-            class="date-picker-btn"
-            @click="datePickerOpen = true"
-          >
-            <span>{{ dueDate || t('debts.dueDate') }}</span>
+          <button type="button" class="date-picker-btn" @click="datePickerOpen = true">
+            <IconByName name="calendar" :size="16" />
+            <span>{{ dueDateLabel }}</span>
           </button>
         </label>
 
-        <!-- Note -->
         <label class="field">
-          <span>{{ t('common.optional') }} Note</span>
-          <input v-model="note" type="text" placeholder="e.g. Lunch money" />
+          <span>{{ t('debts.noteOptional') }}</span>
+          <input
+            v-model="note"
+            type="text"
+            maxlength="120"
+            :placeholder="t('debts.notePlaceholder')"
+          />
         </label>
+
+        <p v-if="error" class="error-msg" role="alert">{{ error }}</p>
 
         <div class="form-actions">
           <button type="button" class="cancel-btn" @click="emit('close')">
             {{ t('common.cancel') }}
           </button>
-          <AppButton
-            type="submit"
-            :disabled="isSubmitting || !personName.trim() || !amount"
-          >
+          <AppButton type="submit" :disabled="isSubmitting">
             {{ t('common.save') }}
           </AppButton>
         </div>
@@ -137,11 +158,7 @@ async function handleSubmit() {
     </div>
   </div>
 
-  <DatePickerModal
-    v-model="dueDate"
-    :open="datePickerOpen"
-    @close="datePickerOpen = false"
-  />
+  <DatePickerModal v-model="dueDate" :open="datePickerOpen" @close="datePickerOpen = false" />
 </template>
 
 <style scoped>
@@ -274,5 +291,17 @@ async function handleSubmit() {
   font-size: var(--text-label);
   cursor: pointer;
   padding: 8px 12px;
+}
+
+.date-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.error-msg {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-error);
 }
 </style>

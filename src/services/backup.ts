@@ -16,6 +16,7 @@ import type {
   DebtType,
   Goal,
   Recurring,
+  Subcategory,
   Transaction,
   TransactionType,
 } from '@/types/finance'
@@ -119,11 +120,25 @@ function sanitizeAccount(value: unknown): Account | null {
   }
 }
 
+function sanitizeSubcategories(value: unknown): Subcategory[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((row) => {
+      const r = asRecord(row)
+      const id = str(r?.id)
+      if (!r || !id) return null
+      const icon = str(r.icon)
+      return { id, name: str(r.name, 'Subcategory'), ...(icon ? { icon } : {}) }
+    })
+    .filter((row): row is Subcategory => row !== null)
+}
+
 function sanitizeCategory(value: unknown): Category | null {
   const r = asRecord(value)
   const id = str(r?.id)
   if (!r || !id) return null
   const kind = CAT_KINDS.includes(r.kind as CategoryKind) ? (r.kind as CategoryKind) : 'expense'
+  const subcategories = sanitizeSubcategories(r.subcategories)
   return {
     id,
     name: str(r.name, 'Category'),
@@ -131,6 +146,7 @@ function sanitizeCategory(value: unknown): Category | null {
     icon: str(r.icon, 'circle'),
     color: str(r.color, '#6c757d'),
     sortOrder: Math.round(num(r.sortOrder)),
+    ...(subcategories.length ? { subcategories } : {}),
   }
 }
 
@@ -155,6 +171,7 @@ function sanitizeTransaction(value: unknown): Transaction | null {
   const type = TX_TYPES.includes(r.type as TransactionType) ? (r.type as TransactionType) : 'expense'
   const toAccountId = str(r.toAccountId)
   const categoryId = str(r.categoryId)
+  const subcategoryId = str(r.subcategoryId)
   const now = new Date().toISOString()
   return {
     id,
@@ -163,6 +180,7 @@ function sanitizeTransaction(value: unknown): Transaction | null {
     accountId,
     ...(type === 'transfer' && toAccountId ? { toAccountId } : {}),
     ...(type !== 'transfer' && categoryId ? { categoryId } : {}),
+    ...(type !== 'transfer' && subcategoryId ? { subcategoryId } : {}),
     note: str(r.note),
     date: str(r.date, str(r.createdAt, now).slice(0, 10)),
     createdAt: str(r.createdAt, now),
@@ -208,7 +226,7 @@ function sanitizeRecurring(value: unknown): Recurring | null {
   }
 }
 
-function sanitizeDebt(value: unknown): Debt | null {
+function sanitizeDebt(value: unknown, scale = 1): Debt | null {
   const r = asRecord(value)
   const id = str(r?.id)
   if (!r || !id) return null
@@ -221,8 +239,8 @@ function sanitizeDebt(value: unknown): Debt | null {
     id,
     type,
     personName: str(r.personName, 'Person'),
-    amount: Math.round(Math.abs(num(r.amount))),
-    paidAmount: Math.round(Math.abs(num(r.paidAmount))),
+    amount: Math.round(Math.abs(num(r.amount)) * scale),
+    paidAmount: Math.round(Math.abs(num(r.paidAmount)) * scale),
     status,
     ...(dueDate ? { dueDate } : {}),
     ...(note ? { note } : {}),
@@ -256,9 +274,11 @@ export function validateBackup(data: unknown): BackupPayload {
   if (!data || typeof data !== 'object') throw new Error('Invalid backup file')
   const raw = data as Record<string, unknown>
   const version = raw.version
-  if (version != null && version !== BACKUP_VERSION) {
+  if (version != null && version !== 1 && version !== BACKUP_VERSION) {
     throw new Error(`Unsupported backup version: ${String(version)}`)
   }
+  // v1 wrote debt amounts in major units; everything else was already minor.
+  const debtScale = version === 1 ? 100 : 1
   if (!Array.isArray(raw.accounts) || !Array.isArray(raw.categories)) {
     throw new Error('Backup is missing required data')
   }
@@ -287,7 +307,9 @@ export function validateBackup(data: unknown): BackupPayload {
       ? raw.recurring.map(sanitizeRecurring).filter((row): row is Recurring => row !== null)
       : [],
     debts: Array.isArray(raw.debts)
-      ? raw.debts.map(sanitizeDebt).filter((row): row is Debt => row !== null)
+      ? raw.debts
+          .map((row) => sanitizeDebt(row, debtScale))
+          .filter((row): row is Debt => row !== null)
       : [],
   }
 }
@@ -406,21 +428,32 @@ export async function exportTransactionsCsv(): Promise<void> {
   const catMap = Object.fromEntries(categories.map((c) => [c.id, c.name]))
   const accMap = Object.fromEntries(accounts.map((a) => [a.id, a.name]))
 
-  const header = 'date,type,amount,category,account,to_account,note'
-  const lines = txs.map((t) => {
-    const amount = (t.amount / 100).toFixed(2)
-    const cells = [
+  const subMap = Object.fromEntries(
+    categories.flatMap((c) => (c.subcategories ?? []).map((sub) => [sub.id, sub.name])),
+  )
+
+  /** Quote every cell: names may contain commas, quotes or newlines. */
+  const cell = (value: string) => '"' + value.replaceAll('"', '""') + '"'
+
+  const header = ['date', 'type', 'amount', 'category', 'subcategory', 'account', 'to_account', 'note']
+    .map(cell)
+    .join(',')
+  const lines = txs.map((t) =>
+    [
       t.date,
       t.type,
-      amount,
+      (t.amount / 100).toFixed(2),
       t.categoryId ? catMap[t.categoryId] ?? '' : '',
+      t.subcategoryId ? subMap[t.subcategoryId] ?? '' : '',
       accMap[t.accountId] ?? '',
       t.toAccountId ? accMap[t.toAccountId] ?? '' : '',
-      `"${(t.note ?? '').replaceAll('"', '""')}"`,
+      t.note ?? '',
     ]
-    return cells.join(',')
-  })
-  const csv = [header, ...lines].join('\n')
+      .map(cell)
+      .join(','),
+  )
+  // Leading BOM so Excel reads Cyrillic/Tajik names as UTF-8.
+  const csv = '\ufeff' + [header, ...lines].join('\r\n')
   const filename = `wherediditgo-transactions-${format(new Date(), 'yyyyMMdd')}.csv`
 
   if (isNative()) {
@@ -439,7 +472,7 @@ export async function exportTransactionsCsv(): Promise<void> {
     return
   }
 
-  const blob = new Blob([csv], { type: 'text/csv' })
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

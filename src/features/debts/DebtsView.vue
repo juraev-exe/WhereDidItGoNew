@@ -1,38 +1,47 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppButton from '@/components/ui/AppButton.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
+import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import IconByName from '@/components/ui/IconByName.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
 import ProgressBar from '@/components/ui/ProgressBar.vue'
 import { useDebtsStore } from '@/stores/debts'
 import { useSettingsStore } from '@/stores/settings'
-import { tickFeedback } from '@/services/native/haptics'
+import { errorFeedback, successFeedback, tickFeedback, warningFeedback } from '@/services/native/haptics'
+import { parseMoneyToMinor } from '@/lib/money'
+import { shortDayLabel, todayISO } from '@/lib/dates'
+import { differenceInCalendarDays } from 'date-fns'
+import { parseLocalDay } from '@/lib/dates'
 import HeaderActions from '@/components/ui/HeaderActions.vue'
 import DebtFormModal from './DebtFormModal.vue'
 import type { Debt } from '@/types/finance'
+
+type Filter = 'active' | 'lent' | 'borrowed' | 'settled'
 
 const { t } = useI18n()
 const debtsStore = useDebtsStore()
 const settingsStore = useSettingsStore()
 
-const showAddModal = ref(false)
-const filter = ref<'active' | 'lent' | 'borrowed' | 'settled'>('active')
+const showFormModal = ref(false)
+const editingDebt = ref<Debt | null>(null)
+const filter = ref<Filter>('active')
 const selectedDebt = ref<Debt | null>(null)
-const paymentAmount = ref<number | ''>('')
+const paymentStr = ref('')
+const paymentError = ref('')
 const showPaymentSheet = ref(false)
+const pendingDelete = ref<Debt | null>(null)
 
-function setFilter(next: 'active' | 'lent' | 'borrowed' | 'settled') {
+function setFilter(next: Filter) {
   if (filter.value === next) return
   filter.value = next
   void tickFeedback()
 }
 
-onMounted(() => {
-  void debtsStore.load()
-})
+onMounted(() => debtsStore.start())
+onUnmounted(() => debtsStore.stop())
 
 const filteredDebts = computed(() => {
   if (filter.value === 'lent') {
@@ -41,44 +50,113 @@ const filteredDebts = computed(() => {
   if (filter.value === 'borrowed') {
     return debtsStore.debts.filter((d) => d.type === 'borrowed' && d.status === 'active')
   }
-  if (filter.value === 'settled') {
-    return debtsStore.settledDebts
-  }
+  if (filter.value === 'settled') return debtsStore.settledDebts
   return debtsStore.activeDebts
 })
 
-function openPaymentModal(debt: Debt) {
-  selectedDebt.value = debt
-  paymentAmount.value = Math.max(0, debt.amount - debt.paidAmount)
-  showPaymentSheet.value = true
+interface DebtRow {
+  debt: Debt
+  remaining: number
+  percent: number
+  dueLabel: string
+  dueTone: 'overdue' | 'soon' | 'normal' | ''
 }
 
-async function handleRecordPayment() {
-  if (!selectedDebt.value || !paymentAmount.value || paymentAmount.value <= 0) return
-  await debtsStore.recordPayment(selectedDebt.value.id, Number(paymentAmount.value))
-  showPaymentSheet.value = false
-  selectedDebt.value = null
+const rows = computed<DebtRow[]>(() =>
+  filteredDebts.value.map((debt) => {
+    const remaining = Math.max(0, debt.amount - debt.paidAmount)
+    const percent = debt.amount > 0 ? Math.min(100, (debt.paidAmount / debt.amount) * 100) : 0
+    let dueLabel = ''
+    let dueTone: DebtRow['dueTone'] = ''
+    if (debt.dueDate && debt.status === 'active') {
+      const days = differenceInCalendarDays(parseLocalDay(debt.dueDate), parseLocalDay(todayISO()))
+      if (days < 0) {
+        dueLabel = t('debts.overdue')
+        dueTone = 'overdue'
+      } else if (days === 0) {
+        dueLabel = t('debts.dueToday')
+        dueTone = 'soon'
+      } else if (days <= 7) {
+        dueLabel = t('debts.dueIn', { count: days })
+        dueTone = 'soon'
+      } else {
+        dueLabel = shortDayLabel(debt.dueDate, settingsStore.intlLocale)
+        dueTone = 'normal'
+      }
+    } else if (debt.dueDate) {
+      dueLabel = shortDayLabel(debt.dueDate, settingsStore.intlLocale)
+      dueTone = 'normal'
+    }
+    return { debt, remaining, percent, dueLabel, dueTone }
+  }),
+)
+
+function openNew() {
+  editingDebt.value = null
+  showFormModal.value = true
   void tickFeedback()
 }
 
-async function handleDelete(debt: Debt) {
-  if (confirm(t('debts.deleteConfirm'))) {
-    await debtsStore.deleteDebt(debt.id)
-    void tickFeedback()
+function openEdit(debt: Debt) {
+  editingDebt.value = debt
+  showFormModal.value = true
+  void tickFeedback()
+}
+
+function openPaymentModal(debt: Debt) {
+  selectedDebt.value = debt
+  paymentStr.value = ((debt.amount - debt.paidAmount) / 100).toFixed(2)
+  paymentError.value = ''
+  showPaymentSheet.value = true
+}
+
+const paymentRemaining = computed(() =>
+  selectedDebt.value ? selectedDebt.value.amount - selectedDebt.value.paidAmount : 0,
+)
+
+async function handleRecordPayment() {
+  const debt = selectedDebt.value
+  if (!debt) return
+  const amount = parseMoneyToMinor(paymentStr.value)
+  if (amount <= 0) {
+    paymentError.value = t('debts.amountRequired')
+    void errorFeedback()
+    return
   }
+  if (amount > paymentRemaining.value) {
+    paymentError.value = t('debts.paymentTooLarge')
+    void errorFeedback()
+    return
+  }
+  await debtsStore.recordPayment(debt.id, amount)
+  showPaymentSheet.value = false
+  selectedDebt.value = null
+  void successFeedback()
+}
+
+function settleFull() {
+  paymentStr.value = (paymentRemaining.value / 100).toFixed(2)
+  paymentError.value = ''
+  void tickFeedback()
+}
+
+async function confirmDelete() {
+  const debt = pendingDelete.value
+  if (!debt) return
+  pendingDelete.value = null
+  await debtsStore.deleteDebt(debt.id)
+  void warningFeedback()
 }
 </script>
 
 <template>
   <div class="debts">
-    <!-- Header with Serif Title -->
     <header class="debts-header">
       <div class="title-row">
         <h1>{{ t('debts.title') }}</h1>
         <HeaderActions />
       </div>
 
-      <!-- Segmented Pill Toggle matching Budgets picture -->
       <div class="seg" role="tablist" :aria-label="t('debts.title')">
         <button
           type="button"
@@ -119,91 +197,87 @@ async function handleDelete(debt: Debt) {
       </div>
     </header>
 
-    <!-- Summary Box -->
     <div class="summary">
       <div>
         <span>{{ t('debts.lent') }}</span>
-        <strong class="lent-val">
-          <MoneyText :amount="debtsStore.totalLent * 100" />
-        </strong>
+        <strong class="lent-val"><MoneyText :amount="debtsStore.totalLent" /></strong>
       </div>
       <div>
         <span>{{ t('debts.borrowed') }}</span>
-        <strong class="borrowed-val">
-          <MoneyText :amount="debtsStore.totalBorrowed * 100" />
+        <strong class="borrowed-val"><MoneyText :amount="debtsStore.totalBorrowed" /></strong>
+      </div>
+      <div>
+        <span>{{ t('debts.net') }}</span>
+        <strong :class="debtsStore.netDebt < 0 ? 'borrowed-val' : 'lent-val'">
+          <MoneyText :amount="debtsStore.netDebt" />
         </strong>
       </div>
     </div>
 
-    <!-- Empty State -->
     <EmptyState
-      v-if="!filteredDebts.length"
+      v-if="!rows.length"
       :title="t('debts.title')"
       :description="t('debts.empty')"
       :action-label="t('debts.addDebt')"
-      @action="showAddModal = true"
+      @action="openNew"
     >
       <template #icon>
         <IconByName name="hand-coins" :size="28" />
       </template>
     </EmptyState>
 
-    <!-- Debt Cards List -->
     <div v-else class="list">
-      <div v-for="debt in filteredDebts" :key="debt.id" class="card">
-        <div class="card-top">
-          <!-- Person Avatar -->
+      <div v-for="row in rows" :key="row.debt.id" class="card">
+        <button type="button" class="card-top" @click="openEdit(row.debt)">
           <span
             class="avatar-icon"
-            :class="debt.type === 'lent' ? 'avatar-lent' : 'avatar-borrowed'"
+            :class="row.debt.type === 'lent' ? 'avatar-lent' : 'avatar-borrowed'"
+            aria-hidden="true"
           >
-            {{ debt.personName.charAt(0).toUpperCase() }}
+            {{ row.debt.personName.charAt(0).toUpperCase() }}
           </span>
 
-          <div class="meta">
-            <div class="meta-row">
-              <strong class="person-name">{{ debt.personName }}</strong>
+          <span class="meta">
+            <span class="meta-row">
+              <strong class="person-name">{{ row.debt.personName }}</strong>
               <span
                 class="type-pill"
-                :class="debt.type === 'lent' ? 'pill-lent' : 'pill-borrowed'"
+                :class="row.debt.type === 'lent' ? 'pill-lent' : 'pill-borrowed'"
               >
-                {{ debt.type === 'lent' ? t('debts.lent') : t('debts.borrowed') }}
+                {{ row.debt.type === 'lent' ? t('debts.lent') : t('debts.borrowed') }}
               </span>
-            </div>
-            <span class="sub-meta">
-              <span v-if="debt.dueDate" class="due-date">
-                <IconByName name="calendar" :size="12" />
-                {{ debt.dueDate }}
-              </span>
-              <span v-if="debt.note" class="note-text">{{ debt.note }}</span>
             </span>
-          </div>
+            <span class="sub-meta">
+              <span v-if="row.dueLabel" class="due-date" :class="`due--${row.dueTone}`">
+                <IconByName name="calendar" :size="12" />
+                {{ row.dueLabel }}
+              </span>
+              <span v-if="row.debt.note" class="note-text">{{ row.debt.note }}</span>
+            </span>
+          </span>
 
-          <div class="amounts text-right">
-            <span class="remaining" :class="debt.type === 'lent' ? 'lent-val' : 'borrowed-val'">
-              <MoneyText :amount="(debt.amount - debt.paidAmount) * 100" />
+          <span class="amounts">
+            <span class="remaining" :class="row.debt.type === 'lent' ? 'lent-val' : 'borrowed-val'">
+              <MoneyText :amount="row.remaining" />
             </span>
             <span class="total-orig">
-              {{ t('debts.amount') }}:
-              <MoneyText :amount="debt.amount * 100" />
+              {{ t('common.of') }} <MoneyText :amount="row.debt.amount" />
             </span>
-          </div>
-        </div>
+          </span>
+        </button>
 
-        <!-- Progress Bar -->
         <ProgressBar
-          v-if="debt.amount > 0"
-          :value="Math.min(100, (debt.paidAmount / debt.amount) * 100)"
-          :color="debt.type === 'lent' ? 'var(--color-income)' : 'var(--color-expense)'"
+          v-if="row.debt.amount > 0"
+          :value="row.percent"
+          :color="row.debt.type === 'lent' ? 'var(--color-income)' : 'var(--color-expense)'"
         />
 
-        <!-- Action Row -->
         <div class="card-actions">
           <button
-            v-if="debt.status === 'active'"
+            v-if="row.debt.status === 'active'"
             type="button"
             class="action-btn pay-btn"
-            @click="openPaymentModal(debt)"
+            @click="openPaymentModal(row.debt)"
           >
             <IconByName name="check-circle-2" :size="16" />
             <span>{{ t('debts.recordPayment') }}</span>
@@ -216,8 +290,8 @@ async function handleDelete(debt: Debt) {
           <button
             type="button"
             class="action-btn delete-btn"
-            :title="t('debts.deleteConfirm')"
-            @click="handleDelete(debt)"
+            :aria-label="t('common.delete')"
+            @click="pendingDelete = row.debt"
           >
             <IconByName name="trash-2" :size="16" />
           </button>
@@ -225,47 +299,60 @@ async function handleDelete(debt: Debt) {
       </div>
     </div>
 
-    <!-- Bottom Add Chip when list is populated -->
-    <section v-if="filteredDebts.length" class="section">
+    <section v-if="rows.length" class="section">
       <div class="chips">
-        <button type="button" class="chip" @click="showAddModal = true">
+        <button type="button" class="chip" @click="openNew">
           <IconByName name="plus" :size="16" />
           {{ t('debts.addDebt') }}
         </button>
       </div>
     </section>
 
-    <!-- Add Debt Modal -->
     <DebtFormModal
-      v-if="showAddModal"
-      @close="showAddModal = false"
-      @saved="debtsStore.load()"
+      v-if="showFormModal"
+      :debt="editingDebt"
+      @close="showFormModal = false"
+      @saved="editingDebt = null"
     />
 
-    <!-- Record Payment BottomSheet -->
     <BottomSheet
       :open="showPaymentSheet"
       :title="`${t('debts.recordPayment')} — ${selectedDebt?.personName ?? ''}`"
       @close="showPaymentSheet = false"
     >
       <div v-if="selectedDebt" class="sheet-form">
+        <p class="sheet-hint">
+          {{ t('debts.remaining') }}: <MoneyText :amount="paymentRemaining" />
+        </p>
         <label class="field">
           <span>{{ t('debts.enterPayment') }} ({{ settingsStore.currencySymbol }})</span>
           <input
-            v-model.number="paymentAmount"
-            type="number"
+            v-model="paymentStr"
+            type="text"
             inputmode="decimal"
-            step="any"
-            min="0.01"
-            :max="selectedDebt.amount - selectedDebt.paidAmount"
+            autocomplete="off"
             placeholder="0.00"
           />
         </label>
+        <button type="button" class="link-btn" @click="settleFull">
+          {{ t('debts.settleFull') }}
+        </button>
+        <p v-if="paymentError" class="error-msg" role="alert">{{ paymentError }}</p>
         <AppButton block size="lg" @click="handleRecordPayment">
           {{ t('common.save') }}
         </AppButton>
       </div>
     </BottomSheet>
+
+    <ConfirmSheet
+      :open="Boolean(pendingDelete)"
+      :title="t('common.delete')"
+      :message="t('debts.deleteConfirm')"
+      :confirm-label="t('common.delete')"
+      destructive
+      @confirm="confirmDelete"
+      @close="pendingDelete = null"
+    />
   </div>
 </template>
 
@@ -296,6 +383,7 @@ h1 {
   font-weight: 600;
   line-height: var(--leading-tight);
   margin: 0;
+  min-width: 0;
   color: var(--color-on-surface);
 }
 
@@ -369,8 +457,8 @@ h1 {
 /* Summary Cards matching Budgets style */
 .summary {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
   padding: var(--space-4);
   border-radius: var(--radius-xl);
   background: var(--color-surface);
@@ -388,8 +476,11 @@ h1 {
 }
 
 .summary strong {
+  display: block;
   font-family: var(--font-display);
   font-size: var(--text-title);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .lent-val {
@@ -599,5 +690,47 @@ h1 {
   background: var(--color-surface);
   color: var(--color-on-surface);
   font-size: var(--text-body);
+}
+
+.card-top {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+}
+
+.amounts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.due--overdue {
+  color: var(--color-expense);
+  font-weight: 700;
+}
+
+.due--soon {
+  color: var(--color-warning);
+  font-weight: 650;
+}
+
+.sheet-hint {
+  font-size: var(--text-caption);
+  color: var(--color-muted);
+}
+
+.link-btn {
+  align-self: flex-start;
+  font-size: var(--text-caption);
+  font-weight: 650;
+  color: var(--color-primary);
+}
+
+.error-msg {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-error);
 }
 </style>

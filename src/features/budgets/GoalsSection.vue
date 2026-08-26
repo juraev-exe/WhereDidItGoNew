@@ -5,6 +5,7 @@ import { Plus } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
+import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import IconByName from '@/components/ui/IconByName.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
@@ -104,9 +105,11 @@ async function save() {
   sheetOpen.value = false
 }
 
+const confirmDeleteOpen = ref(false)
+
 async function remove() {
+  confirmDeleteOpen.value = false
   if (!editing.value) return
-  if (!window.confirm(t('goals.deleteConfirm'))) return
   await goals.removeGoal(editing.value.id)
   sheetOpen.value = false
 }
@@ -256,7 +259,7 @@ async function confirmContribute() {
           </div>
         </div>
         <AppButton block size="lg" @click="save">{{ t('goals.saveGoal') }}</AppButton>
-        <AppButton v-if="editing" variant="danger" block @click="remove">
+        <AppButton v-if="editing" variant="danger" block @click="confirmDeleteOpen = true">
           {{ t('common.delete') }}
         </AppButton>
       </div>
@@ -291,6 +294,15 @@ async function confirmContribute() {
         <AppButton block size="lg" @click="confirmContribute">{{ t('goals.confirmAdd') }}</AppButton>
       </div>
     </BottomSheet>
+    <ConfirmSheet
+      :open="confirmDeleteOpen"
+      :title="t('common.delete')"
+      :message="t('goals.deleteConfirm')"
+      :confirm-label="t('common.delete')"
+      destructive
+      @confirm="remove"
+      @close="confirmDeleteOpen = false"
+    />
   </div>
 </template>
 

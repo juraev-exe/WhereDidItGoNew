@@ -4,11 +4,12 @@ import { useI18n } from 'vue-i18n'
 import { Search } from '@lucide/vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import MoneyText from '@/components/ui/MoneyText.vue'
 import Snackbar from '@/components/ui/Snackbar.vue'
 import SwipeToDelete from '@/components/ui/SwipeToDelete.vue'
 import TransactionRow from '@/components/ui/TransactionRow.vue'
-import { dayKey, monthKey, monthLabel, todayISO, weekdayDayLabel, yesterdayISO } from '@/lib/dates'
-import { successFeedback, warningFeedback } from '@/services/native/haptics'
+import { dayKey, isInMonth, monthKey, monthLabel, todayISO, weekdayDayLabel, yesterdayISO } from '@/lib/dates'
+import { successFeedback, tickFeedback, warningFeedback } from '@/services/native/haptics'
 import { useCategoriesStore } from '@/stores/categories'
 import { useSettingsStore } from '@/stores/settings'
 import { useTransactionsStore } from '@/stores/transactions'
@@ -42,8 +43,9 @@ watch(
 )
 
 const months = computed(() => {
-  const set = new Set(transactions.transactions.map((tx) => tx.date.slice(0, 7)))
+  const set = new Set(transactions.transactions.map((tx) => monthKey(tx.date)))
   set.add(monthKey())
+  if (month.value) set.add(month.value)
   return [...set].sort().reverse()
 })
 
@@ -69,7 +71,7 @@ const categoryOptions = computed(() => [
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
   return transactions.transactions.filter((tx) => {
-    if (month.value && !tx.date.startsWith(month.value)) return false
+    if (month.value && !isInMonth(tx.date, month.value)) return false
     if (typeFilter.value !== 'all' && tx.type !== typeFilter.value) return false
     if (categoryFilter.value !== 'all' && tx.categoryId !== categoryFilter.value) return false
     if (!q) return true
@@ -81,6 +83,28 @@ const filtered = computed(() => {
     )
   })
 })
+
+/** Net of what is currently in view, so a drill-down answers "how much?". */
+const filteredTotals = computed(() => {
+  let income = 0
+  let expense = 0
+  for (const tx of filtered.value) {
+    if (tx.type === 'income') income += tx.amount
+    if (tx.type === 'expense') expense += tx.amount
+  }
+  return { income, expense, net: income - expense }
+})
+
+const hasNarrowedFilters = computed(
+  () => typeFilter.value !== 'all' || categoryFilter.value !== 'all' || query.value.trim() !== '',
+)
+
+function clearFilters() {
+  typeFilter.value = 'all'
+  categoryFilter.value = 'all'
+  query.value = ''
+  void tickFeedback()
+}
 
 function dayHeading(iso: string): string {
   const key = dayKey(iso)
@@ -170,6 +194,32 @@ function onSnackOpen(open: boolean) {
         :options="categoryOptions"
         :aria-label="t('activity.category')"
       />
+
+      <button
+        v-if="hasNarrowedFilters"
+        type="button"
+        class="clear-filters"
+        @click="clearFilters"
+      >
+        {{ t('activity.clearFilters') }}
+      </button>
+    </div>
+
+    <div v-if="filtered.length" class="totals">
+      <div>
+        <span>{{ t('activity.filteredTotal') }}</span>
+        <strong :class="filteredTotals.net < 0 ? 'is-expense' : 'is-income'">
+          <MoneyText :amount="filteredTotals.net" />
+        </strong>
+      </div>
+      <div>
+        <span>{{ t('home.spent') }}</span>
+        <strong class="is-expense"><MoneyText :amount="filteredTotals.expense" /></strong>
+      </div>
+      <div>
+        <span>{{ t('home.income') }}</span>
+        <strong class="is-income"><MoneyText :amount="filteredTotals.income" /></strong>
+      </div>
     </div>
 
     <EmptyState
@@ -212,6 +262,58 @@ function onSnackOpen(open: boolean) {
 </template>
 
 <style scoped>
+.totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 12%, transparent);
+  box-shadow: var(--shadow-sm);
+}
+
+.totals span {
+  display: block;
+  font-size: var(--text-caption);
+  line-height: 1.25;
+  color: var(--color-muted);
+  margin-bottom: 2px;
+  /* Reserve two lines so the figures stay on one baseline in every language. */
+  min-height: 2.5em;
+}
+
+.totals strong {
+  display: block;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.is-expense {
+  color: var(--color-expense);
+}
+
+.is-income {
+  color: var(--color-income);
+}
+
+.clear-filters {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-caption);
+  font-weight: 650;
+  color: var(--color-primary);
+  background: var(--color-primary-container);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.clear-filters:active {
+  transform: scale(0.97);
+}
+
 .activity {
   display: flex;
   flex-direction: column;

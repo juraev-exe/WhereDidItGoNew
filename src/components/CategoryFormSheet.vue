@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { Check, Plus, Search, Trash2, X } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
+import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 import IconByName from '@/components/ui/IconByName.vue'
 import { CATEGORY_COLORS } from '@/lib/categoryColors'
 import { CATEGORY_ICONS } from '@/lib/categoryIcons'
@@ -12,6 +13,7 @@ import { confirmFeedback, errorFeedback, successFeedback, tickFeedback, warningF
 import { useCategoriesStore } from '@/stores/categories'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useBudgetsStore } from '@/stores/budgets'
+import { useRecurringStore } from '@/stores/recurring'
 import type { Category, CategoryKind, Subcategory } from '@/types/finance'
 
 const props = withDefaults(
@@ -36,6 +38,7 @@ const { t } = useI18n()
 const categories = useCategoriesStore()
 const transactions = useTransactionsStore()
 const budgets = useBudgetsStore()
+const recurring = useRecurringStore()
 
 const nameInputRef = ref<HTMLInputElement | null>(null)
 const name = ref('')
@@ -218,17 +221,27 @@ async function save() {
   }
 }
 
-async function remove() {
+const confirmDeleteOpen = ref(false)
+const blockedOpen = ref(false)
+
+function askRemove() {
   if (!props.category) return
   const id = props.category.id
-  const catName = props.category.name
-  const used = transactions.transactions.some((tx) => tx.categoryId === id)
+  const used =
+    transactions.transactions.some((tx) => tx.categoryId === id) ||
+    recurring.items.some((r) => r.categoryId === id)
   if (used) {
-    window.alert(t('settings.categoryInUse', { name: catName }))
+    blockedOpen.value = true
+    void warningFeedback()
     return
   }
-  const ok = window.confirm(t('settings.deleteCategoryConfirm', { name: catName }))
-  if (!ok) return
+  confirmDeleteOpen.value = true
+}
+
+async function remove() {
+  confirmDeleteOpen.value = false
+  if (!props.category) return
+  const id = props.category.id
 
   void warningFeedback()
   await categories.removeCategory(id)
@@ -291,7 +304,7 @@ async function remove() {
         <!-- Subcategories Section -->
         <div class="field">
           <div class="field-head">
-            <span class="field-label">Subcategories</span>
+            <span class="field-label">{{ t('settings.subcategories') }}</span>
             <span v-if="subcategories.length" class="subcat-count-badge">{{ subcategories.length }}</span>
           </div>
 
@@ -299,7 +312,7 @@ async function remove() {
             <input
               v-model="newSubcatName"
               type="text"
-              placeholder="Add subcategory (e.g. Electronics)"
+              :placeholder="t('settings.subcategoryPlaceholder')"
               class="subcat-input"
               @keydown.enter.prevent="addSubcategory"
             />
@@ -369,7 +382,7 @@ async function remove() {
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Search..."
+                :placeholder="t('common.search')"
                 class="search-input"
               />
             </div>
@@ -399,13 +412,32 @@ async function remove() {
         <AppButton block size="lg" :disabled="saving" @click="save">
           {{ saving ? t('quickAdd.saving') : isEditing ? t('settings.saveCategory') : t('settings.addCategoryBtn') }}
         </AppButton>
-        <AppButton v-if="isEditing" variant="ghost" block class="btn-delete-animated" :disabled="saving" @click="remove">
+        <AppButton v-if="isEditing" variant="ghost" block class="btn-delete-animated" :disabled="saving" @click="askRemove">
           <Trash2 :size="16" class="delete-icon" />
           <span>{{ t('common.delete') }}</span>
         </AppButton>
       </div>
     </div>
   </BottomSheet>
+
+  <ConfirmSheet
+    :open="confirmDeleteOpen"
+    :title="t('common.delete')"
+    :message="t('settings.deleteCategoryConfirm', { name: props.category?.name ?? '' })"
+    :confirm-label="t('common.delete')"
+    destructive
+    @confirm="remove"
+    @close="confirmDeleteOpen = false"
+  />
+
+  <ConfirmSheet
+    :open="blockedOpen"
+    :title="t('common.delete')"
+    :message="t('settings.categoryInUse', { name: props.category?.name ?? '' })"
+    acknowledge-only
+    @confirm="blockedOpen = false"
+    @close="blockedOpen = false"
+  />
 </template>
 
 <style scoped>

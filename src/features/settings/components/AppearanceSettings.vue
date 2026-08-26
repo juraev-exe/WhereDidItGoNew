@@ -114,7 +114,7 @@ async function onLocale(code: string) {
 
     <!-- Color Scheme & Gradient Selector -->
     <div class="field">
-      <span class="label">Color Scheme</span>
+      <span class="label">{{ t('settings.colorScheme') }}</span>
       <div class="color-schemes-grid">
         <button
           v-for="s in COLOR_SCHEMES"
@@ -137,7 +137,7 @@ async function onLocale(code: string) {
 
     <!-- Font Family Selector -->
     <div class="field">
-      <span class="label">App Font Family</span>
+      <span class="label">{{ t('settings.fontFamily') }}</span>
       <div class="font-grid">
         <button
           v-for="f in FONT_FAMILIES"

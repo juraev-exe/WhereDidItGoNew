@@ -34,6 +34,21 @@ class FinanceDB extends Dexie {
     this.version(4).stores({
       debts: 'id, type, personName, status, createdAt',
     })
+    // v5: debts were stored in major units (e.g. 12.5 dollars) while every other
+    // money field is minor units. Convert once so all amounts share one unit.
+    this.version(5)
+      .stores({
+        debts: 'id, type, personName, status, createdAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table<Debt>('debts')
+          .toCollection()
+          .modify((debt) => {
+            debt.amount = Math.round((debt.amount ?? 0) * 100)
+            debt.paidAmount = Math.round((debt.paidAmount ?? 0) * 100)
+          }),
+      )
   }
 }
 

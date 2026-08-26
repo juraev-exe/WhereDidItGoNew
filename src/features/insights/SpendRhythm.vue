@@ -97,14 +97,18 @@ h2 {
   align-items: end;
   gap: 4px;
   height: 108px;
+  /* Axis labels are wider than a single column and are centred on it, so leave
+     room for the first and last one to sit fully inside the panel. */
+  padding: 0 1.6rem;
 }
 
 .col {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  gap: 6px;
+  padding-bottom: 1.1rem;
   min-width: 0;
   height: 100%;
 }
@@ -121,13 +125,14 @@ h2 {
 }
 
 .tick {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 0.625rem;
   font-weight: 600;
   color: var(--color-muted);
   white-space: nowrap;
-  overflow: hidden;
-  max-width: 100%;
-  text-overflow: clip;
 }
 
 .tick.ghost {

@@ -158,7 +158,7 @@ const isYesterdaySelected = computed(() => selectedDateStr.value === yesterdayIS
         <button
           type="button"
           class="nav-arrow-btn"
-          aria-label="Previous Month"
+          :aria-label="t('monthNav.previous')"
           @click="prevMonth"
         >
           <ChevronLeft :size="20" />
@@ -167,7 +167,7 @@ const isYesterdaySelected = computed(() => selectedDateStr.value === yesterdayIS
         <button
           type="button"
           class="nav-arrow-btn"
-          aria-label="Next Month"
+          :aria-label="t('monthNav.next')"
           @click="nextMonth"
         >
           <ChevronRight :size="20" />

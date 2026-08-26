@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { Flame, Moon, Settings, Sun, Wallet, Zap } from '@lucide/vue'
@@ -11,6 +11,12 @@ const { t } = useI18n()
 const settings = useSettingsStore()
 const transactions = useTransactionsStore()
 const spinning = ref(false)
+
+const streakLabel = computed(() =>
+  transactions.streak.current > 0
+    ? t('streak.active', { count: transactions.streak.current })
+    : t('streak.none'),
+)
 
 async function toggleTheme() {
   spinning.value = true
@@ -31,8 +37,8 @@ async function toggleTheme() {
       to="/insights"
       class="streak-btn"
       :class="{ 'streak-active': transactions.streak.current > 0, 'streak-today': transactions.streak.activeToday }"
-      :aria-label="t('streak.label', { count: transactions.streak.current }, `${transactions.streak.current} day streak`)"
-      :title="transactions.streak.current > 0 ? `${transactions.streak.current} day streak!` : 'Log today to start your streak!'"
+      :aria-label="streakLabel"
+      :title="streakLabel"
     >
       <Flame :size="17" class="streak-flame" />
       <span class="streak-count">{{ transactions.streak.current }}</span>

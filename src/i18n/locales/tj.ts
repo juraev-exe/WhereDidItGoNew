@@ -135,6 +135,10 @@ export default {
     budgetLimit: 'Лимити моҳона',
     finish: 'Ба Саҳифаи асосӣ',
     stepOf: 'Қадами {current} аз {total}',
+    categoriesTitle: 'Ба чӣ харҷ мекунед?',
+    categoriesLede: 'Категорияҳои мувофиқро нигоҳ доред ва аз худатон илова кунед. Ҳамаашро баъдтар тағйир дода метавонед.',
+    categoriesHint: '{count} категория интихоб шуд',
+    addCategoryPlaceholder: 'Категорияи худ, мас. Варзишгоҳ',
   },
   home: {
     accounts: 'Ҳисобҳо',

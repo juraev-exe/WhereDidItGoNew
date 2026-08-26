@@ -296,6 +296,8 @@ export const useSettingsStore = defineStore('settings', () => {
     currency: string
     accounts?: Array<{ id: string; name: string; balance: number }>
     budgets?: Array<{ categoryId: string; limitAmount: number }>
+    /** Starter categories the user deselected during onboarding. */
+    removeCategoryIds?: string[]
   }) {
     const selectedCurrency = input.currency
     currency.value = selectedCurrency
@@ -309,6 +311,9 @@ export const useSettingsStore = defineStore('settings', () => {
       { key: 'privacyMode', value: privacyMode.value },
       { key: 'hideAmounts', value: privacyMode.value === 'all' ? 'true' : 'false' },
     ])
+    if (input.removeCategoryIds?.length) {
+      await db.categories.bulkDelete(input.removeCategoryIds)
+    }
     const accounts = await db.accounts.toArray()
     await Promise.all(
       accounts.map((a) => {

@@ -2,43 +2,76 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft } from '@lucide/vue'
+import { ArrowLeft, Check, Plus, X } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
+import IconByName from '@/components/ui/IconByName.vue'
 import { db } from '@/db'
+import { relocalizeSeedNames } from '@/db/seed'
+import { APP_LOCALES } from '@/i18n'
 import { CURRENCIES, defaultCurrencyForLocale } from '@/lib/currencies'
 import { parseMoneyToMinor } from '@/lib/money'
+import { CATEGORY_COLORS } from '@/lib/categoryColors'
+import { tickFeedback } from '@/services/native/haptics'
 import { useCategoriesStore } from '@/stores/categories'
 import { useSettingsStore } from '@/stores/settings'
+import type { AppLocale, Category } from '@/types/finance'
 
 const { t } = useI18n()
 const settings = useSettingsStore()
 const categories = useCategoriesStore()
 const router = useRouter()
 
-type Step = 'currency' | 'accounts' | 'budgets'
+type Step = 'currency' | 'accounts' | 'categories' | 'budgets'
+const STEPS: Step[] = ['currency', 'accounts', 'categories', 'budgets']
 const step = ref<Step>('currency')
 const busy = ref(false)
 
+const stepIndex = computed(() => STEPS.indexOf(step.value))
+
+function goNext() {
+  const i = stepIndex.value
+  if (i < STEPS.length - 1) step.value = STEPS[i + 1]!
+  void tickFeedback()
+}
+
+function goBack() {
+  const i = stepIndex.value
+  if (i > 0) step.value = STEPS[i - 1]!
+  void tickFeedback()
+}
+
+/* ── Step 1: language + currency ─────────────────────────────────────────── */
+
+const localeOptions = computed(() =>
+  APP_LOCALES.map((code) => ({ value: code, label: t(`languages.${code}`) })),
+)
+
 const currencyOptions = computed(() =>
-  CURRENCIES.map((c) => ({
-    value: c.code,
-    label: `${c.code} — ${t(`currencies.${c.nameKey}`)}`,
-  })),
+  CURRENCIES.map((c) => ({ value: c.code, label: `${c.code} — ${t(`currencies.${c.nameKey}`)}` })),
 )
 
 const selected = ref(settings.currency || defaultCurrencyForLocale(settings.locale))
+/** Stop auto-suggesting a currency once the user has chosen one deliberately. */
+let currencyTouched = false
+
+async function onLocale(code: string) {
+  const locale = code as AppLocale
+  await settings.setLocale(locale)
+  // The starter categories and accounts were seeded in the previous language.
+  await relocalizeSeedNames(locale)
+  if (!currencyTouched) selected.value = defaultCurrencyForLocale(locale)
+  void tickFeedback()
+}
+
+function onCurrency(code: string) {
+  currencyTouched = true
+  selected.value = code
+}
+
+/* ── Step 2: starting accounts ───────────────────────────────────────────── */
 
 const starters = ref<Array<{ id: string; name: string; balanceStr: string }>>([])
-
-const expenseOptions = computed(() =>
-  categories.expense.map((c) => ({ value: c.id, label: c.name })),
-)
-
-const budgetSlots = ref([
-  { categoryId: '', amountStr: '' },
-  { categoryId: '', amountStr: '' },
-])
 
 onMounted(async () => {
   const rows = await db.accounts.toArray()
@@ -52,31 +85,68 @@ onMounted(async () => {
     }))
 })
 
+// Keep the editable names in step with a language switch.
 watch(
-  () => categories.expense,
-  (list) => {
-    if (!budgetSlots.value[0]?.categoryId && list[0]) budgetSlots.value[0].categoryId = list[0].id
-    if (!budgetSlots.value[1]?.categoryId && list[1]) budgetSlots.value[1].categoryId = list[1].id
+  () => settings.locale,
+  async () => {
+    const rows = await db.accounts.toArray()
+    starters.value = starters.value.map((row) => ({
+      ...row,
+      name: rows.find((a) => a.id === row.id)?.name ?? row.name,
+    }))
   },
-  { immediate: true },
 )
 
-const stepIndex = computed(() => (step.value === 'currency' ? 0 : step.value === 'accounts' ? 1 : 2))
+/* ── Step 3: which categories to keep ────────────────────────────────────── */
 
-const STEPS: Step[] = ['currency', 'accounts', 'budgets']
+const dropped = ref(new Set<string>())
+const newCategoryName = ref('')
 
-function goAccounts() {
-  step.value = 'accounts'
+function toggleCategory(cat: Category) {
+  const next = new Set(dropped.value)
+  if (next.has(cat.id)) next.delete(cat.id)
+  else next.add(cat.id)
+  dropped.value = next
+  void tickFeedback()
 }
 
-function goBudgets() {
-  step.value = 'budgets'
+const keptExpense = computed(() => categories.expense.filter((c) => !dropped.value.has(c.id)))
+
+async function addCategory() {
+  const name = newCategoryName.value.trim()
+  if (!name) return
+  await categories.addCategory({
+    name,
+    kind: 'expense',
+    icon: 'tag',
+    color: CATEGORY_COLORS[categories.expense.length % CATEGORY_COLORS.length]?.hex ?? '#6c757d',
+  })
+  newCategoryName.value = ''
+  void tickFeedback()
 }
 
-function goBack() {
-  const i = STEPS.indexOf(step.value)
-  if (i > 0) step.value = STEPS[i - 1]!
-}
+/* ── Step 4: optional starter budgets ────────────────────────────────────── */
+
+const budgetSlots = ref([
+  { categoryId: '', amountStr: '' },
+  { categoryId: '', amountStr: '' },
+])
+
+const expenseOptions = computed(() =>
+  keptExpense.value.map((c) => ({ value: c.id, label: c.name })),
+)
+
+// Default the budget rows to categories that survived step 3.
+watch(
+  keptExpense,
+  (list) => {
+    for (const [i, slot] of budgetSlots.value.entries()) {
+      const stillValid = list.some((c) => c.id === slot.categoryId)
+      if (!stillValid) slot.categoryId = list[i]?.id ?? ''
+    }
+  },
+  { immediate: true, deep: true },
+)
 
 async function finish(skipBudgets = false) {
   busy.value = true
@@ -104,6 +174,7 @@ async function finish(skipBudgets = false) {
         balance: Math.max(0, parseMoneyToMinor(a.balanceStr)),
       })),
       budgets,
+      removeCategoryIds: [...dropped.value],
     })
     await router.replace('/')
   } finally {
@@ -129,34 +200,52 @@ async function finish(skipBudgets = false) {
       </div>
       <div class="steps-wrapper" role="status" aria-live="polite">
         <p class="steps" aria-hidden="true">
-          <span :class="{ active: stepIndex === 0, on: stepIndex >= 0 }" />
-          <span :class="{ active: stepIndex === 1, on: stepIndex >= 1 }" />
-          <span :class="{ active: stepIndex === 2, on: stepIndex >= 2 }" />
+          <span
+            v-for="(s, i) in STEPS"
+            :key="s"
+            :class="{ active: stepIndex === i, on: stepIndex >= i }"
+          />
         </p>
-        <span class="step-label">{{ t('onboarding.stepOf', { current: stepIndex + 1, total: 3 }) }}</span>
+        <span class="step-label">
+          {{ t('onboarding.stepOf', { current: stepIndex + 1, total: STEPS.length }) }}
+        </span>
       </div>
       <h1 v-if="step === 'currency'">{{ t('onboarding.title') }}</h1>
       <h1 v-else-if="step === 'accounts'">{{ t('onboarding.accountsTitle') }}</h1>
+      <h1 v-else-if="step === 'categories'">{{ t('onboarding.categoriesTitle') }}</h1>
       <h1 v-else>{{ t('onboarding.budgetsTitle') }}</h1>
       <p class="lede">
         <template v-if="step === 'currency'">{{ t('onboarding.lede') }}</template>
         <template v-else-if="step === 'accounts'">{{ t('onboarding.accountsLede') }}</template>
+        <template v-else-if="step === 'categories'">{{ t('onboarding.categoriesLede') }}</template>
         <template v-else>{{ t('onboarding.budgetsLede') }}</template>
       </p>
     </div>
 
+    <!-- Step 1 — language and currency -->
     <template v-if="step === 'currency'">
+      <label class="field">
+        <span>{{ t('settings.language') }}</span>
+        <AppSelect
+          :model-value="settings.locale"
+          :options="localeOptions"
+          :aria-label="t('settings.language')"
+          @update:model-value="onLocale"
+        />
+      </label>
       <label class="field">
         <span>{{ t('onboarding.yourCurrency') }}</span>
         <AppSelect
-          v-model="selected"
+          :model-value="selected"
           :options="currencyOptions"
           :aria-label="t('onboarding.yourCurrency')"
+          @update:model-value="onCurrency"
         />
       </label>
-      <AppButton block size="lg" @click="goAccounts">{{ t('common.next') }}</AppButton>
+      <AppButton block size="lg" @click="goNext">{{ t('common.next') }}</AppButton>
     </template>
 
+    <!-- Step 2 — starting accounts -->
     <template v-else-if="step === 'accounts'">
       <div v-for="acc in starters" :key="acc.id" class="card">
         <label class="field">
@@ -174,9 +263,57 @@ async function finish(skipBudgets = false) {
           />
         </label>
       </div>
-      <AppButton block size="lg" @click="goBudgets">{{ t('common.next') }}</AppButton>
+      <AppButton block size="lg" @click="goNext">{{ t('common.next') }}</AppButton>
     </template>
 
+    <!-- Step 3 — pick the categories to keep, add your own -->
+    <template v-else-if="step === 'categories'">
+      <div class="cat-picker">
+        <button
+          v-for="cat in categories.expense"
+          :key="cat.id"
+          type="button"
+          class="cat-pill"
+          :class="{ 'cat-pill--off': dropped.has(cat.id) }"
+          :style="{ '--cat': cat.color }"
+          :aria-pressed="!dropped.has(cat.id)"
+          @click="toggleCategory(cat)"
+        >
+          <span class="cat-icon">
+            <IconByName :name="cat.icon" :size="16" />
+          </span>
+          <span class="cat-name">{{ cat.name }}</span>
+          <Check v-if="!dropped.has(cat.id)" :size="14" class="cat-mark" />
+          <X v-else :size="14" class="cat-mark" />
+        </button>
+      </div>
+
+      <form class="add-row" @submit.prevent="addCategory">
+        <input
+          v-model="newCategoryName"
+          type="text"
+          maxlength="30"
+          :placeholder="t('onboarding.addCategoryPlaceholder')"
+          :aria-label="t('settings.addCategory')"
+        />
+        <button
+          type="submit"
+          class="add-btn"
+          :disabled="!newCategoryName.trim()"
+          :aria-label="t('settings.addCategory')"
+        >
+          <Plus :size="18" />
+        </button>
+      </form>
+
+      <p class="hint">{{ t('onboarding.categoriesHint', { count: keptExpense.length }) }}</p>
+
+      <AppButton block size="lg" :disabled="!keptExpense.length" @click="goNext">
+        {{ t('common.next') }}
+      </AppButton>
+    </template>
+
+    <!-- Step 4 — optional starter budgets -->
     <template v-else>
       <div v-for="(slot, i) in budgetSlots" :key="i" class="card">
         <label class="field">
@@ -334,5 +471,96 @@ h1 {
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
+}
+
+.cat-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.cat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1.5px solid color-mix(in srgb, var(--cat) 55%, transparent);
+  background: color-mix(in srgb, var(--cat) 16%, var(--color-surface));
+  color: var(--color-on-surface);
+  font-size: var(--text-label);
+  font-weight: 600;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+.cat-pill:active {
+  transform: scale(0.97);
+}
+
+.cat-pill--off {
+  border-color: var(--color-outline-variant);
+  background: var(--color-surface-container);
+  color: var(--color-muted);
+  opacity: 0.6;
+}
+
+.cat-pill--off .cat-name {
+  text-decoration: line-through;
+}
+
+.cat-icon {
+  display: grid;
+  place-items: center;
+  color: var(--cat);
+}
+
+.cat-pill--off .cat-icon {
+  color: var(--color-muted);
+}
+
+.cat-mark {
+  opacity: 0.75;
+}
+
+.add-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.add-row input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-outline-variant);
+  background: var(--color-surface);
+}
+
+.add-btn {
+  width: var(--touch-min);
+  height: var(--touch-min);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-container);
+  color: var(--color-primary);
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+.add-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hint {
+  font-size: var(--text-caption);
+  color: var(--color-muted);
 }
 </style>

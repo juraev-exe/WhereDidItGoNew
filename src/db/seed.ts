@@ -33,6 +33,47 @@ const INCOME_DEFS: Array<Omit<Category, 'id' | 'name'> & { nameKey: keyof SeedMe
   { nameKey: 'otherIncome', kind: 'income', icon: 'plus-circle', color: '#6c757d', sortOrder: 3 },
 ]
 
+const ALL_DEFS = [...EXPENSE_DEFS, ...INCOME_DEFS]
+
+/** Every localised spelling a seeded name can have, keyed by its definition. */
+function defaultNamesFor(nameKey: keyof SeedMessages['categories']): string[] {
+  return (Object.keys(LOCALES) as AppLocale[]).map((code) => seedMessages(code).categories[nameKey])
+}
+
+function defaultAccountNames(key: keyof SeedMessages['accounts']): string[] {
+  return (Object.keys(LOCALES) as AppLocale[]).map((code) => seedMessages(code).accounts[key])
+}
+
+/**
+ * Re-label the seeded categories and accounts when the language changes during
+ * onboarding. Only rows still carrying a default name in *some* locale are
+ * touched, so anything the user has renamed is left alone.
+ */
+export async function relocalizeSeedNames(locale: AppLocale): Promise<void> {
+  const names = seedMessages(locale)
+
+  const categories = await db.categories.toArray()
+  const categoryPatches = categories.flatMap((cat) => {
+    const def = ALL_DEFS.find(
+      (d) => d.kind === cat.kind && d.icon === cat.icon && defaultNamesFor(d.nameKey).includes(cat.name),
+    )
+    if (!def) return []
+    const next = names.categories[def.nameKey]
+    return next && next !== cat.name ? [{ id: cat.id, name: next }] : []
+  })
+  await Promise.all(categoryPatches.map((p) => db.categories.update(p.id, { name: p.name })))
+
+  const accounts = await db.accounts.toArray()
+  const accountPatches = accounts.flatMap((acc) => {
+    const key = acc.type === 'cash' ? 'cash' : acc.type === 'checking' ? 'checking' : null
+    if (!key) return []
+    if (!defaultAccountNames(key).includes(acc.name)) return []
+    const next = names.accounts[key]
+    return next && next !== acc.name ? [{ id: acc.id, name: next }] : []
+  })
+  await Promise.all(accountPatches.map((p) => db.accounts.update(p.id, { name: p.name })))
+}
+
 export async function ensureSeeded(currency = 'USD', locale: AppLocale = 'en'): Promise<void> {
   const names = seedMessages(locale)
 
@@ -84,7 +125,7 @@ export async function ensureSeeded(currency = 'USD', locale: AppLocale = 'en'): 
   }
   const theme = await db.meta.get('theme')
   if (!theme) {
-    await db.meta.put({ key: 'theme', value: 'system' })
+    await db.meta.put({ key: 'theme', value: 'dark' })
   }
   const storedLocale = await db.meta.get('locale')
   if (!storedLocale) {

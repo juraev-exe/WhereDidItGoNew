@@ -23,7 +23,8 @@
     "audit:backup": "node scripts/backup-check.mjs",
     "audit:migration": "node scripts/migration-check.mjs",
     "screens": "node scripts/screens.mjs",
-    "verify": "npm run check && npm run audit && npm run audit:backup && npm run audit:migration"
+    "verify": "npm run check && npm run audit && npm run audit:onboarding && npm run audit:backup && npm run audit:migration",
+    "audit:onboarding": "node scripts/onboarding-check.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

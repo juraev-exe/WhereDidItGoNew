@@ -135,6 +135,10 @@ export default {
     budgetLimit: 'Месячный лимит',
     finish: 'Перейти на Главную',
     stepOf: 'Шаг {current} из {total}',
+    categoriesTitle: 'На что вы тратите?',
+    categoriesLede: 'Оставьте подходящие категории и добавьте свои. Всё это можно изменить позже.',
+    categoriesHint: 'Выбрано категорий: {count}',
+    addCategoryPlaceholder: 'Своя категория, напр. Спортзал',
   },
   home: {
     accounts: 'Счета',

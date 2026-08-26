@@ -47,18 +47,20 @@ export async function resetDb(page) {
   })
 }
 
+/** Steps through the first-launch flow, however many steps it currently has. */
 export async function completeOnboarding(page) {
   await page.goto(BASE, { waitUntil: 'domcontentloaded' })
   await page.waitForTimeout(1500)
-  const next = page.getByRole('button', { name: /^next$/i })
-  if (!(await next.count())) return false
-  await next.first().click()
-  await page.waitForTimeout(400)
-  await page.getByRole('button', { name: /^next$/i }).first().click()
-  await page.waitForTimeout(400)
+  const next = () => page.getByRole('button', { name: /^next$/i })
+  if (!(await next().count())) return false
+  for (let guard = 0; guard < 8; guard++) {
+    if (!(await next().count())) break
+    await next().first().click()
+    await page.waitForTimeout(450)
+  }
   const skip = page.getByRole('button', { name: /^skip$/i })
   if (await skip.count()) await skip.first().click()
-  await page.waitForTimeout(1400)
+  await page.waitForTimeout(1600)
   return true
 }
 

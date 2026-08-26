@@ -135,6 +135,10 @@ export default {
     budgetLimit: 'Monthly limit',
     finish: 'Go to Home',
     stepOf: 'Step {current} of {total}',
+    categoriesTitle: 'Pick what you spend on',
+    categoriesLede: 'Keep the ones that fit your life and add your own. You can change all of this later.',
+    categoriesHint: '{count} categories selected',
+    addCategoryPlaceholder: 'Add your own, e.g. Gym',
   },
   home: {
     accounts: 'Accounts',

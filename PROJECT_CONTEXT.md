@@ -205,6 +205,17 @@ so with a start day of 15 it covers 15 Aug – 14 Sep. The conversion lives in
 every stats function and month filter goes through those helpers. `MonthNav`
 shows the concrete date span whenever the start day is not 1.
 
+### Feature workflow
+
+Before starting a non-trivial feature, write down the goal and any constraints
+it touches (money units, cycle-aware month math, i18n key coverage) so the
+work stays scoped. After changing code, run `npm run verify` — a feature is
+not done until it passes, not just until it looks right in the browser. For
+work large enough to span independent pieces (e.g. several unrelated screens),
+prefer dispatching each piece to a fresh-context pass over extending one long
+session — it keeps context from filling with earlier exploration that no
+longer matters to the piece at hand.
+
 ### Scoped styles and ancestor selectors
 
 Vue's scoped-style compiler cannot express `:global(ancestor) .scoped-child` — it

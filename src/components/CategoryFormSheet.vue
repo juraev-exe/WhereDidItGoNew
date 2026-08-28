@@ -67,6 +67,16 @@ function removeSubcategory(id: string) {
   void tickFeedback()
 }
 
+/**
+ * Vue wraps `subcategories.value` in a reactive Proxy; IndexedDB's structured-clone
+ * algorithm can't clone that ("DataCloneError: ... could not be cloned") on some
+ * WebView builds. Every field here is a primitive, so a shallow copy per item is
+ * enough to strip the proxy before it reaches Dexie.
+ */
+function plainSubcategories(): Subcategory[] {
+  return subcategories.value.map((s) => ({ ...s }))
+}
+
 const isEditing = computed(() => Boolean(props.category))
 const title = computed(() =>
   isEditing.value ? t('settings.editCategory') : t('settings.newCategory'),
@@ -191,7 +201,7 @@ async function save() {
         kind: kind.value,
         color: color.value,
         icon: icon.value,
-        subcategories: subcategories.value,
+        subcategories: plainSubcategories(),
       })
       savedCat = {
         ...props.category,
@@ -199,7 +209,7 @@ async function save() {
         kind: kind.value,
         color: color.value,
         icon: icon.value,
-        subcategories: subcategories.value,
+        subcategories: plainSubcategories(),
       }
     } else {
       savedCat = await categories.addCategory({
@@ -207,7 +217,7 @@ async function save() {
         kind: kind.value,
         color: color.value,
         icon: icon.value,
-        subcategories: subcategories.value,
+        subcategories: plainSubcategories(),
       })
     }
     void successFeedback()

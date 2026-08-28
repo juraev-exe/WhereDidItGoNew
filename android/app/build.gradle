@@ -1,5 +1,31 @@
 apply plugin: 'com.android.application'
 
+// --- Release signing -------------------------------------------------------
+// Reads signing credentials from a gitignored `keystore.properties` file next to
+// this build.gradle's rootProject (i.e. android/keystore.properties). That file is
+// NOT committed and does not exist yet — you must create it yourself:
+//
+//   1. Generate a release keystore (do this once, then BACK IT UP somewhere safe —
+//      losing it means you can never update the Play Store listing again):
+//        keytool -genkeypair -v -storetype PKCS12 -keystore wherediditgo-release.jks \
+//          -alias wherediditgo -keyalg RSA -keysize 2048 -validity 10000
+//
+//   2. Copy android/keystore.properties.example to android/keystore.properties and
+//      fill in the real values (storeFile path, storePassword, keyAlias, keyPassword).
+//
+//   3. Build a signed release bundle for Play Store upload:
+//        cd android && .\gradlew.bat bundleRelease
+//      (or `npm run release:android` from the repo root)
+//
+// Until keystore.properties exists, release builds simply build unsigned — assembleDebug/
+// bundleDebug are unaffected either way.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasKeystoreProperties = keystorePropertiesFile.exists()
+if (hasKeystoreProperties) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.wherediditgo.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +42,25 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (hasKeystoreProperties) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Only attach the release signing config once keystore.properties exists, so the
+            // build doesn't fail for anyone who hasn't generated a keystore yet.
+            if (hasKeystoreProperties) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

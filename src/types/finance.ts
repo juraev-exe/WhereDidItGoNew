@@ -110,7 +110,19 @@ export type ColorScheme =
   | 'luxury-navy'
   | 'violet-peach'
   | 'navy-cyan'
-export type AppFont = 'system' | 'outfit' | 'inter' | 'jakarta' | 'caveat'
+/** Bottom nav tab style: icon + text label, or icon only (more room per tab). */
+export type NavLabelStyle = 'labels' | 'icons'
+export type AppFont =
+  | 'system'
+  | 'outfit'
+  | 'inter'
+  | 'jakarta'
+  | 'caveat'
+  | 'poppins'
+  | 'manrope'
+  | 'space-grotesk'
+  | 'fraunces'
+  | 'jetbrains-mono'
 
 export interface AppMeta {
   onboardingDone: boolean

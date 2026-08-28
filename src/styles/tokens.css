@@ -105,6 +105,15 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+
+  /* Soft accent-colored glow behind the page, derived from whichever color
+     scheme is active — follows --color-primary automatically, no per-scheme
+     duplication needed. */
+  --bg-tint: radial-gradient(
+    ellipse 140% 55% at 50% -12%,
+    color-mix(in srgb, var(--color-primary) 10%, transparent),
+    transparent 60%
+  );
 }
 
 [data-theme='dark'] {
@@ -424,7 +433,32 @@
 :root[data-font='caveat'],
 [data-font='caveat'] {
   --font-display: 'Caveat', cursive, sans-serif !important;
-  --font-body: 'Outfit', -apple-system, sans-serif !important;
+  --font-body: 'Caveat', cursive, sans-serif !important;
+}
+:root[data-font='poppins'],
+[data-font='poppins'] {
+  --font-display: 'Poppins', -apple-system, sans-serif !important;
+  --font-body: 'Poppins', -apple-system, sans-serif !important;
+}
+:root[data-font='manrope'],
+[data-font='manrope'] {
+  --font-display: 'Manrope', -apple-system, sans-serif !important;
+  --font-body: 'Manrope', -apple-system, sans-serif !important;
+}
+:root[data-font='space-grotesk'],
+[data-font='space-grotesk'] {
+  --font-display: 'Space Grotesk', -apple-system, sans-serif !important;
+  --font-body: 'Space Grotesk', -apple-system, sans-serif !important;
+}
+:root[data-font='fraunces'],
+[data-font='fraunces'] {
+  --font-display: 'Fraunces', Georgia, serif !important;
+  --font-body: 'Fraunces', Georgia, serif !important;
+}
+:root[data-font='jetbrains-mono'],
+[data-font='jetbrains-mono'] {
+  --font-display: 'JetBrains Mono', ui-monospace, monospace !important;
+  --font-body: 'JetBrains Mono', ui-monospace, monospace !important;
 }
 
 /* ── Navy Cyan ────────────────────────────────────────────────────────────

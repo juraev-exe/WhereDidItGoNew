@@ -33,6 +33,11 @@ const FONT_FAMILIES: { id: AppFont; label: string; fontStyle: string; sample: st
   { id: 'outfit', label: 'Outfit (Modern)', fontStyle: "'Outfit', sans-serif", sample: 'Aa 123' },
   { id: 'inter', label: 'Inter (Crisp UI)', fontStyle: "'Inter', sans-serif", sample: 'Aa 123' },
   { id: 'jakarta', label: 'Plus Jakarta', fontStyle: "'Plus Jakarta Sans', sans-serif", sample: 'Aa 123' },
+  { id: 'poppins', label: 'Poppins (Geometric)', fontStyle: "'Poppins', sans-serif", sample: 'Aa 123' },
+  { id: 'manrope', label: 'Manrope (Fintech)', fontStyle: "'Manrope', sans-serif", sample: 'Aa 123' },
+  { id: 'space-grotesk', label: 'Space Grotesk', fontStyle: "'Space Grotesk', sans-serif", sample: 'Aa 123' },
+  { id: 'fraunces', label: 'Fraunces (Serif)', fontStyle: "'Fraunces', serif", sample: 'Aa 123' },
+  { id: 'jetbrains-mono', label: 'JetBrains Mono', fontStyle: "'JetBrains Mono', monospace", sample: 'Aa 123' },
   { id: 'caveat', label: 'Caveat (Script)', fontStyle: "'Caveat', cursive", sample: 'Aa 123' },
 ]
 
@@ -139,13 +144,15 @@ async function onLocale(code: string) {
     <!-- Font Family Selector -->
     <div class="field">
       <span class="label">{{ t('settings.fontFamily') }}</span>
-      <div class="font-grid">
+      <div class="font-scroll" role="radiogroup" :aria-label="t('settings.fontFamily')">
         <button
           v-for="f in FONT_FAMILIES"
           :key="f.id"
           type="button"
+          role="radio"
           class="font-btn"
           :class="{ 'font-btn--active': settings.fontFamily === f.id }"
+          :aria-checked="settings.fontFamily === f.id"
           @click="onFontFamily(f.id)"
         >
           <span class="font-sample" :style="{ fontFamily: f.fontStyle }">{{ f.sample }}</span>
@@ -338,23 +345,35 @@ async function onLocale(code: string) {
   text-align: center;
 }
 
-.font-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: var(--space-2);
+.font-scroll {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 2px var(--space-2);
+  margin: -2px -2px calc(var(--space-2) * -1);
+  scrollbar-width: none;
+}
+
+.font-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .font-btn {
   display: flex;
+  flex: 0 0 152px;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
   background: var(--color-surface-container);
   border: 1.5px solid transparent;
   cursor: pointer;
   position: relative;
+  scroll-snap-align: start;
   transition: transform var(--duration-fast) var(--ease-spring-snappy),
               border-color var(--duration-fast) var(--ease-standard),
               background-color var(--duration-fast) var(--ease-standard);
@@ -377,15 +396,18 @@ async function onLocale(code: string) {
 }
 
 .font-sample {
-  font-size: 1.25rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--color-on-surface);
+  line-height: 1.1;
 }
 
 .font-label {
-  font-size: var(--text-caption);
+  font-size: var(--text-label);
   font-weight: 500;
   color: var(--color-muted);
+  white-space: normal;
+  line-height: 1.25;
 }
 
 .font-check {

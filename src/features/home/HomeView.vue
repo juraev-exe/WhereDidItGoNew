@@ -243,7 +243,7 @@ onUnmounted(() => {
 
     <MonthNav v-model="month" label-as-heading />
 
-    <section class="hero-card" :aria-label="onBalance ? t('home.availableBalance') : t('home.monthOverview')">
+    <section class="hero-card surface-glass" :aria-label="onBalance ? t('home.availableBalance') : t('home.monthOverview')">
       <div class="hero-seg" role="tablist" :aria-label="t('home.monthOverview')">
         <button
           type="button"
@@ -350,7 +350,7 @@ onUnmounted(() => {
           v-for="c in tops"
           :key="c.categoryId"
           type="button"
-          class="chip"
+          class="chip surface-glass"
           @click="openCategory(c.categoryId)"
         >
           <span class="dot" :style="{ background: c.color }" />
@@ -380,7 +380,7 @@ onUnmounted(() => {
         </template>
       </EmptyState>
 
-      <div v-else class="list">
+      <div v-else class="list surface-glass">
         <TransactionRow
           v-for="tx in recent"
           :key="tx.id"
@@ -406,7 +406,7 @@ onUnmounted(() => {
 .home {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
 .top {
@@ -425,11 +425,8 @@ onUnmounted(() => {
 }
 
 .hero-card {
-  padding: var(--space-5);
+  padding: var(--space-6) var(--space-5);
   border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 14%, transparent);
-  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -484,7 +481,7 @@ onUnmounted(() => {
 
 .hero-amount {
   font-family: var(--font-display);
-  font-size: clamp(2.25rem, 9vw, 3rem);
+  font-size: clamp(2.5rem, 10vw, 3.375rem);
   font-weight: 650;
   letter-spacing: -0.03em;
   line-height: 1;
@@ -666,10 +663,7 @@ onUnmounted(() => {
   text-align: left;
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  background: var(--color-surface);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 12%, transparent);
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+  transition: transform var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard);
   cursor: pointer;
   animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
 }
@@ -706,10 +700,7 @@ onUnmounted(() => {
 }
 
 .list {
-  background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 12%, transparent);
-  box-shadow: var(--shadow-sm);
   padding: var(--space-2) var(--space-2);
 }
 

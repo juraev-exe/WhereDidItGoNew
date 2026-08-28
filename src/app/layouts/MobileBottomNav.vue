@@ -21,7 +21,11 @@ function toggleAdd() {
 </script>
 
 <template>
-  <nav class="nav" :class="{ 'nav--hidden': ui.isAnyModalOpen }" :aria-label="t('nav.main')">
+  <nav
+    class="nav"
+    :class="{ 'nav--hidden': ui.isAnyModalOpen, 'nav--icons-only': settings.navLabelStyle === 'icons' }"
+    :aria-label="t('nav.main')"
+  >
     <div class="nav-inner">
       <!-- Left side tabs (3 tabs) -->
       <div class="nav-side nav-side--left">
@@ -30,10 +34,11 @@ function toggleAdd() {
           to="/"
           class="tab"
           :class="{ 'tab--active': route.name === 'home' }"
+          :aria-label="t('nav.home')"
           @click="tickFeedback()"
         >
           <Home :size="20" />
-          <span>{{ t('nav.home') }}</span>
+          <span v-if="settings.navLabelStyle === 'labels'">{{ t('nav.home') }}</span>
         </RouterLink>
 
         <!-- Activity Tab -->
@@ -42,10 +47,11 @@ function toggleAdd() {
           to="/activity"
           class="tab"
           :class="{ 'tab--active': route.name === 'activity' }"
+          :aria-label="t('nav.activity')"
           @click="tickFeedback()"
         >
           <List :size="20" />
-          <span>{{ t('nav.activity') }}</span>
+          <span v-if="settings.navLabelStyle === 'labels'">{{ t('nav.activity') }}</span>
         </RouterLink>
 
         <!-- Categories Tab -->
@@ -54,10 +60,11 @@ function toggleAdd() {
           to="/categories"
           class="tab"
           :class="{ 'tab--active': route.name === 'categories' }"
+          :aria-label="t('nav.categories')"
           @click="tickFeedback()"
         >
           <FolderKanban :size="20" />
-          <span>{{ t('nav.categories') }}</span>
+          <span v-if="settings.navLabelStyle === 'labels'">{{ t('nav.categories') }}</span>
         </RouterLink>
       </div>
 
@@ -76,10 +83,11 @@ function toggleAdd() {
           to="/debts"
           class="tab"
           :class="{ 'tab--active': route.name === 'debts' }"
+          :aria-label="t('nav.debts')"
           @click="tickFeedback()"
         >
           <HandCoins :size="20" />
-          <span>{{ t('nav.debts') }}</span>
+          <span v-if="settings.navLabelStyle === 'labels'">{{ t('nav.debts') }}</span>
         </RouterLink>
 
         <!-- Budgets Tab -->
@@ -88,10 +96,11 @@ function toggleAdd() {
           to="/budgets"
           class="tab"
           :class="{ 'tab--active': route.name === 'budgets' }"
+          :aria-label="t('nav.budgets')"
           @click="tickFeedback()"
         >
           <PiggyBank :size="20" />
-          <span>{{ t('nav.budgets') }}</span>
+          <span v-if="settings.navLabelStyle === 'labels'">{{ t('nav.budgets') }}</span>
         </RouterLink>
 
         <!-- Insights Tab -->
@@ -100,10 +109,11 @@ function toggleAdd() {
           to="/insights"
           class="tab"
           :class="{ 'tab--active': route.name === 'insights' }"
+          :aria-label="t('nav.insights')"
           @click="tickFeedback()"
         >
           <ChartPie :size="20" />
-          <span>{{ t('nav.insights') }}</span>
+          <span v-if="settings.navLabelStyle === 'labels'">{{ t('nav.insights') }}</span>
         </RouterLink>
       </div>
     </div>
@@ -112,6 +122,8 @@ function toggleAdd() {
 
 <style scoped>
 .nav {
+  container-type: inline-size;
+  container-name: nav;
   position: fixed;
   left: 0;
   right: 0;
@@ -213,9 +225,27 @@ function toggleAdd() {
 
 .tab span {
   max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* When the bar itself doesn't have room for six labels — a small/older phone,
+   a split-screen layout, a resized preview panel — drop to icon-only rather
+   than truncating labels into unreadable fragments ("Cat", "Act"...). This is
+   a fallback independent of the user's own icon/label choice in Settings,
+   which still governs everything above this width. */
+@container nav (max-width: 300px) {
+  .tab span {
+    display: none;
+  }
+
+  .tab {
+    min-width: 36px;
+    max-width: 48px;
+    padding: 6px 2px;
+  }
 }
 
 .tab--active {
@@ -225,6 +255,19 @@ function toggleAdd() {
 
 .tab--active svg {
   animation: tabPop 0.35s var(--ease-spring) both;
+}
+
+/* Icon-only nav style: tabs shrink to circular hit targets and the whole
+   pill no longer needs to stretch to fit six labels, so it feels roomier
+   instead of cramped on narrower phones. */
+.nav--icons-only .tab {
+  min-width: 44px;
+  max-width: 52px;
+  padding: 8px;
+}
+
+.nav--icons-only .tab--active {
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
 }
 
 .fab {

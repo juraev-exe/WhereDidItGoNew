@@ -1,20 +1,89 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
-import { RouterView, useRoute } from 'vue-router'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import { WifiOff } from '@lucide/vue'
 import MobileBottomNav from '@/app/layouts/MobileBottomNav.vue'
 import QuickAddSheet from '@/features/transactions/QuickAddSheet.vue'
 import CategoryFormSheet from '@/components/CategoryFormSheet.vue'
 import PaywallModal from '@/components/PaywallModal.vue'
 import { useNetworkStatus } from '@/composables/useNetworkStatus'
+import { tickFeedback } from '@/services/native/haptics'
 import { usePremiumStore } from '@/stores/premium'
+import { useSettingsStore } from '@/stores/settings'
 import { useUiStore } from '@/stores/ui'
 
 const route = useRoute()
+const router = useRouter()
 const showNav = computed(() => route.meta.hideNav !== true)
 const { isOnline } = useNetworkStatus()
 const premium = usePremiumStore()
+const settings = useSettingsStore()
 const ui = useUiStore()
+
+// Swipe left/right between the tabs shown in MobileBottomNav, in the same
+// left-to-right order they appear there. Only active on tab routes (not
+// sheets/subpages) and bails out of anything starting inside a horizontally
+// scrollable element (tagged data-h-scroll) so it doesn't fight native scroll.
+const TAB_ORDER: Array<{ name: string; visible: () => boolean }> = [
+  { name: 'home', visible: () => true },
+  { name: 'activity', visible: () => settings.showActivityTab },
+  { name: 'categories', visible: () => settings.showCategoriesTab },
+  { name: 'debts', visible: () => settings.showDebtsTab },
+  { name: 'budgets', visible: () => settings.showBudgetsTab },
+  { name: 'insights', visible: () => settings.showInsightsTab },
+]
+
+const SWIPE_MIN_DISTANCE = 60
+const SWIPE_MAX_OFF_AXIS = 45
+const SWIPE_DECIDE_THRESHOLD = 12
+
+let swipeTracking = false
+let swipePointerId: number | null = null
+let swipeStartX = 0
+let swipeStartY = 0
+let swipeStartTime = 0
+let swipeAxis: 'horizontal' | 'vertical' | null = null
+
+function onMainPointerDown(e: PointerEvent) {
+  if (e.pointerType === 'mouse' && e.button !== 0) return
+  if (!showNav.value || ui.isAnyModalOpen) return
+  if ((e.target as HTMLElement).closest('[data-h-scroll]')) return
+  swipeTracking = true
+  swipeAxis = null
+  swipePointerId = e.pointerId
+  swipeStartX = e.clientX
+  swipeStartY = e.clientY
+  swipeStartTime = performance.now()
+}
+
+function onMainPointerMove(e: PointerEvent) {
+  if (!swipeTracking || e.pointerId !== swipePointerId || swipeAxis) return
+  const dx = e.clientX - swipeStartX
+  const dy = e.clientY - swipeStartY
+  if (Math.abs(dx) > SWIPE_DECIDE_THRESHOLD || Math.abs(dy) > SWIPE_DECIDE_THRESHOLD) {
+    swipeAxis = Math.abs(dx) > Math.abs(dy) * 1.4 ? 'horizontal' : 'vertical'
+  }
+}
+
+function onMainPointerUp(e: PointerEvent) {
+  if (!swipeTracking || e.pointerId !== swipePointerId) return
+  swipeTracking = false
+  if (swipeAxis !== 'horizontal') return
+  const dx = e.clientX - swipeStartX
+  const dy = e.clientY - swipeStartY
+  if (Math.abs(dy) > SWIPE_MAX_OFF_AXIS) return
+  const elapsed = Math.max(performance.now() - swipeStartTime, 1)
+  const velocity = Math.abs(dx) / elapsed
+  if (Math.abs(dx) < SWIPE_MIN_DISTANCE && velocity < 0.5) return
+
+  const tabs = TAB_ORDER.filter((t) => t.visible()).map((t) => t.name)
+  const currentIndex = tabs.indexOf(route.name as string)
+  if (currentIndex === -1) return
+  const targetName = dx < 0 ? tabs[currentIndex + 1] : tabs[currentIndex - 1]
+  if (!targetName) return
+  void tickFeedback()
+  void router.push({ name: targetName })
+}
 
 onMounted(() => {
   ui.closeAdd()
@@ -39,7 +108,14 @@ watch(
         <span>Offline — changes saved locally</span>
       </div>
     </Transition>
-    <main class="main" :class="{ 'main--nav': showNav }">
+    <main
+      class="main"
+      :class="{ 'main--nav': showNav }"
+      @pointerdown="onMainPointerDown"
+      @pointermove="onMainPointerMove"
+      @pointerup="onMainPointerUp"
+      @pointercancel="onMainPointerUp"
+    >
       <RouterView v-slot="{ Component }">
         <Transition name="page" mode="out-in">
           <component :is="Component" />
@@ -66,7 +142,7 @@ watch(
   width: 100%;
   display: flex;
   flex-direction: column;
-  background-color: var(--color-background);
+  background: var(--bg-tint), var(--color-background);
 }
 
 .main {
@@ -85,21 +161,42 @@ watch(
   );
 }
 
-.page-enter-active,
+.page-enter-active {
+  transition:
+    opacity var(--duration-normal) var(--ease-emphasized),
+    transform var(--duration-normal) var(--ease-emphasized),
+    filter var(--duration-normal) var(--ease-emphasized);
+}
+
 .page-leave-active {
   transition:
     opacity var(--duration-fast) var(--ease-standard),
-    transform var(--duration-fast) var(--ease-standard);
+    transform var(--duration-fast) var(--ease-standard),
+    filter var(--duration-fast) var(--ease-standard);
 }
 
 .page-enter-from {
   opacity: 0;
-  transform: translateY(6px);
+  transform: scale(0.98) translateY(10px);
+  filter: blur(4px);
 }
 
 .page-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: scale(1.01) translateY(-6px);
+  filter: blur(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active {
+    transition: opacity var(--duration-fast) var(--ease-standard);
+  }
+  .page-enter-from,
+  .page-leave-to {
+    transform: none;
+    filter: none;
+  }
 }
 
 .offline-bar {

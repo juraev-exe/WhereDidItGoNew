@@ -38,6 +38,36 @@ async function toggleTab(
       <h2>{{ t('settings.navigationTabs', 'Bottom Navigation') }}</h2>
     </div>
 
+    <section class="card" aria-labelledby="nav-style-title">
+    <div class="header">
+      <h2 id="nav-style-title" class="section-title">{{ t('settings.navStyle') }}</h2>
+      <p class="section-desc">{{ t('settings.navStyleDesc') }}</p>
+    </div>
+
+    <div class="segmented" role="radiogroup" :aria-label="t('settings.navStyle')">
+      <button
+        type="button"
+        role="radio"
+        class="seg-btn"
+        :class="{ 'seg-btn--on': settings.navLabelStyle === 'labels' }"
+        :aria-checked="settings.navLabelStyle === 'labels'"
+        @click="settings.setNavLabelStyle('labels')"
+      >
+        {{ t('settings.navStyleLabels') }}
+      </button>
+      <button
+        type="button"
+        role="radio"
+        class="seg-btn"
+        :class="{ 'seg-btn--on': settings.navLabelStyle === 'icons' }"
+        :aria-checked="settings.navLabelStyle === 'icons'"
+        @click="settings.setNavLabelStyle('icons')"
+      >
+        {{ t('settings.navStyleIcons') }}
+      </button>
+    </div>
+    </section>
+
     <section class="card" aria-labelledby="nav-tabs-title">
     <div class="header">
       <h2 id="nav-tabs-title" class="section-title">{{ t('settings.navigationTabs') }}</h2>
@@ -213,6 +243,40 @@ async function toggleTab(
 .section-desc {
   font-size: var(--text-label);
   color: var(--color-muted);
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1);
+  padding: 4px;
+  background: var(--color-surface-container);
+  border-radius: var(--radius-full);
+}
+
+.seg-btn {
+  min-height: 38px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-label);
+  font-weight: 600;
+  color: var(--color-muted);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--duration-normal) var(--ease-emphasized),
+              color var(--duration-normal) var(--ease-emphasized),
+              box-shadow var(--duration-normal) var(--ease-emphasized),
+              transform var(--duration-fast) var(--ease-spring-snappy);
+}
+
+.seg-btn:active {
+  transform: scale(0.95);
+}
+
+.seg-btn--on {
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  box-shadow: var(--shadow-sm), 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .tab-options {

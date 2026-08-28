@@ -1,120 +1,72 @@
-/** Curated Lucide icon names available for categories */
+/**
+ * Curated Lucide icon names offered in the category icon picker — trimmed to the
+ * most commonly useful one per concept rather than every near-duplicate, so the
+ * picker isn't a 100+-icon wall (e.g. no "apple", "wine", "beer" — "utensils"/
+ * "coffee"/"pizza" already cover food broadly). This does NOT affect icons
+ * already assigned to existing categories: IconByName.vue's render map is a
+ * separate, full superset, so anything saved before this trim keeps rendering
+ * correctly — trimming this list only narrows what's offered for new picks.
+ * Every icon the default seed categories use (src/db/seed.ts) stays included.
+ */
 export const CATEGORY_ICONS = [
   // Food & Drinks
   'utensils',
   'coffee',
-  'beer',
   'pizza',
-  'apple',
   'cake',
-  'glass-water',
-  'wine',
-  'sandwich',
-  'cookie',
 
   // Transportation & Travel
   'car',
-  'bus',
   'fuel',
   'plane',
   'bike',
-  'train',
-  'ship',
-  'navigation',
-  'compass',
-  'map-pin',
-  'ticket',
-  'luggage',
 
   // Shopping & Retail
   'shopping-bag',
   'shopping-cart',
   'shirt',
-  'store',
-  'package',
-  'scissors',
-  'watch',
-  'gem',
-  'footprints',
-  'tag',
 
   // Health, Fitness & Beauty
   'heart-pulse',
   'stethoscope',
   'pill',
   'dumbbell',
-  'activity',
-  'sparkles',
-  'cross',
-  'syringe',
-  'brain',
 
   // Entertainment & Hobbies
   'clapperboard',
   'music',
   'gamepad-2',
   'tv',
-  'film',
-  'camera',
-  'headphones',
-  'mic',
-  'palette',
 
   // Housing, Utilities & Services
   'home',
-  'building-2',
   'receipt',
   'zap',
   'droplets',
   'wifi',
   'smartphone',
-  'wrench',
-  'hammer',
-  'plug',
-  'key',
-  'shield-check',
 
   // Work & Education
   'graduation-cap',
   'book-open',
   'briefcase',
   'laptop',
-  'calculator',
-  'pen-tool',
-  'file-text',
-  'folder',
-  'award',
-  'target',
 
   // Finance & Investments
   'banknote',
   'wallet',
   'piggy-bank',
   'credit-card',
-  'landmark',
-  'trending-up',
-  'trending-down',
   'dollar-sign',
-  'coins',
-  'vault',
-  'chart-pie',
-  'hand-coins',
 
   // Family, Pets & Life
   'baby',
   'paw-print',
   'gift',
   'heart',
-  'users',
-  'user',
 
   // Nature & Outings
   'palmtree',
-  'tent',
-  'tree-pine',
-  'flower-2',
-  'umbrella',
-  'cloud',
 
   // Basic
   'repeat',

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { ArrowLeftRight } from '@lucide/vue'
 import IconByName from '@/components/ui/IconByName.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
+import { iconForMerchant } from '@/lib/merchantIcons'
 import { formatTxDate } from '@/services/stats'
 import { useAccountsStore } from '@/stores/accounts'
 import { useCategoriesStore } from '@/stores/categories'
@@ -32,6 +33,8 @@ const subcategory = computed(() => {
 })
 
 const account = computed(() => accounts.byId(props.transaction.accountId))
+
+const icon = computed(() => iconForMerchant(props.transaction.note) ?? category.value?.icon ?? 'circle')
 
 const label = computed(() => {
   if (props.transaction.type === 'transfer') {
@@ -82,7 +85,7 @@ const iconBg = computed(() => {
   <button type="button" class="row" @click="$emit('select')">
     <span class="icon" :style="{ background: iconBg }">
       <ArrowLeftRight v-if="transaction.type === 'transfer'" :size="18" />
-      <IconByName v-else :name="category?.icon ?? 'circle'" :size="18" />
+      <IconByName v-else :name="icon" :size="18" />
     </span>
     <span class="meta">
       <span class="title">{{ label }}</span>

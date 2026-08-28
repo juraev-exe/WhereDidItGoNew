@@ -2,14 +2,19 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Toaster } from 'vue-sonner'
+import { Toaster, toast } from 'vue-sonner'
 import 'vue-sonner/style.css'
 import { App } from '@capacitor/app'
 import type { PluginListenerHandle } from '@capacitor/core'
 import AppShell from '@/app/layouts/AppShell.vue'
 import PinLockModal from '@/components/PinLockModal.vue'
+import { db } from '@/db'
 import { monthKey } from '@/lib/dates'
 import { hideSplash } from '@/services/native/chrome'
+import { initDeepLinks } from '@/services/native/deepLinks'
+import { scheduleRecurringReminders } from '@/services/native/notifications'
+import { updateBalanceWidget } from '@/services/native/widget'
+import { summarizeMonth } from '@/services/stats'
 import { useAccountsStore } from '@/stores/accounts'
 import { useBudgetsStore } from '@/stores/budgets'
 import { useGoalsStore } from '@/stores/goals'
@@ -33,11 +38,31 @@ const router = useRouter()
 
 let backHandle: PluginListenerHandle | undefined
 let appStateHandle: PluginListenerHandle | undefined
+let removeDeepLinks: (() => void) | undefined
+
+const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100, 200, 365]
+
+async function checkStreakMilestone(current: number) {
+  const milestone = [...STREAK_MILESTONES].reverse().find((m) => current >= m)
+  if (!milestone) return
+  const row = await db.meta.get('lastCelebratedStreak')
+  const lastCelebrated = Number(row?.value ?? 0)
+  if (milestone <= lastCelebrated) return
+  await db.meta.put({ key: 'lastCelebratedStreak', value: String(milestone) })
+  toast.success(t('streak.milestone', { count: milestone }))
+}
 
 async function runForegroundJobs() {
   await recurring.postDue()
   const copied = await budgets.carryForwardIfNeeded()
   if (copied === 'copied') ui.notifyBudgetCopied(monthKey())
+  const summary = summarizeMonth(transactions.transactions, budgets.budgets)
+  void updateBalanceWidget({
+    monthSpend: summary.expense,
+    monthIncome: summary.income,
+    currencySymbol: settings.currencySymbol,
+  })
+  void scheduleRecurringReminders(recurring.items, categories.categories)
 }
 
 const isObscured = ref(false)
@@ -71,6 +96,7 @@ onMounted(async () => {
   await hideSplash()
 
   if (isNative()) {
+    removeDeepLinks = await initDeepLinks(() => ui.openAdd())
     appStateHandle = await App.addListener('appStateChange', ({ isActive }) => {
       if (isActive) {
         isObscured.value = false
@@ -82,7 +108,7 @@ onMounted(async () => {
         settings.lockApp()
       }
     })
-    backHandle = await App.addListener('backButton', ({ canGoBack }) => {
+    backHandle = await App.addListener('backButton', () => {
       if (ui.addSheetOpen) {
         ui.closeAdd()
         return
@@ -95,11 +121,12 @@ onMounted(async () => {
         ui.setSettingsSubpage('root')
         return
       }
-      if (router.currentRoute.value.meta.hideNav) {
-        router.back()
-        return
-      }
-      if (canGoBack && router.currentRoute.value.name !== 'home') {
+      // Capacitor's own `canGoBack` tracks the native WebView history list, which
+      // often lags or misreports for a client-side-routed SPA. Vue Router's own
+      // history entry (set by createWebHistory on every navigation) is the
+      // reliable signal for "is there a previous in-app screen to go back to".
+      const hasRouterHistory = (window.history.state as { back?: string | null } | null)?.back != null
+      if (hasRouterHistory && router.currentRoute.value.name !== 'home') {
         router.back()
         return
       }
@@ -117,6 +144,7 @@ onMounted(async () => {
 onUnmounted(() => {
   void backHandle?.remove()
   void appStateHandle?.remove()
+  removeDeepLinks?.()
   document.removeEventListener('visibilitychange', onVisibility)
   accounts.stop()
   categories.stop()
@@ -133,6 +161,11 @@ watch(
       void router.replace('/onboarding')
     }
   },
+)
+
+watch(
+  () => transactions.streak.current,
+  (current) => void checkStreakMilestone(current),
 )
 </script>
 

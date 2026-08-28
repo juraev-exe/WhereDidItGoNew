@@ -42,18 +42,6 @@ async function android(type: AndroidHapticType): Promise<void> {
   await Haptics.performAndroidHaptic({ type })
 }
 
-/** Soft keyboard / keypad key — crisp Pixel-style tap */
-export async function tapFeedback(): Promise<void> {
-  if (!throttle(18)) return
-  await run(async () => {
-    if (isAndroid()) {
-      await android(AndroidHapticType.KeyboardTap)
-      return
-    }
-    await Haptics.impact({ style: ImpactStyle.Soft })
-  })
-}
-
 /** Discrete segment / option change (hero toggle, type tabs, month step) */
 export async function tickFeedback(): Promise<void> {
   if (!throttle(22)) return
@@ -193,11 +181,3 @@ export async function warningFeedback(): Promise<void> {
   })
 }
 
-/** End an iOS selection session if one was started */
-export async function endSelectionFeedback(): Promise<void> {
-  if (!selectionOpen) return
-  selectionOpen = false
-  await run(async () => {
-    await Haptics.selectionEnd()
-  })
-}

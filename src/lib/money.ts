@@ -133,12 +133,3 @@ export function evaluateAmountExpression(input: string): number {
   return Math.round(total * 100)
 }
 
-export function minorToDisplay(minorUnits: number): string {
-  return (Math.abs(minorUnits) / 100).toFixed(2)
-}
-
-export function signedAmount(type: 'expense' | 'income' | 'transfer', amount: number): number {
-  if (type === 'expense') return -Math.abs(amount)
-  if (type === 'income') return Math.abs(amount)
-  return amount
-}

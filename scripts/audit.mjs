@@ -160,9 +160,8 @@ const SUBPAGES = [
   ['13-formatting', 0],
   ['14-appearance', 1],
   ['15-navigation', 2],
-  ['16-security', 3],
-  ['17-privacy', 4],
-  ['18-backups', 5],
+  ['16-security-privacy', 3],
+  ['17-backups', 4],
 ]
 for (const [name, index] of SUBPAGES) {
   state.stage = `settings-${name}`

@@ -4,4 +4,14 @@
     <string name="title_activity_main">WhereDidItGo</string>
     <string name="package_name">com.wherediditgo.app</string>
     <string name="custom_url_scheme">com.wherediditgo.app</string>
+
+    <!-- Home-screen balance widget -->
+    <string name="widget_spent_this_month">Spent this month</string>
+    <string name="widget_placeholder">—</string>
+    <string name="widget_income_line_format">Income: %1$s</string>
+    <string name="widget_description">Shows how much you\'ve spent and earned this month.</string>
+
+    <!-- App shortcuts (long-press the home-screen icon) -->
+    <string name="shortcut_add_transaction_short">Add transaction</string>
+    <string name="shortcut_add_transaction_long">Add a new transaction</string>
 </resources>

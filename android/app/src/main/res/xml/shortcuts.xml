@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Static app shortcut shown on a long-press of the home-screen icon. Jumps straight to the
+    quick-add-transaction sheet instead of the home screen, via the wherediditgo://add deep
+    link, which the web layer picks up through @capacitor/app's appUrlOpen event / getLaunchUrl
+    (see src/services/native/deepLinks.ts). Requires API 25+; silently ignored below that,
+    which is fine since minSdkVersion is 24.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="add_transaction"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_add_transaction_short"
+        android:shortcutLongLabel="@string/shortcut_add_transaction_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.wherediditgo.app"
+            android:targetClass="com.wherediditgo.app.MainActivity"
+            android:data="wherediditgo://add" />
+    </shortcut>
+</shortcuts>

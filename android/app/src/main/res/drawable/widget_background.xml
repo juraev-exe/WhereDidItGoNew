@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Solid dark rounded-rect background for the home-screen widget. RemoteViews cannot render
+    the app's real backdrop-blur glassmorphism surface, so this is a flat approximation using
+    the dark background token (~#121413) used elsewhere for native surfaces, e.g.
+    src/services/native/chrome.ts, applyStatusBar().
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#121413" />
+    <corners android:radius="20dp" />
+</shape>

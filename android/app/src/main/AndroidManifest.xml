@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+        allowBackup is disabled: this app stores local personal finance data and has no
+        server-side sync, so Android Auto Backup should not silently copy that data to the
+        user's Google Drive account. Set to "true" (and consider android:dataExtractionRules /
+        android:fullBackupContent on API 31+ to scope what gets backed up) if in-app backup
+        portability via OS-level backup is explicitly desired later. The app already ships its
+        own manual export/import backup flow (see src/services/backup.ts).
+    -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -18,6 +26,22 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!--
+                Deep link target for the "Add transaction" app shortcut (see
+                res/xml/shortcuts.xml): wherediditgo://add. Handled on the web side by
+                @capacitor/app's appUrlOpen event / getLaunchUrl (see
+                src/services/native/deepLinks.ts) — no native intent handling needed here.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="wherediditgo" android:host="add" />
+            </intent-filter>
+
+            <!-- Static app shortcuts (long-press the home-screen icon) -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
 
         <provider
@@ -27,9 +51,32 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Home-screen "this month" balance widget (see BalanceWidgetProvider.java) -->
+        <receiver
+            android:name=".BalanceWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_balance_info" />
+        </receiver>
     </application>
 
-    <!-- Permissions -->
-
+    <!--
+        Permissions audit (cross-referenced against installed Capacitor plugins in package.json):
+        - INTERNET: required by src/services/ai.ts, which calls the Anthropic API directly from
+          the WebView for the optional AI finance-question feature. Not used for any background
+          sync — the app is otherwise fully offline/local-only.
+        - No CAMERA/STORAGE permission is declared: @capacitor/camera only launches the system
+          camera/gallery via intents (see its bundled manifest <queries>), and
+          @capacitor/filesystem is only used against Directory.Cache (app-private storage), so
+          neither needs a runtime permission declared here.
+        - @capawesome/capacitor-haptics (VIBRATE) and other plugins declare their own permissions
+          in their bundled AndroidManifest.xml, which Gradle's manifest merger adds automatically
+          at build time — they do not need to be duplicated here.
+    -->
     <uses-permission android:name="android.permission.INTERNET" />
 </manifest>

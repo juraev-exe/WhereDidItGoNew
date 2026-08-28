@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Download, FileSpreadsheet, Trash2, Upload } from '@lucide/vue'
+import { ArrowLeft, Download, FileSpreadsheet, FileUp, Trash2, Upload } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
+import CsvImportSheet from './CsvImportSheet.vue'
 import {
   exportBackupFile,
   exportTransactionsCsv,
@@ -30,6 +31,7 @@ const importing = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const importSheetOpen = ref(false)
 const pendingBackup = shallowRef<BackupPayload | null>(null)
+const csvImportOpen = ref(false)
 
 const resetSheetOpen = ref(false)
 const resetA = ref(2)
@@ -67,6 +69,10 @@ async function doCsv() {
 
 function triggerImport() {
   fileInput.value?.click()
+}
+
+function openCsvImport() {
+  csvImportOpen.value = true
 }
 
 async function onFileSelected(e: Event) {
@@ -208,6 +214,21 @@ async function executeReset() {
           </div>
         </div>
       </button>
+
+      <div class="divider" />
+
+      <!-- Import CSV -->
+      <button type="button" class="row-btn" @click="openCsvImport">
+        <div class="row-left">
+          <div class="icon-circle icon-amber">
+            <FileUp :size="18" />
+          </div>
+          <div class="row-label">
+            <span class="title">{{ t('settings.importCsv', 'Import from CSV') }}</span>
+            <span class="subtitle">{{ t('settings.importCsvDesc', "Bring in transactions from your bank's CSV export") }}</span>
+          </div>
+        </div>
+      </button>
     </div>
 
     <h3 class="section-title danger-title">{{ t('settings.dangerZone', 'Danger Zone') }}</h3>
@@ -269,6 +290,12 @@ async function executeReset() {
         </AppButton>
       </div>
     </BottomSheet>
+
+    <CsvImportSheet
+      :open="csvImportOpen"
+      @close="csvImportOpen = false"
+      @notify="(msg) => emit('notify', msg)"
+    />
   </div>
 </template>
 
@@ -385,6 +412,11 @@ h2 {
 .icon-red {
   background: color-mix(in srgb, var(--color-expense) 15%, transparent);
   color: var(--color-expense);
+}
+
+.icon-amber {
+  background: color-mix(in srgb, #ff9500 15%, transparent);
+  color: #ff9500;
 }
 
 .row-label {

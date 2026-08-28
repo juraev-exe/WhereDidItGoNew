@@ -197,7 +197,7 @@ async function confirmDelete() {
       </div>
     </header>
 
-    <div class="summary">
+    <div class="summary surface-glass">
       <div>
         <span>{{ t('debts.lent') }}</span>
         <strong class="lent-val"><MoneyText :amount="debtsStore.totalLent" /></strong>
@@ -227,7 +227,7 @@ async function confirmDelete() {
     </EmptyState>
 
     <div v-else class="list">
-      <div v-for="row in rows" :key="row.debt.id" class="card">
+      <div v-for="row in rows" :key="row.debt.id" class="card surface-glass">
         <button type="button" class="card-top" @click="openEdit(row.debt)">
           <span
             class="avatar-icon"
@@ -461,9 +461,6 @@ h1 {
   gap: var(--space-2);
   padding: var(--space-4);
   border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 12%, transparent);
   animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
 }
 
@@ -506,9 +503,6 @@ h1 {
   gap: var(--space-3);
   padding: var(--space-4);
   border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 14%, transparent);
-  box-shadow: var(--shadow-sm);
   text-align: left;
   width: 100%;
   transition: transform var(--duration-fast) var(--ease-spring), box-shadow var(--duration-fast) var(--ease-standard);

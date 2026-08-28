@@ -40,7 +40,7 @@ function tickLabel(row: DaySpend) {
 </script>
 
 <template>
-  <section class="panel" :aria-label="title">
+  <section class="panel surface-glass" :aria-label="title">
     <div class="head">
       <h2>{{ title }}</h2>
       <p class="lede">{{ lede }}</p>
@@ -70,7 +70,6 @@ function tickLabel(row: DaySpend) {
 .panel {
   padding: var(--space-4);
   border-radius: var(--radius-lg);
-  background: var(--color-surface);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);

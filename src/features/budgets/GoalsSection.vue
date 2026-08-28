@@ -150,7 +150,7 @@ async function confirmContribute() {
 
     <template v-else>
       <div class="list">
-        <div v-for="row in rows" :key="row.goal.id" class="card">
+        <div v-for="row in rows" :key="row.goal.id" class="card surface-glass">
           <button type="button" class="card-main" @click="openEdit(row.goal)">
             <div class="card-top">
               <span class="icon" :style="{ background: `color-mix(in srgb, ${row.goal.color} 22%, transparent)` }">
@@ -323,7 +323,6 @@ async function confirmContribute() {
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-lg);
-  background: var(--color-surface);
   overflow: hidden;
 }
 

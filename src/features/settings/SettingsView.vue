@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   ChevronRight,
   Crown,
-  Eye,
   ExternalLink,
   FolderKanban,
   LayoutGrid,
@@ -14,14 +13,15 @@ import {
   Palette,
   RefreshCw,
   Sliders,
+  Sparkles,
   Wallet,
 } from '@lucide/vue'
+import AiSettings from './components/AiSettings.vue'
 import AppearanceSettings from './components/AppearanceSettings.vue'
 import BackupsSettings from './components/BackupsSettings.vue'
 import FormattingSettings from './components/FormattingSettings.vue'
 import NavigationSettings from './components/NavigationSettings.vue'
-import PrivacySettings from './components/PrivacySettings.vue'
-import SecuritySettings from './components/SecuritySettings.vue'
+import SecurityPrivacySettings from './components/SecurityPrivacySettings.vue'
 import Snackbar from '@/components/ui/Snackbar.vue'
 import { tickFeedback } from '@/services/native/haptics'
 import { useAccountsStore } from '@/stores/accounts'
@@ -29,7 +29,7 @@ import { useUiStore } from '@/stores/ui'
 import { usePremiumStore } from '@/stores/premium'
 import pkg from '../../../package.json'
 
-type Subpage = 'root' | 'formatting' | 'appearance' | 'navigation' | 'security' | 'privacy' | 'backups'
+type Subpage = 'root' | 'formatting' | 'appearance' | 'navigation' | 'securityPrivacy' | 'backups' | 'ai'
 
 const APP_VERSION = pkg.version
 const REPO_URL = 'https://github.com/juraev-exe/wherediditgo'
@@ -92,20 +92,20 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
       @notify="onNotify"
     />
 
-    <SecuritySettings
-      v-else-if="activeSubpage === 'security'"
-      @back="activeSubpage = 'root'"
-      @notify="onNotify"
-    />
-
-    <PrivacySettings
-      v-else-if="activeSubpage === 'privacy'"
+    <SecurityPrivacySettings
+      v-else-if="activeSubpage === 'securityPrivacy'"
       @back="activeSubpage = 'root'"
       @notify="onNotify"
     />
 
     <BackupsSettings
       v-else-if="activeSubpage === 'backups'"
+      @back="activeSubpage = 'root'"
+      @notify="onNotify"
+    />
+
+    <AiSettings
+      v-else-if="activeSubpage === 'ai'"
       @back="activeSubpage = 'root'"
       @notify="onNotify"
     />
@@ -137,7 +137,7 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
       </button>
 
       <!-- Group 1: Preferences & Appearance -->
-      <div class="group-card">
+      <div class="group-card surface-glass">
         <!-- Formatting -->
         <button type="button" class="group-row" @click="openSubpage('formatting')">
           <div class="row-left">
@@ -186,32 +186,15 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
       </div>
 
       <!-- Group 2: Security & Privacy -->
-      <div class="group-card">
-        <!-- Security -->
-        <button type="button" class="group-row" @click="openSubpage('security')">
+      <div class="group-card surface-glass">
+        <button type="button" class="group-row" @click="openSubpage('securityPrivacy')">
           <div class="row-left">
             <div class="icon-squircle icon-amber">
               <Lock :size="19" />
             </div>
             <div class="row-text">
-              <span class="row-title">{{ t('settings.securityTitle', 'Security') }}</span>
-              <span class="row-sub">{{ t('settings.securitySub', 'PIN code lock and biometric unlock') }}</span>
-            </div>
-          </div>
-          <ChevronRight :size="18" class="chevron-right" />
-        </button>
-
-        <div class="divider" />
-
-        <!-- Privacy -->
-        <button type="button" class="group-row" @click="openSubpage('privacy')">
-          <div class="row-left">
-            <div class="icon-squircle icon-indigo">
-              <Eye :size="19" />
-            </div>
-            <div class="row-text">
-              <span class="row-title">{{ t('settings.privacyTitle', 'Privacy') }}</span>
-              <span class="row-sub">{{ t('settings.privacySub', 'Hide values and app switcher shield') }}</span>
+              <span class="row-title">{{ t('settings.securityPrivacyTitle', 'Security & Privacy') }}</span>
+              <span class="row-sub">{{ t('settings.securityPrivacySub', 'PIN lock, biometrics, and hidden values') }}</span>
             </div>
           </div>
           <ChevronRight :size="18" class="chevron-right" />
@@ -219,7 +202,7 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
       </div>
 
       <!-- Group 3: Data & Organization -->
-      <div class="group-card">
+      <div class="group-card surface-glass">
         <!-- Backups -->
         <button type="button" class="group-row" @click="openSubpage('backups')">
           <div class="row-left">
@@ -265,10 +248,26 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
           </div>
           <ChevronRight :size="18" class="chevron-right" />
         </button>
+
+        <div class="divider" />
+
+        <!-- AI Assistant -->
+        <button type="button" class="group-row" @click="openSubpage('ai')">
+          <div class="row-left">
+            <div class="icon-squircle icon-purple">
+              <Sparkles :size="19" />
+            </div>
+            <div class="row-text">
+              <span class="row-title">{{ t('ai.title') }}</span>
+              <span class="row-sub">{{ t('settings.aiSub', 'Opt-in chat about your finances (your API key)') }}</span>
+            </div>
+          </div>
+          <ChevronRight :size="18" class="chevron-right" />
+        </button>
       </div>
 
       <!-- Group 4: Attribution & About -->
-      <div class="group-card about-card">
+      <div class="group-card about-card surface-glass">
         <div class="about-content">
           <span class="app-name">WhereDidItGo</span>
           <span class="app-version">{{ t('settings.version', { version: APP_VERSION }) }}</span>
@@ -384,10 +383,7 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
 
 /* Apple Inset Grouped Cards */
 .group-card {
-  background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-outline);
-  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 

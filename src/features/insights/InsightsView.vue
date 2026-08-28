@@ -14,6 +14,7 @@ import {
 } from '@lucide/vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
+import AiAssistantSheet from '@/features/insights/AiAssistantSheet.vue'
 import ActivityCalendar from '@/features/insights/ActivityCalendar.vue'
 import CategoryShare from '@/features/insights/CategoryShare.vue'
 import InsightHero from '@/features/insights/InsightHero.vue'
@@ -221,6 +222,8 @@ function titleForHero(card: InsightCard | null) {
       return t('insights.heroOverspent')
     case 'topShare':
       return t('insights.heroTop', { category: categoryLabel(card) })
+    case 'unusualSpend':
+      return t('insights.heroUnusual', { category: categoryLabel(card) })
     default:
       return t('insights.heroQuiet')
   }
@@ -242,6 +245,8 @@ function subForHero(card: InsightCard | null) {
       return t('insights.heroOverIncome')
     case 'topShare':
       return t('insights.heroTopSub')
+    case 'unusualSpend':
+      return t('insights.heroUnusualSub')
     default:
       return ''
   }
@@ -272,13 +277,15 @@ function toStory(card: InsightCard): StoryView {
         return t('insights.storyCategoryRise', { category })
       case 'categoryDrop':
         return t('insights.storyCategoryDrop', { category })
+      case 'unusualSpend':
+        return t('insights.storyUnusualSpend', { category })
       default:
         return category
     }
   })()
 
   const sub = (() => {
-    if (card.kind === 'largest') {
+    if (card.kind === 'largest' || card.kind === 'unusualSpend') {
       const date = card.date ? formatTxDate(card.date, settings.intlLocale) : ''
       return [date, card.note].filter(Boolean).join(' · ')
     }
@@ -310,6 +317,7 @@ function iconFor(kind: InsightCard['kind']): Component {
       return PiggyBank
     case 'outspentIncome':
     case 'budgetOver':
+    case 'unusualSpend':
       return TriangleAlert
     case 'topShare':
       return PieChart
@@ -328,6 +336,13 @@ import HeaderActions from '@/components/ui/HeaderActions.vue'
 function onStory(story: StoryView) {
   if (story.categoryId) openCategory(story.categoryId)
 }
+
+const aiOpen = ref(false)
+
+function openAiSettings() {
+  aiOpen.value = false
+  void router.push('/settings')
+}
 </script>
 
 <template>
@@ -335,7 +350,12 @@ function onStory(story: StoryView) {
     <header>
       <div class="title-row">
         <h1>{{ t('insights.title') }}</h1>
-        <HeaderActions />
+        <div class="header-actions">
+          <button type="button" class="ai-trigger" :aria-label="t('ai.title')" @click="aiOpen = true">
+            <Sparkles :size="18" />
+          </button>
+          <HeaderActions />
+        </div>
       </div>
       <div class="seg" role="radiogroup" :aria-label="t('insights.periodAria')">
         <button
@@ -394,7 +414,7 @@ function onStory(story: StoryView) {
             <button
               v-if="story.categoryId"
               type="button"
-              class="story"
+              class="story surface-glass"
               :class="`story--${story.tone}`"
               :aria-label="t('insights.seeCategory', { category: story.categoryName || story.title })"
               @click="onStory(story)"
@@ -410,7 +430,7 @@ function onStory(story: StoryView) {
                 <MoneyText :amount="story.amount" />
               </strong>
             </button>
-            <div v-else class="story" :class="`story--${story.tone}`">
+            <div v-else class="story surface-glass" :class="`story--${story.tone}`">
               <span class="story-icon" aria-hidden="true">
                 <component :is="story.icon" :size="18" />
               </span>
@@ -457,6 +477,8 @@ function onStory(story: StoryView) {
 
       <ActivityCalendar :heatmap="heatmap" />
     </template>
+
+    <AiAssistantSheet :open="aiOpen" @close="aiOpen = false" @open-settings="openAiSettings" />
   </div>
 </template>
 
@@ -473,6 +495,27 @@ function onStory(story: StoryView) {
   justify-content: space-between;
   gap: var(--space-3);
   margin-bottom: var(--space-3);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ai-trigger {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  color: var(--color-primary);
+  background: var(--color-primary-container);
+  transition: transform var(--duration-fast) var(--ease-spring-snappy);
+}
+
+.ai-trigger:active {
+  transform: scale(0.92);
 }
 
 h1 {
@@ -544,8 +587,6 @@ button.story:focus-visible {
   min-height: var(--touch-min);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 12%, transparent);
   text-align: left;
   transition: transform var(--duration-fast) var(--ease-spring), box-shadow var(--duration-fast) var(--ease-standard), background var(--duration-fast);
 }

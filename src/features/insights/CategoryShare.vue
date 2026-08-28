@@ -18,7 +18,7 @@ function rowLabel(row: CategorySpend) {
 </script>
 
 <template>
-  <section class="panel" :aria-label="title">
+  <section class="panel surface-glass" :aria-label="title">
     <h2>{{ title }}</h2>
     <div
       class="stack"
@@ -67,7 +67,6 @@ function rowLabel(row: CategorySpend) {
 .panel {
   padding: var(--space-4);
   border-radius: var(--radius-lg);
-  background: var(--color-surface);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);

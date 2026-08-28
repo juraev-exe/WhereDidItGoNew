@@ -107,7 +107,7 @@ async function remove() {
     </template>
   </EmptyState>
 
-  <section v-else class="panel" :aria-label="t('recurring.title')">
+  <section v-else class="panel surface-glass" :aria-label="t('recurring.title')">
     <p class="lede">{{ t('recurring.lede') }}</p>
     <ul class="list">
       <li v-for="{ row, categoryName, lastPosted } in rows" :key="row.id">
@@ -193,7 +193,6 @@ async function remove() {
   gap: var(--space-3);
   padding: var(--space-4);
   border-radius: var(--radius-lg);
-  background: var(--color-surface);
 }
 
 .lede {

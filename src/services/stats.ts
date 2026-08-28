@@ -650,6 +650,57 @@ export function categorySpendDeltas(
   return out.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
 }
 
+export interface SpendAnomaly {
+  transaction: Transaction
+  categoryId: string
+  categoryName: string
+  categoryColor: string
+  /** Rounded mean amount for that category in the range, for comparison. */
+  typicalAmount: number
+}
+
+/**
+ * Flags single transactions that are statistical outliers within their own
+ * category (amount well above that category's mean for the range) — a
+ * lightweight, fully local stand-in for anomaly-detection style alerting.
+ * Needs at least 4 transactions in a category to have a meaningful mean/stdev.
+ */
+export function detectSpendAnomalies(
+  transactions: Transaction[],
+  categories: Category[],
+  range: StatsRange,
+): SpendAnomaly[] {
+  const catMap = Object.fromEntries(categories.map((c) => [c.id, c]))
+  const byCategory = new Map<string, Transaction[]>()
+  for (const t of transactions) {
+    if (t.type !== 'expense' || !t.categoryId || !inStatsRange(t.date, range)) continue
+    const list = byCategory.get(t.categoryId)
+    if (list) list.push(t)
+    else byCategory.set(t.categoryId, [t])
+  }
+
+  const anomalies: SpendAnomaly[] = []
+  for (const [categoryId, txs] of byCategory) {
+    if (txs.length < 4) continue
+    const mean = txs.reduce((s, t) => s + t.amount, 0) / txs.length
+    const variance = txs.reduce((s, t) => s + (t.amount - mean) ** 2, 0) / txs.length
+    const stdDev = Math.sqrt(variance)
+    if (stdDev <= 0) continue
+    for (const t of txs) {
+      if (t.amount > mean + 2 * stdDev && t.amount > mean * 1.8) {
+        anomalies.push({
+          transaction: t,
+          categoryId,
+          categoryName: catMap[categoryId]?.name ?? '',
+          categoryColor: catMap[categoryId]?.color ?? '#6c757d',
+          typicalAmount: Math.round(mean),
+        })
+      }
+    }
+  }
+  return anomalies.sort((a, b) => b.transaction.amount - a.transaction.amount)
+}
+
 export type InsightTone = 'good' | 'warn' | 'neutral'
 export type InsightKind =
   | 'spentLess'
@@ -666,6 +717,7 @@ export type InsightKind =
   | 'peakBucket'
   | 'categoryRise'
   | 'categoryDrop'
+  | 'unusualSpend'
 
 export interface InsightCard {
   kind: InsightKind
@@ -835,6 +887,21 @@ export function buildInsightCards(
         label: peak.label,
       })
     }
+  }
+
+  const topAnomaly = detectSpendAnomalies(transactions, categories, range)[0]
+  if (topAnomaly) {
+    cards.push({
+      kind: 'unusualSpend',
+      tone: 'warn',
+      score: 80,
+      amount: topAnomaly.transaction.amount,
+      categoryId: topAnomaly.categoryId,
+      categoryName: topAnomaly.categoryName,
+      categoryColor: topAnomaly.categoryColor,
+      note: topAnomaly.transaction.note,
+      date: topAnomaly.transaction.date,
+    })
   }
 
   const move = categorySpendDeltas(transactions, categories, range)[0]

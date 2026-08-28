@@ -2,13 +2,14 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Plus } from '@lucide/vue'
+import { ArrowLeft, Check, Plus } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 import IconByName from '@/components/ui/IconByName.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
+import { CATEGORY_COLORS } from '@/lib/categoryColors'
 import { parseMoneyToMinor } from '@/lib/money'
 import { useAccountsStore } from '@/stores/accounts'
 import { usePremiumStore } from '@/stores/premium'
@@ -126,7 +127,7 @@ async function archive() {
         v-for="acc in accounts.active"
         :key="acc.id"
         type="button"
-        class="card"
+        class="card surface-glass"
         @click="openEdit(acc)"
       >
         <span class="icon" :style="{ background: `color-mix(in srgb, ${acc.color} 22%, transparent)` }">
@@ -168,10 +169,30 @@ async function archive() {
           />
         </label>
         <p v-if="type === 'credit'" class="hint">{{ t('accounts.creditOwedHint') }}</p>
-        <label class="field">
-          <span>{{ t('accounts.color') }}</span>
-          <input v-model="color" type="color" />
-        </label>
+        <div class="field">
+          <div class="field-head">
+            <span>{{ t('accounts.color') }}</span>
+            <span class="color-hex-tag">{{ color.toUpperCase() }}</span>
+          </div>
+          <div class="color-swatches-grid">
+            <button
+              v-for="c in CATEGORY_COLORS"
+              :key="c.hex"
+              type="button"
+              class="swatch-item"
+              :class="{ 'swatch-item--active': color.toLowerCase() === c.hex.toLowerCase() }"
+              :style="{ backgroundColor: c.hex }"
+              :aria-label="c.name"
+              @click="color = c.hex"
+            >
+              <Check v-if="color.toLowerCase() === c.hex.toLowerCase()" :size="14" class="swatch-check" />
+            </button>
+            <label class="custom-color-swatch" :title="t('accounts.color')">
+              <input v-model="color" type="color" class="native-color-input" />
+              <span class="custom-color-plus">+</span>
+            </label>
+          </div>
+        </div>
         <AppButton block size="lg" @click="save">{{ t('common.save') }}</AppButton>
         <AppButton v-if="editing" variant="danger" block @click="askArchive">
           {{ t('accounts.archive') }}
@@ -254,9 +275,6 @@ h1 {
   width: 100%;
   padding: var(--space-4);
   border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 14%, transparent);
-  box-shadow: var(--shadow-sm);
   text-align: left;
   cursor: pointer;
   transition: transform var(--duration-fast) var(--ease-spring), box-shadow var(--duration-fast) var(--ease-standard);
@@ -333,9 +351,86 @@ h1 {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
-.field input[type='color'] {
-  padding: var(--space-2);
-  height: 48px;
+.field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.color-hex-tag {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-caption);
+  color: var(--color-muted);
+}
+
+.color-swatches-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.swatch-item {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: none;
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-spring-snappy), box-shadow var(--duration-fast);
+}
+
+.swatch-item:hover {
+  transform: scale(1.18);
+}
+
+.swatch-item:active {
+  transform: scale(0.95);
+}
+
+.swatch-item--active {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 2.5px var(--color-surface), 0 0 0 5px var(--color-primary), 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.swatch-check {
+  color: #ffffff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+.custom-color-swatch {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--color-outline);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: var(--color-surface-container);
+  transition: border-color var(--duration-fast), transform var(--duration-fast) var(--ease-spring);
+}
+
+.custom-color-swatch:hover {
+  border-color: var(--color-primary);
+  transform: scale(1.1);
+}
+
+.native-color-input {
+  position: absolute;
+  inset: -10px;
+  width: 50px;
+  height: 50px;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.custom-color-plus {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-muted);
+  pointer-events: none;
 }
 
 .hint {

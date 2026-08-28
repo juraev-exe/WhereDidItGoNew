@@ -140,7 +140,7 @@ const editCategory = computed(() => categories.byId(editCategoryId.value))
 
     <template v-else>
 
-    <div v-if="rows.length" class="summary">
+    <div v-if="rows.length" class="summary surface-glass">
       <div>
         <span>{{ t('budgets.spent') }}</span>
         <strong><MoneyText :amount="totalSpent" /></strong>
@@ -174,7 +174,7 @@ const editCategory = computed(() => categories.byId(editCategoryId.value))
         v-for="row in rows"
         :key="row.budget.id"
         type="button"
-        class="card"
+        class="card surface-glass"
         @click="openEdit(row.category.id, row.budget.limitAmount)"
       >
         <div class="card-top">
@@ -328,9 +328,6 @@ h1 {
   gap: var(--space-2);
   padding: var(--space-4);
   border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 14%, transparent);
-  box-shadow: var(--shadow-sm);
   animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
 }
 
@@ -364,9 +361,6 @@ h1 {
   gap: var(--space-3);
   padding: var(--space-4);
   border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 14%, transparent);
-  box-shadow: var(--shadow-sm);
   text-align: left;
   width: 100%;
   cursor: pointer;

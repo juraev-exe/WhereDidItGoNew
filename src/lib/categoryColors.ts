@@ -19,5 +19,3 @@ export const CATEGORY_COLORS = [
   { hex: '#092634', name: 'Navy Blue' },
   { hex: '#6c757d', name: 'Slate Gray' },
 ] as const
-
-export type CategoryColor = (typeof CATEGORY_COLORS)[number]['hex']

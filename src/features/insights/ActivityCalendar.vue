@@ -116,7 +116,7 @@ watch(() => props.heatmap.start, scrollToEnd)
     </div>
 
     <!-- GitHub Contribution Graph Heatmap Scroller -->
-    <div ref="scroller" class="scroller" tabindex="0">
+    <div ref="scroller" class="scroller" data-h-scroll tabindex="0">
       <div
         class="github-graph"
         :style="{

@@ -6,9 +6,12 @@ import { Edit2, FolderKanban, Plus, Search, Trash2 } from '@lucide/vue'
 import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import IconByName from '@/components/ui/IconByName.vue'
+import MoneyText from '@/components/ui/MoneyText.vue'
 import { tickFeedback, warningFeedback } from '@/services/native/haptics'
+import { spendByCategory } from '@/services/stats'
 import { useBudgetsStore } from '@/stores/budgets'
 import { useCategoriesStore } from '@/stores/categories'
+import { usePremiumStore } from '@/stores/premium'
 import { useRecurringStore } from '@/stores/recurring'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useUiStore } from '@/stores/ui'
@@ -21,6 +24,7 @@ const categoriesStore = useCategoriesStore()
 const transactionsStore = useTransactionsStore()
 const budgetsStore = useBudgetsStore()
 const recurringStore = useRecurringStore()
+const premium = usePremiumStore()
 const ui = useUiStore()
 
 const filter = ref<'all' | CategoryKind>('all')
@@ -38,6 +42,12 @@ const expenseCount = computed(
 const incomeCount = computed(
   () => categoriesStore.categories.filter((c) => c.kind === 'income').length,
 )
+
+/** This month's expense total per category, for the at-a-glance spend on each card. */
+const monthSpend = computed(() => {
+  const rows = spendByCategory(transactionsStore.transactions, categoriesStore.categories)
+  return new Map(rows.map((r) => [r.categoryId, r]))
+})
 
 const filteredCategories = computed(() => {
   let list = categoriesStore.categories
@@ -60,6 +70,10 @@ function openCategoryActivity(cat: Category) {
 }
 
 function openAddCategory() {
+  if (!premium.canAddCategory()) {
+    premium.openPaywall(t('premium.limitCategoriesReached'))
+    return
+  }
   void tickFeedback()
   const defKind: CategoryKind = filter.value === 'income' ? 'income' : 'expense'
   ui.openCategories(null, defKind)
@@ -166,7 +180,7 @@ async function confirmDeleteCategory() {
       <div
         v-for="cat in filteredCategories"
         :key="cat.id"
-        class="cat-card"
+        class="cat-card surface-glass"
         :style="{ '--cat-color': cat.color }"
         @click="openCategoryActivity(cat)"
       >
@@ -198,6 +212,15 @@ async function confirmDeleteCategory() {
               <span v-if="cat.subcategories.length > 3" class="card-subcat-more">
                 +{{ cat.subcategories.length - 3 }}
               </span>
+            </div>
+            <div v-if="cat.kind === 'expense' && monthSpend.get(cat.id)" class="card-spend">
+              <span class="card-spend-bar">
+                <span
+                  class="card-spend-fill"
+                  :style="{ width: `${Math.min(100, monthSpend.get(cat.id)!.percent)}%` }"
+                />
+              </span>
+              <MoneyText class="card-spend-amount" :amount="monthSpend.get(cat.id)!.amount" />
             </div>
           </div>
         </div>
@@ -402,10 +425,11 @@ h1 {
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  background: color-mix(in srgb, var(--cat-color) 8%, var(--color-surface));
+  /* Tinted glass: translucent so surface-glass's blur shows through, category
+     color still reads via the tint and the accent border below. */
+  background: color-mix(in srgb, var(--cat-color) 10%, transparent);
   border: 1.5px solid color-mix(in srgb, var(--cat-color) 18%, transparent);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: transform var(--duration-fast) var(--ease-spring-snappy),
               background var(--duration-fast) var(--ease-standard),
@@ -503,6 +527,36 @@ h1 {
   font-size: 10.5px;
   font-weight: 600;
   color: var(--color-muted);
+}
+
+.card-spend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 4px;
+}
+
+.card-spend-bar {
+  flex: 1;
+  max-width: 72px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--cat-color) 16%, var(--color-surface-container));
+  overflow: hidden;
+}
+
+.card-spend-fill {
+  display: block;
+  height: 100%;
+  background: var(--cat-color);
+  border-radius: var(--radius-full);
+}
+
+.card-spend-amount {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .kind-pill {

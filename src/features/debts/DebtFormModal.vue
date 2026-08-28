@@ -74,7 +74,7 @@ async function handleSubmit() {
 
 <template>
   <div class="modal-backdrop" @click.self="emit('close')">
-    <div class="modal-card" role="dialog" aria-modal="true">
+    <div class="modal-card surface-glass" role="dialog" aria-modal="true">
       <div class="modal-header">
         <h3 class="modal-title">{{ isEditing ? t('debts.editDebt') : t('debts.addDebt') }}</h3>
         <button type="button" class="icon-btn" :aria-label="t('common.close')" @click="emit('close')">
@@ -177,10 +177,8 @@ async function handleSubmit() {
 .modal-card {
   width: 100%;
   max-width: 440px;
-  background: var(--color-surface);
   border-radius: var(--radius-xl);
   padding: var(--space-5);
-  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);

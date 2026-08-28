@@ -11,7 +11,7 @@ import { monthKey, setCycleStartDay } from '@/lib/dates'
 import { createId } from '@/lib/id'
 import { getCurrencySymbol } from '@/lib/money'
 import { applyStatusBar } from '@/services/native/chrome'
-import type { AppFont, ColorScheme, CurrencyPosition, HeroMetric, PrivacyMode, ThemeMode } from '@/types/finance'
+import type { AppFont, ColorScheme, CurrencyPosition, HeroMetric, NavLabelStyle, PrivacyMode, ThemeMode } from '@/types/finance'
 
 function resolveTheme(mode: ThemeMode): 'light' | 'dark' | 'oled' {
   return mode
@@ -62,10 +62,15 @@ export const useSettingsStore = defineStore('settings', () => {
   const showDebtsTab = ref(true)
   const showBudgetsTab = ref(true)
   const showInsightsTab = ref(true)
+  const navLabelStyle = ref<NavLabelStyle>('labels')
   const hideCents = ref(false)
   const startOfMonth = ref(1)
   const firstDayOfWeek = ref<0 | 1>(1)
   const hideInRecents = ref(false)
+  /** Opt-in "ask your finances" chat. Off by default — nothing is sent anywhere until enabled. */
+  const aiEnabled = ref(false)
+  /** User's own Anthropic API key. Kept local-only: never included in JSON backups. */
+  const aiApiKey = ref('')
 
   const intlLocale = computed(() => toIntlLocale(locale.value))
 
@@ -113,11 +118,14 @@ export const useSettingsStore = defineStore('settings', () => {
     showDebtsTab.value = map.showDebtsTab !== 'false'
     showBudgetsTab.value = map.showBudgetsTab !== 'false'
     showInsightsTab.value = map.showInsightsTab !== 'false'
+    navLabelStyle.value = map.navLabelStyle === 'icons' ? 'icons' : 'labels'
     hideCents.value = map.hideCents === 'true'
     startOfMonth.value = Number.parseInt(map.startOfMonth || '1', 10) || 1
     setCycleStartDay(startOfMonth.value)
     firstDayOfWeek.value = map.firstDayOfWeek === '0' ? 0 : 1
     hideInRecents.value = map.hideInRecents === 'true'
+    aiEnabled.value = map.aiEnabled === 'true'
+    aiApiKey.value = map.aiApiKey ?? ''
     if (pinEnabled.value && pinHash.value) {
       isUnlocked.value = false
     } else {
@@ -367,9 +375,24 @@ export const useSettingsStore = defineStore('settings', () => {
     await db.meta.put({ key: 'firstDayOfWeek', value: String(val) })
   }
 
+  async function setNavLabelStyle(style: NavLabelStyle) {
+    navLabelStyle.value = style
+    await db.meta.put({ key: 'navLabelStyle', value: style })
+  }
+
   async function setHideInRecents(val: boolean) {
     hideInRecents.value = val
     await db.meta.put({ key: 'hideInRecents', value: val ? 'true' : 'false' })
+  }
+
+  async function setAiEnabled(val: boolean) {
+    aiEnabled.value = val
+    await db.meta.put({ key: 'aiEnabled', value: val ? 'true' : 'false' })
+  }
+
+  async function setAiApiKey(key: string) {
+    aiApiKey.value = key.trim()
+    await db.meta.put({ key: 'aiApiKey', value: aiApiKey.value })
   }
 
   const currencySymbol = computed(() =>
@@ -405,10 +428,13 @@ export const useSettingsStore = defineStore('settings', () => {
     showDebtsTab,
     showBudgetsTab,
     showInsightsTab,
+    navLabelStyle,
     hideCents,
     startOfMonth,
     firstDayOfWeek,
     hideInRecents,
+    aiEnabled,
+    aiApiKey,
     currencySymbol,
     load,
     setTheme,
@@ -434,10 +460,13 @@ export const useSettingsStore = defineStore('settings', () => {
     setShowDebtsTab,
     setShowBudgetsTab,
     setShowInsightsTab,
+    setNavLabelStyle,
     setHideCents,
     setStartOfMonth,
     setFirstDayOfWeek,
     setHideInRecents,
+    setAiEnabled,
+    setAiApiKey,
     unlockApp,
     lockApp,
   }

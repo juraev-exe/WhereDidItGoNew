@@ -346,7 +346,10 @@ async function onLocale(code: string) {
 }
 
 .font-scroll {
-  display: flex;
+  display: grid;
+  grid-template-rows: repeat(2, auto);
+  grid-auto-flow: column;
+  grid-auto-columns: 152px;
   gap: var(--space-3);
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -363,7 +366,6 @@ async function onLocale(code: string) {
 
 .font-btn {
   display: flex;
-  flex: 0 0 152px;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);

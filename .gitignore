@@ -37,6 +37,7 @@ dist-ssr/
 .output/
 .vite/
 .cache/
+release/
 .vercel/
 *.tsbuildinfo
 *.map

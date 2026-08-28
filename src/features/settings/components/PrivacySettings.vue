@@ -6,6 +6,7 @@ import { usePremiumStore } from '@/stores/premium'
 import { tickFeedback } from '@/services/native/haptics'
 import type { PrivacyMode } from '@/types/finance'
 
+defineProps<{ embedded?: boolean }>()
 const emit = defineEmits<{
   (e: 'back'): void
   (e: 'notify', msg: string): void
@@ -36,12 +37,13 @@ async function onSelectPrivacyMode(mode: PrivacyMode) {
 
 <template>
   <div class="subpage">
-    <div class="header">
+    <div v-if="!embedded" class="header">
       <button type="button" class="back-btn" :aria-label="t('common.back')" @click="emit('back')">
         <ArrowLeft :size="22" />
       </button>
       <h2>{{ t('settings.privacyTitle', 'Privacy') }}</h2>
     </div>
+    <h3 v-else class="section-title section-title--embedded">{{ t('settings.privacyTitle', 'Privacy') }}</h3>
 
     <div class="grouped-section">
       <!-- Hide Preview in Recents Toggle -->
@@ -168,6 +170,15 @@ h2 {
   color: var(--color-muted);
   margin-top: var(--space-2);
   margin-left: var(--space-2);
+}
+
+.section-title--embedded {
+  font-size: 1rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin-top: var(--space-2);
 }
 
 .grouped-section {

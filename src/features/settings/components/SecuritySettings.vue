@@ -7,6 +7,7 @@ import PinLockModal from '@/components/PinLockModal.vue'
 import { useSettingsStore } from '@/stores/settings'
 import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 
+defineProps<{ embedded?: boolean }>()
 const emit = defineEmits<{
   (e: 'back'): void
   (e: 'notify', msg: string): void
@@ -38,7 +39,7 @@ async function toggleBiometrics() {
 
 <template>
   <div class="subpage">
-    <div class="subpage-header">
+    <div v-if="!embedded" class="subpage-header">
       <button type="button" class="back-btn" :aria-label="t('common.back')" @click="emit('back')">
         <ArrowLeft :size="22" />
       </button>

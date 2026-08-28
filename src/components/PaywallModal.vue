@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { toast } from 'vue-sonner'
 import { Check, Crown, RefreshCw, Sparkles, Star, X } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
@@ -37,11 +38,19 @@ const features = computed(() => [
 ])
 
 async function onBuy() {
-  await premium.buyPro()
+  const success = await premium.buyPro()
+  if (!success) {
+    toast.error(t('premium.purchaseFailed', "Purchase didn't go through — try again in a moment."))
+  }
 }
 
 async function onRestore() {
-  await premium.restore()
+  const restored = await premium.restore()
+  toast[restored ? 'success' : 'error'](
+    restored
+      ? t('premium.restoreSuccess', 'Purchases restored.')
+      : t('premium.restoreFailed', 'No previous purchase found for this account.'),
+  )
 }
 </script>
 

@@ -2,10 +2,12 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { PremiumManager, PRO_PRODUCT, type ProductDetails } from '@/services/native/billing'
 import { useAccountsStore } from '@/stores/accounts'
+import { useCategoriesStore } from '@/stores/categories'
 import { useTransactionsStore } from '@/stores/transactions'
 
 export const MAX_FREE_ACCOUNTS = 2
 export const MAX_FREE_MONTHLY_TXS = 100
+export const MAX_FREE_CATEGORIES = 15
 
 export const usePremiumStore = defineStore('premium', () => {
   const isPremiumUser = ref(false)
@@ -62,6 +64,12 @@ export const usePremiumStore = defineStore('premium', () => {
     return accounts.accounts.length < MAX_FREE_ACCOUNTS
   }
 
+  function canAddCategory(): boolean {
+    if (isPremiumUser.value) return true
+    const categories = useCategoriesStore()
+    return categories.categories.length < MAX_FREE_CATEGORIES
+  }
+
   function canAddTransaction(): boolean {
     if (isPremiumUser.value) return true
     const txStore = useTransactionsStore()
@@ -83,6 +91,7 @@ export const usePremiumStore = defineStore('premium', () => {
     buyPro,
     restore,
     canAddAccount,
+    canAddCategory,
     canAddTransaction,
   }
 })

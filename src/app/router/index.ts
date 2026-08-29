@@ -51,6 +51,12 @@ const router = createRouter({
       component: () => import('@/features/accounts/AccountsView.vue'),
       meta: { hideNav: true },
     },
+    {
+      path: '/__login-preview',
+      name: 'login-preview',
+      component: () => import('@/components/LoginCard.vue'),
+      meta: { hideNav: true },
+    },
   ],
   scrollBehavior() {
     return { top: 0 }

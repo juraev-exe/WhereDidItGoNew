@@ -70,10 +70,8 @@
         - INTERNET: required by src/services/ai.ts, which calls the Anthropic API directly from
           the WebView for the optional AI finance-question feature. Not used for any background
           sync — the app is otherwise fully offline/local-only.
-        - No CAMERA/STORAGE permission is declared: @capacitor/camera only launches the system
-          camera/gallery via intents (see its bundled manifest <queries>), and
-          @capacitor/filesystem is only used against Directory.Cache (app-private storage), so
-          neither needs a runtime permission declared here.
+        - No CAMERA/STORAGE permission is declared: @capacitor/filesystem is only used against
+          Directory.Cache (app-private storage), so it needs no runtime permission declared here.
         - @capawesome/capacitor-haptics (VIBRATE) and other plugins declare their own permissions
           in their bundled AndroidManifest.xml, which Gradle's manifest merger adds automatically
           at build time — they do not need to be duplicated here.

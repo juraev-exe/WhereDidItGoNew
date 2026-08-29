@@ -31,7 +31,6 @@
     "audit:onboarding": "node scripts/onboarding-check.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.121.0",
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/camera": "latest",

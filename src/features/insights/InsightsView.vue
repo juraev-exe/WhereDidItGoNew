@@ -14,7 +14,6 @@ import {
 } from '@lucide/vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
-import AiAssistantSheet from '@/features/insights/AiAssistantSheet.vue'
 import ActivityCalendar from '@/features/insights/ActivityCalendar.vue'
 import CategoryShare from '@/features/insights/CategoryShare.vue'
 import InsightHero from '@/features/insights/InsightHero.vue'
@@ -336,13 +335,6 @@ import HeaderActions from '@/components/ui/HeaderActions.vue'
 function onStory(story: StoryView) {
   if (story.categoryId) openCategory(story.categoryId)
 }
-
-const aiOpen = ref(false)
-
-function openAiSettings() {
-  aiOpen.value = false
-  void router.push('/settings')
-}
 </script>
 
 <template>
@@ -350,12 +342,7 @@ function openAiSettings() {
     <header>
       <div class="title-row">
         <h1>{{ t('insights.title') }}</h1>
-        <div class="header-actions">
-          <button type="button" class="ai-trigger" :aria-label="t('ai.title')" @click="aiOpen = true">
-            <Sparkles :size="18" />
-          </button>
-          <HeaderActions />
-        </div>
+        <HeaderActions />
       </div>
       <div class="seg" role="radiogroup" :aria-label="t('insights.periodAria')">
         <button
@@ -477,8 +464,6 @@ function openAiSettings() {
 
       <ActivityCalendar :heatmap="heatmap" />
     </template>
-
-    <AiAssistantSheet :open="aiOpen" @close="aiOpen = false" @open-settings="openAiSettings" />
   </div>
 </template>
 
@@ -495,27 +480,6 @@ function openAiSettings() {
   justify-content: space-between;
   gap: var(--space-3);
   margin-bottom: var(--space-3);
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.ai-trigger {
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-full);
-  color: var(--color-primary);
-  background: var(--color-primary-container);
-  transition: transform var(--duration-fast) var(--ease-spring-snappy);
-}
-
-.ai-trigger:active {
-  transform: scale(0.92);
 }
 
 h1 {

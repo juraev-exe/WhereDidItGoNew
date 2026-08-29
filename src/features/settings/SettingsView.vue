@@ -13,10 +13,8 @@ import {
   Palette,
   RefreshCw,
   Sliders,
-  Sparkles,
   Wallet,
 } from '@lucide/vue'
-import AiSettings from './components/AiSettings.vue'
 import AppearanceSettings from './components/AppearanceSettings.vue'
 import BackupsSettings from './components/BackupsSettings.vue'
 import FormattingSettings from './components/FormattingSettings.vue'
@@ -29,7 +27,7 @@ import { useUiStore } from '@/stores/ui'
 import { usePremiumStore } from '@/stores/premium'
 import pkg from '../../../package.json'
 
-type Subpage = 'root' | 'formatting' | 'appearance' | 'navigation' | 'securityPrivacy' | 'backups' | 'ai'
+type Subpage = 'root' | 'formatting' | 'appearance' | 'navigation' | 'securityPrivacy' | 'backups'
 
 const APP_VERSION = pkg.version
 const REPO_URL = 'https://github.com/juraev-exe/wherediditgo'
@@ -100,12 +98,6 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
 
     <BackupsSettings
       v-else-if="activeSubpage === 'backups'"
-      @back="activeSubpage = 'root'"
-      @notify="onNotify"
-    />
-
-    <AiSettings
-      v-else-if="activeSubpage === 'ai'"
       @back="activeSubpage = 'root'"
       @notify="onNotify"
     />
@@ -244,22 +236,6 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
             <div class="row-text">
               <span class="row-title">{{ t('settings.categories', 'Categories') }}</span>
               <span class="row-sub">{{ t('settings.categoriesSub', 'Expense & income categories') }}</span>
-            </div>
-          </div>
-          <ChevronRight :size="18" class="chevron-right" />
-        </button>
-
-        <div class="divider" />
-
-        <!-- AI Assistant -->
-        <button type="button" class="group-row" @click="openSubpage('ai')">
-          <div class="row-left">
-            <div class="icon-squircle icon-purple">
-              <Sparkles :size="19" />
-            </div>
-            <div class="row-text">
-              <span class="row-title">{{ t('ai.title') }}</span>
-              <span class="row-sub">{{ t('settings.aiSub', 'Opt-in chat about your finances (your API key)') }}</span>
             </div>
           </div>
           <ChevronRight :size="18" class="chevron-right" />

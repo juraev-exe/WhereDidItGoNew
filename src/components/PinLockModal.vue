@@ -97,87 +97,89 @@ async function handleResetLock() {
 </script>
 
 <template>
-  <div class="pin-modal-overlay">
-    <div class="pin-card" :class="{ shake: isShaking }">
-      <div class="pin-header">
-        <div class="pin-icon">
-          <Lock class="w-8 h-8 text-amber-500" />
+  <Teleport to="body">
+    <div class="pin-modal-overlay">
+      <div class="pin-card" :class="{ shake: isShaking }">
+        <div class="pin-header">
+          <div class="pin-icon">
+            <Lock class="w-8 h-8 text-amber-500" />
+          </div>
+          <h2 class="pin-title">
+            <template v-if="mode === 'setup'">
+              {{ isConfirming ? t('security.confirmPin') : t('security.createPin') }}
+            </template>
+            <template v-else>
+              {{ t('security.enterPin') }}
+            </template>
+          </h2>
+          <p v-if="errorMessage" class="pin-error">{{ errorMessage }}</p>
         </div>
-        <h2 class="pin-title">
-          <template v-if="mode === 'setup'">
-            {{ isConfirming ? t('security.confirmPin') : t('security.createPin') }}
-          </template>
-          <template v-else>
-            {{ t('security.enterPin') }}
-          </template>
-        </h2>
-        <p v-if="errorMessage" class="pin-error">{{ errorMessage }}</p>
-      </div>
 
-      <!-- PIN Dots -->
-      <div class="pin-dots">
-        <span
-          v-for="i in 4"
-          :key="i"
-          class="pin-dot"
-          :class="{ active: pin.length >= i }"
-        ></span>
-      </div>
+        <!-- PIN Dots -->
+        <div class="pin-dots">
+          <span
+            v-for="i in 4"
+            :key="i"
+            class="pin-dot"
+            :class="{ active: pin.length >= i }"
+          ></span>
+        </div>
 
-      <!-- Keypad -->
-      <div class="keypad-grid">
-        <button
-          v-for="num in ['1', '2', '3', '4', '5', '6', '7', '8', '9']"
-          :key="num"
-          type="button"
-          class="key-btn"
-          @click="pressKey(num)"
-        >
-          {{ num }}
-        </button>
+        <!-- Keypad -->
+        <div class="keypad-grid">
+          <button
+            v-for="num in ['1', '2', '3', '4', '5', '6', '7', '8', '9']"
+            :key="num"
+            type="button"
+            class="key-btn"
+            @click="pressKey(num)"
+          >
+            {{ num }}
+          </button>
 
-        <button
-          v-if="mode !== 'setup' && settings.biometricEnabled"
-          type="button"
-          class="key-btn action-key"
-          @click="handleBiometrics"
-        >
-          <Fingerprint class="w-6 h-6 text-primary" />
-        </button>
-        <button v-else type="button" class="key-btn action-key" @click="clear">
-          C
-        </button>
+          <button
+            v-if="mode !== 'setup' && settings.biometricEnabled"
+            type="button"
+            class="key-btn action-key"
+            @click="handleBiometrics"
+          >
+            <Fingerprint class="w-6 h-6 text-primary" />
+          </button>
+          <button v-else type="button" class="key-btn action-key" @click="clear">
+            C
+          </button>
 
-        <button type="button" class="key-btn" @click="pressKey('0')">0</button>
+          <button type="button" class="key-btn" @click="pressKey('0')">0</button>
 
-        <button type="button" class="key-btn action-key" @click="backspace">
-          <Delete class="w-6 h-6" />
-        </button>
-      </div>
+          <button type="button" class="key-btn action-key" @click="backspace">
+            <Delete class="w-6 h-6" />
+          </button>
+        </div>
 
-      <div v-if="mode !== 'setup'" class="pin-footer">
-        <button type="button" class="reset-link" @click="confirmResetOpen = true">
-          <ShieldAlert class="w-4 h-4 mr-1" />
-          {{ t('security.forgotPin') }}
-        </button>
-      </div>
-      <div v-else-if="mode === 'setup'" class="pin-footer">
-        <button type="button" class="cancel-btn" @click="emit('cancel')">
-          {{ t('common.cancel') }}
-        </button>
+        <div v-if="mode !== 'setup'" class="pin-footer">
+          <button type="button" class="reset-link" @click="confirmResetOpen = true">
+            <ShieldAlert class="w-4 h-4 mr-1" />
+            {{ t('security.forgotPin') }}
+          </button>
+        </div>
+        <div v-else-if="mode === 'setup'" class="pin-footer">
+          <button type="button" class="cancel-btn" @click="emit('cancel')">
+            {{ t('common.cancel') }}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <ConfirmSheet
-    :open="confirmResetOpen"
-    :title="t('security.resetSecurity')"
-    :message="t('security.resetSecurityConfirm')"
-    :confirm-label="t('security.resetSecurity')"
-    destructive
-    @confirm="handleResetLock"
-    @close="confirmResetOpen = false"
-  />
+    <ConfirmSheet
+      :open="confirmResetOpen"
+      :title="t('security.resetSecurity')"
+      :message="t('security.resetSecurityConfirm')"
+      :confirm-label="t('security.resetSecurity')"
+      destructive
+      @confirm="handleResetLock"
+      @close="confirmResetOpen = false"
+    />
+  </Teleport>
 </template>
 
 <style scoped>

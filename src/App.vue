@@ -79,21 +79,52 @@ function onVisibility() {
   }
 }
 
+/**
+ * Un-onboarded users get sent to onboarding from anywhere except onboarding
+ * itself and dev-only preview routes (meta.preview), which exist to render a
+ * single component in isolation and would otherwise be unreachable.
+ */
+function needsOnboardingRedirect() {
+  const current = router.currentRoute.value
+  return !settings.onboardingDone && current.name !== 'onboarding' && current.meta.preview !== true
+}
+
 onMounted(async () => {
-  await settings.load()
-  accounts.start()
-  categories.start()
-  budgets.start()
-  goals.start()
-  transactions.start()
-  recurring.start()
-  await runForegroundJobs()
+  try {
+    // The initial navigation resolves asynchronously, so without this the gate
+    // below would inspect the start location (no name, no meta) instead of the
+    // route the user actually opened. isReady() rejects when that navigation
+    // fails, and the gate being accurate matters less than booting at all.
+    try {
+      await router.isReady()
+    } catch {
+      // Fall through: needsOnboardingRedirect() reads whatever route resolved.
+    }
 
-  if (!settings.onboardingDone && router.currentRoute.value.name !== 'onboarding') {
-    await router.replace('/onboarding')
+    await settings.load()
+    accounts.start()
+    categories.start()
+    budgets.start()
+    goals.start()
+    transactions.start()
+    recurring.start()
+    await runForegroundJobs()
+
+    if (needsOnboardingRedirect()) {
+      // Can reject if the onboarding chunk itself fails to load.
+      await router.replace('/onboarding')
+    }
+  } catch (err) {
+    // Startup is best-effort. Anything here can fail on a bad network or a
+    // stale lazy chunk (a rejected navigation, an IndexedDB open error), and
+    // none of it is worth stranding the user behind a splash they cannot
+    // dismiss — surface the error and carry on to the finally below.
+    console.error('[boot] initialization did not complete', err)
+  } finally {
+    // Must always run: the splash is native chrome the web layer alone cannot
+    // dismiss, so skipping it leaves the app looking permanently frozen.
+    await hideSplash()
   }
-
-  await hideSplash()
 
   if (isNative()) {
     removeDeepLinks = await initDeepLinks(() => ui.openAdd())
@@ -156,8 +187,8 @@ onUnmounted(() => {
 
 watch(
   () => settings.onboardingDone,
-  (done) => {
-    if (!done && router.currentRoute.value.name !== 'onboarding') {
+  () => {
+    if (needsOnboardingRedirect()) {
       void router.replace('/onboarding')
     }
   },

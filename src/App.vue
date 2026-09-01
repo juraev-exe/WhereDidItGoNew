@@ -92,8 +92,15 @@ function needsOnboardingRedirect() {
 onMounted(async () => {
   // The initial navigation resolves asynchronously, so without this the gate
   // below would inspect the start location (no name, no meta) instead of the
-  // route the user actually opened.
-  await router.isReady()
+  // route the user actually opened. isReady() *rejects* when that navigation
+  // fails (a stale lazy chunk after a deploy, offline, a guard throwing), and
+  // booting is more important than the gate being accurate — swallow it rather
+  // than leaving the app stuck on the splash with no stores started.
+  try {
+    await router.isReady()
+  } catch {
+    // Fall through: needsOnboardingRedirect() reads whatever route resolved.
+  }
 
   await settings.load()
   accounts.start()

@@ -79,7 +79,22 @@ function onVisibility() {
   }
 }
 
+/**
+ * Un-onboarded users get sent to onboarding from anywhere except onboarding
+ * itself and dev-only preview routes (meta.preview), which exist to render a
+ * single component in isolation and would otherwise be unreachable.
+ */
+function needsOnboardingRedirect() {
+  const current = router.currentRoute.value
+  return !settings.onboardingDone && current.name !== 'onboarding' && current.meta.preview !== true
+}
+
 onMounted(async () => {
+  // The initial navigation resolves asynchronously, so without this the gate
+  // below would inspect the start location (no name, no meta) instead of the
+  // route the user actually opened.
+  await router.isReady()
+
   await settings.load()
   accounts.start()
   categories.start()
@@ -89,7 +104,7 @@ onMounted(async () => {
   recurring.start()
   await runForegroundJobs()
 
-  if (!settings.onboardingDone && router.currentRoute.value.name !== 'onboarding') {
+  if (needsOnboardingRedirect()) {
     await router.replace('/onboarding')
   }
 
@@ -156,8 +171,8 @@ onUnmounted(() => {
 
 watch(
   () => settings.onboardingDone,
-  (done) => {
-    if (!done && router.currentRoute.value.name !== 'onboarding') {
+  () => {
+    if (needsOnboardingRedirect()) {
       void router.replace('/onboarding')
     }
   },

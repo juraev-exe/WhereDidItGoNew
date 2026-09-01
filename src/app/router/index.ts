@@ -51,12 +51,20 @@ const router = createRouter({
       component: () => import('@/features/accounts/AccountsView.vue'),
       meta: { hideNav: true },
     },
-    {
-      path: '/__login-preview',
-      name: 'login-preview',
-      component: () => import('@/components/LoginCard.vue'),
-      meta: { hideNav: true },
-    },
+    // Design preview for LoginCard. Dev-only: Vite statically replaces
+    // import.meta.env.DEV with false in production, so both this route entry
+    // and the LoginCard chunk are dropped from release builds. `preview: true`
+    // exempts it from the onboarding redirect in App.vue.
+    ...(import.meta.env.DEV
+      ? [
+          {
+            path: '/__login-preview',
+            name: 'login-preview',
+            component: () => import('@/components/LoginCard.vue'),
+            meta: { hideNav: true, preview: true },
+          },
+        ]
+      : []),
   ],
   scrollBehavior() {
     return { top: 0 }

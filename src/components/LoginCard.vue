@@ -13,7 +13,7 @@ withDefaults(
   {
     brandName: 'WhereDidItGo',
     title: 'Welcome back',
-    subtitle: 'Sign in to sync your data across devices.',
+    subtitle: 'Sign in to continue.',
     loading: false,
   },
 )
@@ -36,64 +36,141 @@ function onSubmit() {
 }
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const emailRef = ref<HTMLInputElement | null>(null)
+
 let raf = 0
 let handleResize: (() => void) | null = null
+let handleVisibility: (() => void) | null = null
+let resizeTimer: ReturnType<typeof setTimeout> | null = null
+let reducedMotionQuery: MediaQueryList | null = null
+let handleMotionPreference: (() => void) | null = null
 
 onMounted(() => {
+  emailRef.value?.focus()
+
   const canvas = canvasRef.value
   const ctx = canvas?.getContext('2d')
   if (!canvas || !ctx) return
 
-  type Particle = { x: number; y: number; v: number; o: number }
+  type Particle = { x: number; y: number; v: number; o: number; color: string }
   let particles: Particle[] = []
 
+  // The canvas is purely decorative, so cap the particle count rather than
+  // letting it scale with raw pixel area — a 4K display would otherwise draw
+  // ~4x the work of 1080p for no visible gain.
+  const MAX_PARTICLES = 300
+
+  // Back the canvas with real device pixels, otherwise the dots render soft on
+  // any HiDPI or OS-scaled display (both common on the Windows desktop build).
   const setSize = () => {
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    canvas.width = Math.floor(window.innerWidth * dpr)
+    canvas.height = Math.floor(window.innerHeight * dpr)
+    canvas.style.width = `${window.innerWidth}px`
+    canvas.style.height = `${window.innerHeight}px`
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   }
 
-  const makeParticle = (): Particle => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    v: Math.random() * 0.25 + 0.05,
-    o: Math.random() * 0.35 + 0.15,
-  })
+  const randomVelocity = () => Math.random() * 0.25 + 0.05
+  const randomOpacity = () => Math.random() * 0.35 + 0.15
+
+  const makeParticle = (): Particle => {
+    const o = randomOpacity()
+    return {
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      v: randomVelocity(),
+      o,
+      color: `rgba(250,250,250,${o})`,
+    }
+  }
 
   const init = () => {
-    particles = []
-    const count = Math.floor((canvas.width * canvas.height) / 9000)
-    for (let i = 0; i < count; i++) particles.push(makeParticle())
+    const count = Math.min(
+      Math.floor((window.innerWidth * window.innerHeight) / 9000),
+      MAX_PARTICLES,
+    )
+    particles = Array.from({ length: count }, makeParticle)
   }
 
   const draw = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    particles.forEach((p) => {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
+    for (const p of particles) {
       p.y -= p.v
       if (p.y < 0) {
-        p.x = Math.random() * canvas.width
-        p.y = canvas.height + Math.random() * 40
-        p.v = Math.random() * 0.25 + 0.05
-        p.o = Math.random() * 0.35 + 0.15
+        p.x = Math.random() * window.innerWidth
+        p.y = window.innerHeight + Math.random() * 40
+        p.v = randomVelocity()
+        p.o = randomOpacity()
+        // Cache the colour string: it only changes on wrap, so rebuilding it
+        // per particle per frame would be ~59 wasted allocations out of 60.
+        p.color = `rgba(250,250,250,${p.o})`
       }
-      ctx.fillStyle = `rgba(250,250,250,${p.o})`
+      ctx.fillStyle = p.color
       ctx.fillRect(p.x, p.y, 0.7, 2.2)
-    })
+    }
     raf = requestAnimationFrame(draw)
+  }
+
+  const stop = () => {
+    if (raf) {
+      cancelAnimationFrame(raf)
+      raf = 0
+    }
+  }
+
+  // Honour reduced-motion (the stylesheet already freezes the CSS animations)
+  // and never burn frames while the app is backgrounded or minimised.
+  const shouldAnimate = () =>
+    !reducedMotionQuery?.matches && document.visibilityState === 'visible'
+
+  const sync = () => {
+    if (shouldAnimate()) {
+      if (!raf) raf = requestAnimationFrame(draw)
+    } else {
+      stop()
+      // Leave one static frame behind rather than an empty black rectangle.
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
+      for (const p of particles) {
+        ctx.fillStyle = p.color
+        ctx.fillRect(p.x, p.y, 0.7, 2.2)
+      }
+    }
   }
 
   setSize()
   init()
-  raf = requestAnimationFrame(draw)
 
+  reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+  handleMotionPreference = () => sync()
+  reducedMotionQuery.addEventListener('change', handleMotionPreference)
+
+  handleVisibility = () => sync()
+  document.addEventListener('visibilitychange', handleVisibility)
+
+  // Debounced: a live window drag (or a mobile keyboard opening mid-login)
+  // fires resize continuously, and each rebuild reallocates every particle.
   handleResize = () => {
-    setSize()
-    init()
+    if (resizeTimer) clearTimeout(resizeTimer)
+    resizeTimer = setTimeout(() => {
+      resizeTimer = null
+      setSize()
+      init()
+      sync()
+    }, 150)
   }
   window.addEventListener('resize', handleResize)
+
+  sync()
 })
 
 onUnmounted(() => {
   if (handleResize) window.removeEventListener('resize', handleResize)
+  if (handleVisibility) document.removeEventListener('visibilitychange', handleVisibility)
+  if (reducedMotionQuery && handleMotionPreference) {
+    reducedMotionQuery.removeEventListener('change', handleMotionPreference)
+  }
+  if (resizeTimer) clearTimeout(resizeTimer)
   cancelAnimationFrame(raf)
 })
 </script>
@@ -135,6 +212,7 @@ onUnmounted(() => {
               <Mail :size="16" class="input-icon" />
               <input
                 id="login-email"
+                ref="emailRef"
                 v-model="email"
                 type="email"
                 placeholder="you@example.com"
@@ -189,10 +267,24 @@ onUnmounted(() => {
           </div>
 
           <div class="oauth-row">
-            <AppButton type="button" size="lg" variant="outline" class="oauth-btn" @click="emit('github')">
+            <AppButton
+              type="button"
+              size="lg"
+              variant="outline"
+              class="oauth-btn"
+              :disabled="loading"
+              @click="emit('github')"
+            >
               GitHub
             </AppButton>
-            <AppButton type="button" size="lg" variant="outline" class="oauth-btn" @click="emit('google')">
+            <AppButton
+              type="button"
+              size="lg"
+              variant="outline"
+              class="oauth-btn"
+              :disabled="loading"
+              @click="emit('google')"
+            >
               Google
             </AppButton>
           </div>
@@ -214,7 +306,12 @@ onUnmounted(() => {
   z-index: 9999;
   background: #09090b;
   color: #fafafa;
-  overflow: hidden;
+  /* Scroll rather than clip: when a mobile keyboard opens or the device is in
+     landscape, the viewport can be shorter than the card and the submit/OAuth
+     controls would otherwise be unreachable. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .vignette {
@@ -364,11 +461,13 @@ onUnmounted(() => {
 /* Centered stage */
 .login-stage {
   position: relative;
-  height: 100%;
+  min-height: 100%;
   width: 100%;
   display: grid;
   place-items: center;
-  padding: var(--space-4);
+  /* Clear the fixed header, and keep clear of the safe-area inset on mobile. */
+  padding: calc(var(--space-12) + var(--safe-top)) var(--space-4)
+    calc(var(--space-6) + var(--safe-bottom));
 }
 
 .login-card {
@@ -456,7 +555,8 @@ onUnmounted(() => {
 }
 
 .input::placeholder {
-  color: #52525b;
+  /* #52525b sat at ~2.6:1 on this background, below the WCAG AA 4.5:1 floor. */
+  color: #8b8b93;
 }
 
 .input:focus-visible {
@@ -539,7 +639,10 @@ onUnmounted(() => {
   position: absolute;
   top: -8px;
   padding: 0 var(--space-2);
-  background: #18181b;
+  /* Matches .login-card's translucent surface so the label reads as a cutout
+     in the glass rather than an opaque patch over it. */
+  background: color-mix(in srgb, #18181b 70%, transparent);
+  backdrop-filter: blur(12px);
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;

@@ -90,32 +90,41 @@ function needsOnboardingRedirect() {
 }
 
 onMounted(async () => {
-  // The initial navigation resolves asynchronously, so without this the gate
-  // below would inspect the start location (no name, no meta) instead of the
-  // route the user actually opened. isReady() *rejects* when that navigation
-  // fails (a stale lazy chunk after a deploy, offline, a guard throwing), and
-  // booting is more important than the gate being accurate — swallow it rather
-  // than leaving the app stuck on the splash with no stores started.
   try {
-    await router.isReady()
-  } catch {
-    // Fall through: needsOnboardingRedirect() reads whatever route resolved.
+    // The initial navigation resolves asynchronously, so without this the gate
+    // below would inspect the start location (no name, no meta) instead of the
+    // route the user actually opened. isReady() rejects when that navigation
+    // fails, and the gate being accurate matters less than booting at all.
+    try {
+      await router.isReady()
+    } catch {
+      // Fall through: needsOnboardingRedirect() reads whatever route resolved.
+    }
+
+    await settings.load()
+    accounts.start()
+    categories.start()
+    budgets.start()
+    goals.start()
+    transactions.start()
+    recurring.start()
+    await runForegroundJobs()
+
+    if (needsOnboardingRedirect()) {
+      // Can reject if the onboarding chunk itself fails to load.
+      await router.replace('/onboarding')
+    }
+  } catch (err) {
+    // Startup is best-effort. Anything here can fail on a bad network or a
+    // stale lazy chunk (a rejected navigation, an IndexedDB open error), and
+    // none of it is worth stranding the user behind a splash they cannot
+    // dismiss — surface the error and carry on to the finally below.
+    console.error('[boot] initialization did not complete', err)
+  } finally {
+    // Must always run: the splash is native chrome the web layer alone cannot
+    // dismiss, so skipping it leaves the app looking permanently frozen.
+    await hideSplash()
   }
-
-  await settings.load()
-  accounts.start()
-  categories.start()
-  budgets.start()
-  goals.start()
-  transactions.start()
-  recurring.start()
-  await runForegroundJobs()
-
-  if (needsOnboardingRedirect()) {
-    await router.replace('/onboarding')
-  }
-
-  await hideSplash()
 
   if (isNative()) {
     removeDeepLinks = await initDeepLinks(() => ui.openAdd())

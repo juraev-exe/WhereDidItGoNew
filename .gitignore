@@ -66,6 +66,8 @@ ios/App/App.xcworkspace/
 
 # IDE & Editor Files
 .idea/
+.claude/
+.cursor/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json

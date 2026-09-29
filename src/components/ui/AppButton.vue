@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+
 withDefaults(
   defineProps<{
     variant?: 'filled' | 'tonal' | 'outline' | 'ghost' | 'danger'
     size?: 'sm' | 'md' | 'lg'
     block?: boolean
     disabled?: boolean
+    loading?: boolean
     type?: 'button' | 'submit'
   }>(),
   {
@@ -12,6 +15,7 @@ withDefaults(
     size: 'md',
     block: false,
     disabled: false,
+    loading: false,
     type: 'button',
   },
 )
@@ -23,11 +27,20 @@ defineEmits<{ click: [MouseEvent] }>()
   <button
     :type="type"
     class="btn"
-    :class="[`btn--${variant}`, `btn--${size}`, { 'btn--block': block }]"
-    :disabled="disabled"
+    :class="[`btn--${variant}`, `btn--${size}`, { 'btn--block': block, 'btn--loading': loading }]"
+    :disabled="disabled || loading"
+    :aria-busy="loading"
     @click="$emit('click', $event)"
   >
-    <slot />
+    <LoadingSpinner
+      v-if="loading"
+      class="btn-spinner"
+      :size="size === 'sm' ? 14 : size === 'lg' ? 20 : 16"
+      variant="ios"
+    />
+    <span class="btn-label" :class="{ 'btn-label--loading': loading }">
+      <slot />
+    </span>
   </button>
 </template>
 
@@ -40,11 +53,12 @@ defineEmits<{ click: [MouseEvent] }>()
   min-height: var(--touch-min);
   border-radius: var(--radius-full);
   font-weight: 600;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--tracking-label, 0.005em);
   cursor: pointer;
   border: none;
+  user-select: none;
   transition:
-    transform var(--duration-fast) var(--ease-spring-snappy),
+    transform 140ms var(--ease-spring-snappy),
     background var(--duration-fast) var(--ease-standard),
     box-shadow var(--duration-fast) var(--ease-standard),
     opacity var(--duration-fast) var(--ease-standard);
@@ -85,13 +99,28 @@ defineEmits<{ click: [MouseEvent] }>()
 }
 
 .btn:active:not(:disabled) {
-  transform: scale(0.95) translateY(0);
+  transform: scale(0.96) translateY(0);
+  transition-duration: 60ms; /* Instant compression on touch-down */
 }
 
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   transform: none !important;
+}
+
+.btn--loading {
+  cursor: wait !important;
+}
+
+.btn-spinner {
+  flex-shrink: 0;
+}
+
+.btn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .btn--block {

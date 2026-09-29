@@ -156,8 +156,8 @@ async function onRestore() {
 
       <!-- Sticky Action -->
       <div class="actions">
-        <AppButton block size="lg" variant="filled" class="continue-btn" :disabled="premium.loading" @click="onBuy">
-          <Sparkles :size="20" />
+        <AppButton block size="lg" variant="filled" class="continue-btn" :loading="premium.loading" :disabled="premium.loading" @click="onBuy">
+          <Sparkles v-if="!premium.loading" :size="20" />
           {{ premium.loading ? t('common.loading') : t('premium.continue', 'Continue') }}
         </AppButton>
 

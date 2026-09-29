@@ -313,9 +313,9 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
   gap: var(--space-3);
   padding: var(--space-4);
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, color-mix(in srgb, #007aff 16%, var(--color-surface)), color-mix(in srgb, #5856d6 18%, var(--color-surface)));
-  border: 1px solid color-mix(in srgb, #007aff 30%, transparent);
-  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.12);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 16%, var(--color-surface)), color-mix(in srgb, var(--color-tertiary) 18%, var(--color-surface)));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-primary) 12%, transparent);
   cursor: pointer;
   text-align: left;
   transition: transform var(--duration-fast) var(--ease-spring);
@@ -329,30 +329,30 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
   width: 42px;
   height: 42px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #007aff, #5856d6);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-tertiary));
+  color: var(--color-on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.35);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 
 .pro-banner-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   flex: 1;
 }
 
 .pro-title {
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   font-weight: 700;
   color: var(--color-on-surface);
 }
 
 .pro-sub {
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
   color: var(--color-muted);
   line-height: 1.35;
 }
@@ -398,8 +398,8 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
 }
 
 .icon-blue {
-  background: color-mix(in srgb, #007aff 15%, transparent);
-  color: #007aff;
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
 }
 
 .icon-purple {
@@ -413,18 +413,18 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
 }
 
 .icon-amber {
-  background: color-mix(in srgb, #ff9500 15%, transparent);
-  color: #ff9500;
+  background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+  color: var(--color-warning);
 }
 
 .icon-indigo {
-  background: color-mix(in srgb, #5856d6 15%, transparent);
-  color: #5856d6;
+  background: color-mix(in srgb, var(--color-tertiary) 15%, transparent);
+  color: var(--color-tertiary);
 }
 
 .icon-emerald {
-  background: color-mix(in srgb, #34c759 15%, transparent);
-  color: #34c759;
+  background: color-mix(in srgb, var(--color-success) 15%, transparent);
+  color: var(--color-success);
 }
 
 .icon-sky {
@@ -433,24 +433,24 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
 }
 
 .icon-rose {
-  background: color-mix(in srgb, #ff2d55 15%, transparent);
-  color: #ff2d55;
+  background: color-mix(in srgb, var(--color-expense) 15%, transparent);
+  color: var(--color-expense);
 }
 
 .row-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .row-title {
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   color: var(--color-on-surface);
 }
 
 .row-sub {
-  font-size: 0.82rem;
+  font-size: var(--text-caption);
   color: var(--color-muted);
   line-height: 1.35;
 }
@@ -476,23 +476,23 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .app-name {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: var(--text-title);
   font-weight: 700;
   color: var(--color-on-surface);
 }
 
 .app-version {
-  font-size: 0.82rem;
+  font-size: var(--text-caption);
   color: var(--color-muted);
 }
 
 .author-tag {
-  font-size: 0.88rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--color-primary);
   margin-top: var(--space-1);
@@ -501,8 +501,8 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
 .github-link {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.82rem;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
   color: var(--color-muted);
   margin-top: var(--space-2);
   transition: color var(--duration-fast);

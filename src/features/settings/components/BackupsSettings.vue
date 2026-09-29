@@ -490,11 +490,11 @@ h2 {
 
 .error-msg {
   color: var(--color-expense);
-  font-size: 0.85rem;
+  font-size: var(--text-caption);
 }
 
 .danger-action-btn {
   background: var(--color-expense) !important;
-  color: #ffffff !important;
+  color: var(--color-on-error) !important;
 }
 </style>

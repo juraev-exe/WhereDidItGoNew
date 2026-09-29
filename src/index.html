@@ -39,7 +39,57 @@
     <meta name="apple-mobile-web-app-title" content="WhereDidItGo" />
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <style>
+        .preboot {
+          position: fixed;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          background: #f2f2f7;
+          color: #1c1c1e;
+          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+        }
+        @media (prefers-color-scheme: dark) {
+          .preboot {
+            background: #000000;
+            color: #ffffff;
+          }
+        }
+        .preboot-logo {
+          width: 76px;
+          height: 76px;
+          border-radius: 20px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+        .preboot-spinner {
+          width: 24px;
+          height: 24px;
+          color: #007aff;
+          animation: prebootSpin 0.8s steps(8, end) infinite;
+        }
+        @keyframes prebootSpin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+      <div class="preboot">
+        <img src="/logo.png" alt="Logo" class="preboot-logo" />
+        <svg class="preboot-spinner" viewBox="0 0 24 24" fill="currentColor">
+          <rect x="11" y="2" width="2" height="5" rx="1" opacity="1.0" />
+          <rect x="11" y="2" width="2" height="5" rx="1" transform="rotate(45 12 12)" opacity="0.875" />
+          <rect x="11" y="2" width="2" height="5" rx="1" transform="rotate(90 12 12)" opacity="0.75" />
+          <rect x="11" y="2" width="2" height="5" rx="1" transform="rotate(135 12 12)" opacity="0.625" />
+          <rect x="11" y="2" width="2" height="5" rx="1" transform="rotate(180 12 12)" opacity="0.5" />
+          <rect x="11" y="2" width="2" height="5" rx="1" transform="rotate(225 12 12)" opacity="0.375" />
+          <rect x="11" y="2" width="2" height="5" rx="1" transform="rotate(270 12 12)" opacity="0.25" />
+          <rect x="11" y="2" width="2" height="5" rx="1" transform="rotate(315 12 12)" opacity="0.125" />
+        </svg>
+      </div>
+    </div>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

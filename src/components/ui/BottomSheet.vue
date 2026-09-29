@@ -2,6 +2,7 @@
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X } from '@lucide/vue'
+import { animateSpring, projectMomentum, rubberband, VelocityTracker, type SpringControl } from '@/lib/motion'
 import { closeFeedback, openFeedback } from '@/services/native/haptics'
 import { useUiStore } from '@/stores/ui'
 
@@ -22,16 +23,15 @@ const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
 const ui = useUiStore()
 
-const CLOSE_PX = 96
-const CLOSE_FLICK = 0.55
-
 const panelRef = ref<HTMLElement | null>(null)
 const dragY = ref(0)
 const dragging = ref(false)
+const isSpringSettling = ref(false)
 let startY = 0
-let startTime = 0
 let pointerId: number | null = null
 let previouslyFocusedElement: HTMLElement | null = null
+const tracker = new VelocityTracker()
+let activeSpring: SpringControl | null = null
 
 function getFocusableElements(): HTMLElement[] {
   if (!panelRef.value) return []
@@ -65,32 +65,85 @@ function onKey(e: KeyboardEvent) {
 
 function onPointerDown(e: PointerEvent) {
   if (e.button !== 0) return
+  // Interrupt ongoing spring seamlessly from live presentation coordinate
+  if (activeSpring) {
+    activeSpring.stop()
+    activeSpring = null
+    isSpringSettling.value = false
+  }
   dragging.value = true
-  startY = e.clientY
-  startTime = performance.now()
-  dragY.value = 0
+  startY = e.clientY - dragY.value
   pointerId = e.pointerId
+  tracker.reset(e.clientX, e.clientY)
   ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
 }
 
 function onPointerMove(e: PointerEvent) {
   if (!dragging.value || e.pointerId !== pointerId) return
-  dragY.value = Math.max(0, e.clientY - startY)
+  tracker.addSample(e.clientX, e.clientY)
+  const rawDelta = e.clientY - startY
+  if (rawDelta < 0) {
+    // Apple Rubber-banding when pulled upwards past sheet top bound
+    dragY.value = rubberband(rawDelta, 360, 0.45)
+  } else {
+    // Direct 1:1 manipulation tracking
+    dragY.value = rawDelta
+  }
 }
 
 function finishDrag() {
   if (!dragging.value) return
-  const dy = dragY.value
-  const elapsed = Math.max(performance.now() - startTime, 1)
-  const velocity = dy / elapsed
   dragging.value = false
   pointerId = null
-  if (dy > CLOSE_PX || (dy > 36 && velocity > CLOSE_FLICK)) {
-    dragY.value = 0
-    emit('close')
+
+  const { vy } = tracker.getVelocity() // px/ms
+  const currentY = dragY.value
+
+  // Apple WWDC 2018 momentum projection: calculate resting position based on deceleration
+  const projectedY = currentY + projectMomentum(vy, 0.997)
+
+  // Dismiss if projected landing exceeds threshold or strong downward flick
+  const shouldClose = projectedY > 135 || (currentY > 40 && vy > 0.42)
+
+  if (shouldClose) {
+    isSpringSettling.value = true
+    activeSpring = animateSpring({
+      from: currentY,
+      to: 500,
+      initialVelocity: Math.max(vy, 0.3),
+      dampingRatio: 0.95,
+      response: 0.32,
+      onUpdate: (val) => {
+        dragY.value = val
+      },
+      onComplete: () => {
+        isSpringSettling.value = false
+        activeSpring = null
+        dragY.value = 0
+        emit('close')
+      },
+    })
     return
   }
-  dragY.value = 0
+
+  // Otherwise, spring back to 0 using Apple spring physics with velocity handoff
+  isSpringSettling.value = true
+  const hasMomentum = Math.abs(vy) > 0.22
+  activeSpring = animateSpring({
+    from: currentY,
+    to: 0,
+    initialVelocity: vy,
+    dampingRatio: hasMomentum ? 0.82 : 1.0,
+    response: 0.34,
+    onUpdate: (val) => {
+      dragY.value = val
+    },
+    onComplete: () => {
+      isSpringSettling.value = false
+      activeSpring = null
+      dragY.value = 0
+    },
+  })
 }
 
 function onPointerUp(e: PointerEvent) {
@@ -102,6 +155,11 @@ watch(
   () => props.open,
   async (v) => {
     document.body.style.overflow = v ? 'hidden' : ''
+    if (activeSpring) {
+      activeSpring.stop()
+      activeSpring = null
+    }
+    isSpringSettling.value = false
     dragY.value = 0
     dragging.value = false
     pointerId = null
@@ -140,6 +198,10 @@ watch(
 onMounted(() => window.addEventListener('keydown', onKey))
 onUnmounted(() => {
   window.removeEventListener('keydown', onKey)
+  if (activeSpring) {
+    activeSpring.stop()
+    activeSpring = null
+  }
   if (props.open) {
     ui.registerModalClose()
   }
@@ -153,8 +215,8 @@ onUnmounted(() => {
       <div v-if="open" class="sheet-root" role="presentation">
         <button
           class="sheet-scrim"
-          :class="{ 'sheet-scrim--dragging': dragging }"
-          :style="dragY ? { opacity: String(Math.max(0.2, 1 - dragY / 360)) } : undefined"
+          :class="{ 'sheet-scrim--dragging': dragging || isSpringSettling }"
+          :style="dragY !== 0 ? { opacity: String(Math.max(0, 1 - Math.max(0, dragY) / 380)) } : undefined"
           :aria-label="t('common.close')"
           type="button"
           @click="emit('close')"
@@ -162,8 +224,8 @@ onUnmounted(() => {
         <div
           ref="panelRef"
           class="sheet-panel surface-glass"
-          :class="{ 'sheet-panel--contain': contain, 'sheet-panel--dragging': dragging }"
-          :style="dragY ? { transform: `translateY(${dragY}px)` } : undefined"
+          :class="{ 'sheet-panel--contain': contain, 'sheet-panel--dragging': dragging || isSpringSettling }"
+          :style="dragY !== 0 ? { transform: `translateY(${dragY}px)` } : undefined"
           role="dialog"
           aria-modal="true"
           :aria-label="title || t('common.close')"
@@ -221,13 +283,16 @@ onUnmounted(() => {
   position: relative;
   width: min(100%, 560px);
   max-height: min(85dvh, 720px);
-  background: color-mix(in srgb, var(--color-surface) 96%, transparent);
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 18%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 14%, transparent);
   border-bottom: none;
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  box-shadow: var(--shadow-lg);
+  /* Apple specular rim catch-light along top edge */
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 28%, transparent),
+    var(--shadow-lg);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -279,11 +344,17 @@ onUnmounted(() => {
 }
 
 .sheet-handle {
-  width: 36px;
-  height: 4px;
+  width: 38px;
+  height: 4.5px;
   border-radius: var(--radius-full);
   background: var(--color-outline-variant);
   pointer-events: none;
+  transition: background var(--duration-fast), transform var(--duration-fast);
+}
+
+.sheet-handle-hit:active .sheet-handle {
+  transform: scaleX(1.12);
+  background: var(--color-secondary);
 }
 
 .sheet-header {

@@ -54,6 +54,14 @@
   --leading-normal: 1.45;
   --leading-relaxed: 1.6;
 
+  /* Optical Tracking (Letter Spacing) — Apple WWDC UI Typography standard */
+  --tracking-display: -0.028em;
+  --tracking-headline: -0.018em;
+  --tracking-title: -0.012em;
+  --tracking-body: -0.004em;
+  --tracking-label: 0.005em;
+  --tracking-caption: 0.012em;
+
   /* Spacing */
   --space-1: 4px;
   --space-2: 8px;

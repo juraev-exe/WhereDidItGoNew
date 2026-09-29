@@ -258,7 +258,7 @@ onUnmounted(() => {
             </button>
           </div>
 
-          <AppButton type="submit" block size="lg" variant="filled" :disabled="loading" class="submit-btn">
+          <AppButton type="submit" block size="lg" variant="filled" :loading="loading" :disabled="loading" class="submit-btn">
             {{ loading ? 'Signing in…' : 'Sign in' }}
           </AppButton>
 

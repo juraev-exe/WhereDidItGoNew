@@ -16,6 +16,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
 import ActivityCalendar from '@/features/insights/ActivityCalendar.vue'
 import CategoryShare from '@/features/insights/CategoryShare.vue'
+import ExecutiveKpiGrid from '@/features/insights/ExecutiveKpiGrid.vue'
 import InsightHero from '@/features/insights/InsightHero.vue'
 import SpendRhythm from '@/features/insights/SpendRhythm.vue'
 import { monthKey, shortDayLabel } from '@/lib/dates'
@@ -23,7 +24,9 @@ import {
   activityHeatmap,
   buildInsightCards,
   buildRangeInsights,
+  computeExecutiveKpis,
   formatTxDate,
+  previousEquivalentRange,
   rangeForPeriod,
   selectHeroCard,
   spendByCategoryInRange,
@@ -78,6 +81,15 @@ function openCategory(categoryId: string) {
 }
 
 const summary = computed(() => summarizeRange(transactions.transactions, range.value))
+const priorRange = computed(() => previousEquivalentRange(range.value))
+const executiveKpis = computed(() =>
+  computeExecutiveKpis(
+    transactions.transactions,
+    categories.categories,
+    range.value,
+    priorRange.value,
+  ),
+)
 const extra = computed(() =>
   buildRangeInsights(transactions.transactions, categories.categories, range.value),
 )
@@ -395,6 +407,8 @@ function onStory(story: StoryView) {
             />
           </template>
         </InsightHero>
+
+        <ExecutiveKpiGrid :kpis="executiveKpis" />
 
         <ul v-if="stories.length" class="stories">
           <li v-for="story in stories" :key="story.id">

@@ -920,3 +920,189 @@ export function buildInsightCards(
   return cards.sort((a, b) => b.score - a.score)
 }
 
+/* ==========================================================================
+   Executive Financial KPIs & Pacing Engine (Phase 1)
+   ========================================================================== */
+
+export interface ExecutiveKpis {
+  savingsRate: {
+    pct: number
+    tone: 'good' | 'neutral' | 'warn'
+  }
+  dailyBurn: {
+    currentDaily: number
+    priorDaily: number
+    deltaPct: number
+  }
+  projectedSpend: {
+    projectedAmount: number
+    daysRemaining: number
+  }
+  essentialRatio: {
+    essentialPct: number
+    discretionaryPct: number
+    essentialAmount: number
+    discretionaryAmount: number
+  }
+}
+
+const ESSENTIAL_ICONS = new Set([
+  'utensils',
+  'car',
+  'home',
+  'receipt',
+  'heart-pulse',
+  'shield',
+  'bus',
+  'train',
+  'fuel',
+  'zap',
+  'graduation-cap',
+])
+
+export function isEssentialCategory(category: Category | null | undefined): boolean {
+  if (!category) return false
+  if (category.kind !== 'expense') return false
+  if (category.icon && ESSENTIAL_ICONS.has(category.icon)) return true
+  const lower = category.name.toLowerCase()
+  const essentialKeywords = [
+    'food',
+    'grocer',
+    'transport',
+    'hous',
+    'bill',
+    'health',
+    'utilit',
+    'rent',
+    'medic',
+    'продукт',
+    'транспорт',
+    'жиль',
+    'коммун',
+    'здоров',
+    'аптек',
+    'хӯрок',
+    'нақлиёт',
+    'манзил',
+    'ҳисоб',
+    'саломат',
+  ]
+  return essentialKeywords.some((k) => lower.includes(k))
+}
+
+export function computeExecutiveKpis(
+  transactions: Transaction[],
+  categories: Category[],
+  range: StatsRange,
+  priorRange: StatsRange | null = null,
+  referenceDate = new Date(),
+): ExecutiveKpis {
+  const categoryMap = new Map<string, Category>(categories.map((c) => [c.id, c]))
+
+  let income = 0
+  let expense = 0
+  let essentialAmount = 0
+  let discretionaryAmount = 0
+
+  for (const t of transactions) {
+    if (!inStatsRange(t.date, range)) continue
+    if (t.type === 'income') {
+      income += t.amount
+    } else if (t.type === 'expense') {
+      expense += t.amount
+      const cat = t.categoryId ? categoryMap.get(t.categoryId) : null
+      if (isEssentialCategory(cat)) {
+        essentialAmount += t.amount
+      } else {
+        discretionaryAmount += t.amount
+      }
+    }
+  }
+
+  // 1. Savings Rate
+  let savingsPct = 0
+  let tone: 'good' | 'neutral' | 'warn' = 'neutral'
+  if (income > 0) {
+    savingsPct = Math.round(((income - expense) / income) * 100)
+    tone = savingsPct >= 20 ? 'good' : savingsPct >= 0 ? 'neutral' : 'warn'
+  } else if (expense > 0) {
+    savingsPct = -100
+    tone = 'warn'
+  } else {
+    savingsPct = 0
+    tone = 'neutral'
+  }
+
+  // 2. Cycle Span & Elapsed Days
+  const startDate = range.start ? parseLocalDay(range.start) : earliestDay(transactions, referenceDate)
+  const endDate = parseLocalDay(range.end)
+  const totalDays = Math.max(1, differenceInCalendarDays(endDate, startDate) + 1)
+
+  const refDay = startOfDay(referenceDate)
+  let elapsed = totalDays
+  if (refDay < startDate) {
+    elapsed = 1
+  } else if (refDay <= endDate) {
+    elapsed = Math.max(1, differenceInCalendarDays(refDay, startDate) + 1)
+  }
+
+  const daysRemaining = Math.max(0, totalDays - elapsed)
+  const currentDaily = Math.round(expense / elapsed)
+
+  // 3. Prior Range Daily Comparison
+  let priorDaily = 0
+  let deltaPct = 0
+  if (priorRange && priorRange.start) {
+    let priorExpense = 0
+    for (const t of transactions) {
+      if (inStatsRange(t.date, priorRange) && t.type === 'expense') {
+        priorExpense += t.amount
+      }
+    }
+    const priorStart = parseLocalDay(priorRange.start)
+    const priorEnd = parseLocalDay(priorRange.end)
+    const priorDays = Math.max(1, differenceInCalendarDays(priorEnd, priorStart) + 1)
+    priorDaily = Math.round(priorExpense / priorDays)
+    if (priorDaily > 0) {
+      deltaPct = Math.round(((currentDaily - priorDaily) / priorDaily) * 100)
+    } else if (currentDaily > 0) {
+      deltaPct = 100
+    }
+  }
+
+  // 4. Projected Spend
+  const projectedAmount = daysRemaining > 0 ? expense + currentDaily * daysRemaining : expense
+
+  // 5. Essential vs Discretionary
+  const totalCatExpense = essentialAmount + discretionaryAmount
+  let essentialPct = 0
+  let discretionaryPct = 0
+  if (totalCatExpense > 0) {
+    essentialPct = Math.round((essentialAmount / totalCatExpense) * 100)
+    discretionaryPct = 100 - essentialPct
+  }
+
+  return {
+    savingsRate: {
+      pct: savingsPct,
+      tone,
+    },
+    dailyBurn: {
+      currentDaily,
+      priorDaily,
+      deltaPct,
+    },
+    projectedSpend: {
+      projectedAmount,
+      daysRemaining,
+    },
+    essentialRatio: {
+      essentialPct,
+      discretionaryPct,
+      essentialAmount,
+      discretionaryAmount,
+    },
+  }
+}
+
+

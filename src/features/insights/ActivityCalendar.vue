@@ -275,11 +275,11 @@ watch(() => props.heatmap.start, scrollToEnd)
 }
 
 .icon-fire {
-  color: #ff9500;
+  color: var(--color-warning);
 }
 
 .icon-trophy {
-  color: #eab308;
+  color: var(--color-warning);
 }
 
 /* Scroller & Graph */

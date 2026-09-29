@@ -8,6 +8,7 @@ import { App } from '@capacitor/app'
 import type { PluginListenerHandle } from '@capacitor/core'
 import AppShell from '@/app/layouts/AppShell.vue'
 import PinLockModal from '@/components/PinLockModal.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { db } from '@/db'
 import { monthKey } from '@/lib/dates'
 import { hideSplash } from '@/services/native/chrome'
@@ -201,22 +202,32 @@ watch(
 </script>
 
 <template>
-  <div v-if="!settings.ready" class="boot" aria-busy="true" :aria-label="t('common.loading')">
-    <p class="brand">WhereDidItGo</p>
-  </div>
-  <div v-else class="app-root" :class="{ 'app-obscured': isObscured && settings.hideInRecents }">
-    <Toaster
-      :theme="settings.resolvedTheme === 'oled' ? 'dark' : settings.resolvedTheme"
-      position="top-center"
-      rich-colors
-    />
-    <PinLockModal
-      v-if="settings.pinEnabled && !settings.isUnlocked"
-      mode="unlock"
-      @success="settings.unlockApp()"
-    />
-    <AppShell v-else />
-  </div>
+  <Transition name="boot-fade">
+    <div v-if="!settings.ready" class="boot" aria-busy="true" :aria-label="t('common.loading')">
+      <div class="boot-content">
+        <div class="boot-logo-card surface-glass">
+          <img src="/logo.png" alt="WhereDidItGo Logo" class="boot-logo" />
+        </div>
+        <h1 class="brand">WhereDidItGo</h1>
+        <div class="boot-indicator">
+          <LoadingSpinner :size="24" color="var(--color-primary)" variant="ios" />
+        </div>
+      </div>
+    </div>
+    <div v-else class="app-root" :class="{ 'app-obscured': isObscured && settings.hideInRecents }">
+      <Toaster
+        :theme="settings.resolvedTheme === 'oled' ? 'dark' : settings.resolvedTheme"
+        position="top-center"
+        rich-colors
+      />
+      <PinLockModal
+        v-if="settings.pinEnabled && !settings.isUnlocked"
+        mode="unlock"
+        @success="settings.unlockApp()"
+      />
+      <AppShell v-else />
+    </div>
+  </Transition>
 </template>
 
 <style scoped>
@@ -231,17 +242,81 @@ watch(
   user-select: none;
 }
 
+.boot-fade-enter-active,
+.boot-fade-leave-active {
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.boot-fade-leave-to {
+  opacity: 0;
+  transform: scale(1.02);
+}
+
+.boot-fade-enter-from {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
 .boot {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
   min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  background: var(--bg-tint), var(--color-background);
+}
+
+.boot-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+  animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
+}
+
+.boot-logo-card {
+  width: 78px;
+  height: 78px;
+  border-radius: 22px;
+  padding: 6px;
   display: grid;
   place-items: center;
-  padding: var(--space-8);
+  box-shadow: var(--shadow-lg);
+  animation: bootLogoPulse 2.4s ease-in-out infinite;
+}
+
+.boot-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+@keyframes bootLogoPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 .brand {
   font-family: var(--font-display);
   font-size: var(--text-headline);
   font-weight: 700;
-  color: var(--color-primary);
+  letter-spacing: var(--tracking-headline, -0.018em);
+  color: var(--color-on-background);
+}
+
+.boot-indicator {
+  margin-top: var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

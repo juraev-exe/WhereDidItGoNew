@@ -616,12 +616,12 @@ async function remove() {
 .add-cat-btn {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 11px;
+  gap: var(--space-1);
+  font-size: var(--text-caption);
   font-weight: 600;
   color: var(--color-primary);
   background: var(--color-primary-container);
-  padding: 3px 10px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-full);
   border: none;
   cursor: pointer;
@@ -682,11 +682,11 @@ async function remove() {
 
 .subcat-pill {
   min-height: 32px;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   background: var(--color-surface-container);
   border: 1.5px solid var(--color-outline-variant);
-  font-size: 11.5px;
+  font-size: var(--text-caption);
   font-weight: 600;
   color: var(--color-muted);
   transition: transform var(--duration-fast) var(--ease-spring-snappy),
@@ -749,7 +749,7 @@ async function remove() {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--color-on-primary);
   transition: transform var(--duration-fast);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }

@@ -19,6 +19,10 @@ import {
   parseLocalDay,
   clampDayOfMonth,
 } from '../src/lib/dates.ts'
+import {
+  computeExecutiveKpis,
+  isEssentialCategory,
+} from '../src/services/stats.ts'
 
 let failures = 0
 
@@ -77,6 +81,68 @@ setCycleStartDay(1)
 eq('local day parse avoids UTC shift', parseLocalDay('2026-08-26').getDate(), 26)
 eq('day clamp low', clampDayOfMonth(0), 1)
 eq('day clamp high', clampDayOfMonth(31), 28)
+
+console.log('\n— executive financial kpis & pacing engine —')
+const mockCategories = [
+  { id: 'cat-groceries', name: 'Groceries', kind: 'expense', icon: 'utensils', color: '#e07a5f', sortOrder: 0 },
+  { id: 'cat-bills', name: 'Utilities', kind: 'expense', icon: 'receipt', color: '#118ab2', sortOrder: 1 },
+  { id: 'cat-games', name: 'Entertainment', kind: 'expense', icon: 'clapperboard', color: '#9b5de5', sortOrder: 2 },
+  { id: 'cat-salary', name: 'Salary', kind: 'income', icon: 'briefcase', color: '#2a9d8f', sortOrder: 0 },
+]
+
+eq('essential category check: utensils is essential', isEssentialCategory(mockCategories[0]), true)
+eq('essential category check: entertainment is discretionary', isEssentialCategory(mockCategories[2]), false)
+
+const mockRange = { start: '2026-08-01', end: '2026-08-30' } // 30 days
+const mockPrior = { start: '2026-07-02', end: '2026-07-31' } // 30 days
+const mockRefDate = new Date(2026, 7, 10) // 10 days elapsed (Aug 1 to Aug 10)
+
+const mockTx = [
+  // Income in range: $1000
+  { id: 't1', type: 'income', amount: 100000, date: '2026-08-02', accountId: 'a1', categoryId: 'cat-salary', note: '' },
+  // Essential expense: $300
+  { id: 't2', type: 'expense', amount: 30000, date: '2026-08-05', accountId: 'a1', categoryId: 'cat-groceries', note: '' },
+  // Discretionary expense: $200
+  { id: 't3', type: 'expense', amount: 20000, date: '2026-08-08', accountId: 'a1', categoryId: 'cat-games', note: '' },
+  // Prior range expense: $400 over 30 days = ~$13.33/day
+  { id: 't4', type: 'expense', amount: 40000, date: '2026-07-15', accountId: 'a1', categoryId: 'cat-groceries', note: '' },
+]
+
+const kpis = computeExecutiveKpis(mockTx, mockCategories, mockRange, mockPrior, mockRefDate)
+
+// Income = 1000, Expense = 500 -> Savings = (1000 - 500) / 1000 = 50%
+eq('savings rate percentage', kpis.savingsRate.pct, 50)
+eq('savings rate tone is good for >= 20%', kpis.savingsRate.tone, 'good')
+
+// 10 elapsed days, 50000 expense -> 5000 / day
+eq('daily burn rate current daily', kpis.dailyBurn.currentDaily, 5000)
+// 30 days in prior range, 40000 expense -> 1333 / day
+eq('daily burn rate prior daily', kpis.dailyBurn.priorDaily, 1333)
+// delta = (5000 - 1333) / 1333 = ~275%
+eq('daily burn rate delta pct', kpis.dailyBurn.deltaPct, 275)
+
+// 30 days total, 10 elapsed -> 20 remaining. Projected = 50000 + 5000 * 20 = 150000
+eq('projected spend days remaining', kpis.projectedSpend.daysRemaining, 20)
+eq('projected spend total amount', kpis.projectedSpend.projectedAmount, 150000)
+
+// Essential: 30000 (60%), Discretionary: 20000 (40%)
+eq('essential percentage', kpis.essentialRatio.essentialPct, 60)
+eq('discretionary percentage', kpis.essentialRatio.discretionaryPct, 40)
+
+// Edge cases
+const zeroIncomeKpis = computeExecutiveKpis(
+  [{ id: 't-e', type: 'expense', amount: 2000, date: '2026-08-01', accountId: 'a1', note: '' }],
+  mockCategories,
+  mockRange,
+  null,
+  mockRefDate,
+)
+eq('zero income edge case savings rate is -100%', zeroIncomeKpis.savingsRate.pct, -100)
+eq('zero income edge case tone is warn', zeroIncomeKpis.savingsRate.tone, 'warn')
+
+const zeroAllKpis = computeExecutiveKpis([], mockCategories, mockRange, null, mockRefDate)
+eq('zero activity savings rate is 0%', zeroAllKpis.savingsRate.pct, 0)
+eq('zero activity tone is neutral', zeroAllKpis.savingsRate.tone, 'neutral')
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Trash2 } from '@lucide/vue'
+import { animateSpring, projectMomentum, rubberband, VelocityTracker, type SpringControl } from '@/lib/motion'
 import { tickFeedback } from '@/services/native/haptics'
 
 const ACTION = 76
@@ -18,27 +19,42 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const offset = ref(0)
 const dragging = ref(false)
+const isSpringSettling = ref(false)
 let startX = 0
 let startY = 0
 let startOffset = 0
 let axis: 'h' | 'v' | null = null
 let pointerId: number | null = null
+const tracker = new VelocityTracker()
+let activeSpring: SpringControl | null = null
 
 watch(
   () => props.open,
   (v) => {
+    if (activeSpring) {
+      activeSpring.stop()
+      activeSpring = null
+    }
+    isSpringSettling.value = false
     if (!dragging.value) offset.value = v ? -ACTION : 0
   },
 )
 
 function onPointerDown(e: PointerEvent) {
   if (e.button !== 0) return
+  // Interrupt ongoing spring seamlessly from live presentation coordinate
+  if (activeSpring) {
+    activeSpring.stop()
+    activeSpring = null
+    isSpringSettling.value = false
+  }
   dragging.value = true
   startX = e.clientX
   startY = e.clientY
   startOffset = offset.value
   axis = null
   pointerId = e.pointerId
+  tracker.reset(e.clientX, e.clientY)
   ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
 }
 
@@ -52,11 +68,25 @@ function onPointerMove(e: PointerEvent) {
     if (axis === 'h') void tickFeedback()
   }
   if (axis !== 'h') return
-  offset.value = Math.min(0, Math.max(-ACTION * 1.35, startOffset + dx))
+
+  tracker.addSample(e.clientX, e.clientY)
+  const rawOffset = startOffset + dx
+
+  // Apple Rubber-banding on boundaries
+  if (rawOffset > 0) {
+    // Over-drag to the right: soft elastic resistance
+    offset.value = rubberband(rawOffset, 80, 0.45)
+  } else if (rawOffset < -ACTION) {
+    // Over-drag past action button width: soft elastic resistance
+    const overshoot = rawOffset - -ACTION
+    offset.value = -ACTION + rubberband(overshoot, 110, 0.45)
+  } else {
+    // Direct 1:1 manipulation
+    offset.value = rawOffset
+  }
 }
 
-function onPointerUp(e: PointerEvent) {
-  if (e.pointerId !== pointerId) return
+function finishDrag() {
   dragging.value = false
   pointerId = null
   if (axis !== 'h') {
@@ -64,23 +94,77 @@ function onPointerUp(e: PointerEvent) {
     return
   }
   axis = null
-  if (offset.value <= -ACTION * 0.45) {
-    offset.value = -ACTION
-    emit('update:open', true)
-  } else {
-    offset.value = 0
-    emit('update:open', false)
-  }
+
+  const { vx } = tracker.getVelocity() // px/ms
+  const currentX = offset.value
+
+  // Apple momentum projection: calculate projected resting endpoint
+  const projectedX = currentX + projectMomentum(vx, 0.997)
+
+  // Commit rule: decide if row should snap open or closed
+  const shouldOpen = projectedX < -ACTION * 0.45 || (currentX < -15 && vx < -0.32)
+
+  const target = shouldOpen ? -ACTION : 0
+  isSpringSettling.value = true
+  const hasMomentum = Math.abs(vx) > 0.22
+
+  activeSpring = animateSpring({
+    from: currentX,
+    to: target,
+    initialVelocity: vx,
+    dampingRatio: hasMomentum ? 0.82 : 1.0,
+    response: 0.32,
+    onUpdate: (val) => {
+      offset.value = val
+    },
+    onComplete: () => {
+      isSpringSettling.value = false
+      activeSpring = null
+      offset.value = target
+      emit('update:open', shouldOpen)
+    },
+  })
+}
+
+function onPointerUp(e: PointerEvent) {
+  if (e.pointerId !== pointerId) return
+  finishDrag()
 }
 
 function onFrontClick(e: MouseEvent) {
-  if (props.open || offset.value < -4) {
+  if (props.open || Math.abs(offset.value) > 4) {
     e.preventDefault()
     e.stopPropagation()
-    offset.value = 0
-    emit('update:open', false)
+    if (activeSpring) {
+      activeSpring.stop()
+      activeSpring = null
+    }
+    isSpringSettling.value = true
+    activeSpring = animateSpring({
+      from: offset.value,
+      to: 0,
+      initialVelocity: 0,
+      dampingRatio: 1.0,
+      response: 0.3,
+      onUpdate: (val) => {
+        offset.value = val
+      },
+      onComplete: () => {
+        isSpringSettling.value = false
+        activeSpring = null
+        offset.value = 0
+        emit('update:open', false)
+      },
+    })
   }
 }
+
+onUnmounted(() => {
+  if (activeSpring) {
+    activeSpring.stop()
+    activeSpring = null
+  }
+})
 </script>
 
 <template>
@@ -90,7 +174,7 @@ function onFrontClick(e: MouseEvent) {
     </button>
     <div
       class="front"
-      :class="{ 'front--dragging': dragging }"
+      :class="{ 'front--dragging': dragging || isSpringSettling }"
       :style="{ transform: `translate3d(${offset}px, 0, 0)` }"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"

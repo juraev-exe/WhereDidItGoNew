@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { WifiOff } from '@lucide/vue'
 import MobileBottomNav from '@/app/layouts/MobileBottomNav.vue'
 import QuickAddSheet from '@/features/transactions/QuickAddSheet.vue'
@@ -14,6 +15,7 @@ import { useUiStore } from '@/stores/ui'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const showNav = computed(() => route.meta.hideNav !== true)
 const { isOnline } = useNetworkStatus()
 const premium = usePremiumStore()
@@ -105,7 +107,7 @@ watch(
     <Transition name="offline-banner">
       <div v-if="!isOnline" class="offline-bar" role="status" aria-live="polite">
         <WifiOff :size="14" />
-        <span>Offline — changes saved locally</span>
+        <span>{{ t('common.offlineNotice') }}</span>
       </div>
     </Transition>
     <main

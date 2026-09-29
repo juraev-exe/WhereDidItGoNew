@@ -109,7 +109,12 @@ const iconBg = computed(() => {
   border-radius: var(--radius-md);
   text-align: left;
   min-height: var(--touch-min);
-  transition: background var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    transform 140ms var(--ease-spring-snappy);
   cursor: pointer;
   animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
 }
@@ -125,7 +130,8 @@ const iconBg = computed(() => {
 }
 
 .row:active {
-  transform: scale(0.99);
+  transform: scale(0.978);
+  transition-duration: 60ms;
   background: var(--color-surface-container);
 }
 

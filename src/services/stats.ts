@@ -150,11 +150,109 @@ export function spendByCategoryInRange(
     .sort((a, b) => b.amount - a.amount)
 }
 
+export interface SubcategorySpend {
+  subcategoryId: string
+  name: string
+  amount: number
+  percent: number
+  txCount: number
+}
+
+export interface DetailedCategorySpend extends CategorySpend {
+  icon?: string
+  txCount: number
+  subcategories: SubcategorySpend[]
+}
+
+export function detailedSpendByCategoryInRange(
+  transactions: Transaction[],
+  categories: Category[],
+  range: StatsRange,
+): DetailedCategorySpend[] {
+  const catMap = Object.fromEntries(categories.map((c) => [c.id, c]))
+  const catAmountMap = new Map<string, number>()
+  const catTxCountMap = new Map<string, number>()
+  const subMap = new Map<string, Map<string, { amount: number; txCount: number }>>()
+
+  for (const t of transactions) {
+    if (t.type !== 'expense' || !t.categoryId || !inStatsRange(t.date, range)) continue
+
+    catAmountMap.set(t.categoryId, (catAmountMap.get(t.categoryId) ?? 0) + t.amount)
+    catTxCountMap.set(t.categoryId, (catTxCountMap.get(t.categoryId) ?? 0) + 1)
+
+    if (t.subcategoryId) {
+      if (!subMap.has(t.categoryId)) {
+        subMap.set(t.categoryId, new Map())
+      }
+      const catSubs = subMap.get(t.categoryId)!
+      const curSub = catSubs.get(t.subcategoryId) ?? { amount: 0, txCount: 0 }
+      curSub.amount += t.amount
+      curSub.txCount += 1
+      catSubs.set(t.subcategoryId, curSub)
+    }
+  }
+
+  const total = [...catAmountMap.values()].reduce((a, b) => a + b, 0) || 1
+
+  return [...catAmountMap.entries()]
+    .map(([categoryId, amount]) => {
+      const cat = catMap[categoryId]
+      const txCount = catTxCountMap.get(categoryId) ?? 0
+      const subEntries = subMap.get(categoryId)
+
+      const subcategories: SubcategorySpend[] = []
+      if (subEntries && cat?.subcategories?.length) {
+        const subNameMap = Object.fromEntries(cat.subcategories.map((s) => [s.id, s.name]))
+        for (const [subId, subData] of subEntries.entries()) {
+          const subName = subNameMap[subId] ?? 'Other'
+          subcategories.push({
+            subcategoryId: subId,
+            name: subName,
+            amount: subData.amount,
+            percent: amount > 0 ? (subData.amount / amount) * 100 : 0,
+            txCount: subData.txCount,
+          })
+        }
+        subcategories.sort((a, b) => b.amount - a.amount)
+      }
+
+      return {
+        categoryId,
+        name: cat?.name ?? 'Unknown',
+        color: cat?.color ?? '#6c757d',
+        icon: cat?.icon,
+        amount,
+        percent: (amount / total) * 100,
+        txCount,
+        subcategories,
+      }
+    })
+    .sort((a, b) => b.amount - a.amount)
+}
+
+export function transactionsForCategoryInRange(
+  transactions: Transaction[],
+  categoryId: string,
+  range: StatsRange,
+  subcategoryId?: string,
+): Transaction[] {
+  return transactions
+    .filter(
+      (t) =>
+        t.type === 'expense' &&
+        t.categoryId === categoryId &&
+        inStatsRange(t.date, range) &&
+        (!subcategoryId || t.subcategoryId === subcategoryId),
+    )
+    .sort((a, b) => b.date.localeCompare(a.date))
+}
+
 export interface DaySpend {
   date: string
   label: string
   expense: number
   income: number
+  net?: number
 }
 
 export function budgetProgress(
@@ -396,7 +494,13 @@ export function spendSeries(
     return eachMonthOfInterval({ start, end }).map((d) => {
       const key = monthKey(d)
       const v = byKey.get(key) ?? { expense: 0, income: 0 }
-      return { date: key, label: shortMonthLabel(d, locale), expense: v.expense, income: v.income }
+      return {
+        date: key,
+        label: shortMonthLabel(d, locale),
+        expense: v.expense,
+        income: v.income,
+        net: v.income - v.expense,
+      }
     })
   }
 
@@ -409,6 +513,7 @@ export function spendSeries(
         label: shortDayLabel(key, locale),
         expense: v.expense,
         income: v.income,
+        net: v.income - v.expense,
       }
     })
   }
@@ -421,6 +526,7 @@ export function spendSeries(
       label: shortDayLabel(key, locale),
       expense: v.expense,
       income: v.income,
+      net: v.income - v.expense,
     }
   })
 }

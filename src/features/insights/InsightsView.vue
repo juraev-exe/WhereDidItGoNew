@@ -15,21 +15,20 @@ import {
 import EmptyState from '@/components/ui/EmptyState.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
 import ActivityCalendar from '@/features/insights/ActivityCalendar.vue'
-import CategoryShare from '@/features/insights/CategoryShare.vue'
+import CashFlowChart from '@/features/insights/CashFlowChart.vue'
+import CategoryDistributionChart from '@/features/insights/CategoryDistributionChart.vue'
 import ExecutiveKpiGrid from '@/features/insights/ExecutiveKpiGrid.vue'
 import InsightHero from '@/features/insights/InsightHero.vue'
-import SpendRhythm from '@/features/insights/SpendRhythm.vue'
 import { monthKey, shortDayLabel } from '@/lib/dates'
 import {
   activityHeatmap,
   buildInsightCards,
-  buildRangeInsights,
   computeExecutiveKpis,
+  detailedSpendByCategoryInRange,
   formatTxDate,
   previousEquivalentRange,
   rangeForPeriod,
   selectHeroCard,
-  spendByCategoryInRange,
   spendSeries,
   summarizeRange,
   type InsightCard,
@@ -90,11 +89,12 @@ const executiveKpis = computed(() =>
     priorRange.value,
   ),
 )
-const extra = computed(() =>
-  buildRangeInsights(transactions.transactions, categories.categories, range.value),
-)
-const byCat = computed(() =>
-  spendByCategoryInRange(transactions.transactions, categories.categories, range.value),
+const detailedCategories = computed(() =>
+  detailedSpendByCategoryInRange(
+    transactions.transactions,
+    categories.categories,
+    range.value,
+  ),
 )
 const seriesBucket = computed(() => {
   if (period.value === 'all') return 'month' as const
@@ -148,42 +148,6 @@ const heroFigure = computed(() => {
   return null
 })
 
-const shareRows = computed(() => {
-  const rows = byCat.value
-  if (rows.length <= 5) return rows
-  const head = rows.slice(0, 5)
-  const rest = rows.slice(5)
-  const amount = rest.reduce((sum, row) => sum + row.amount, 0)
-  const total = rows.reduce((sum, row) => sum + row.amount, 0) || 1
-  return [
-    ...head,
-    {
-      categoryId: OTHER_ID,
-      name: t('insights.otherCategories'),
-      color: 'var(--color-outline)',
-      amount,
-      percent: (amount / total) * 100,
-    },
-  ]
-})
-
-const peakRow = computed(() => {
-  if (!series.value.length) return null
-  return series.value.reduce((best, row) => (row.expense > best.expense ? row : best))
-})
-const rhythmLede = computed(() => {
-  const peak = peakRow.value
-  if (!peak || peak.expense <= 0) return t('insights.rhythmEven')
-  const avg = series.value.reduce((sum, row) => sum + row.expense, 0) / series.value.length
-  if (peak.expense <= avg * 1.45) return t('insights.rhythmEven')
-  const bucketKey =
-    seriesBucket.value === 'month'
-      ? 'bucketMonth'
-      : seriesBucket.value === 'week'
-        ? 'bucketWeek'
-        : 'bucketDay'
-  return t('insights.rhythmPeak', { bucket: t(`insights.${bucketKey}`), when: peak.label })
-})
 
 const stories = computed(() => {
   const heroKind = heroCard.value?.kind
@@ -446,21 +410,19 @@ function onStory(story: StoryView) {
           </li>
         </ul>
 
-        <CategoryShare
-          v-if="shareRows.length"
-          :title="t('insights.whereItWent')"
-          :rows="shareRows"
-          :other-id="OTHER_ID"
-          @select="openCategory"
+        <CashFlowChart
+          :transactions="transactions.transactions"
+          :range="range"
+          :suggested-bucket="seriesBucket"
         />
 
-        <SpendRhythm
-          v-if="series.some((row) => row.expense > 0)"
-          :title="t('insights.rhythm')"
-          :lede="rhythmLede"
-          :series="series"
-          :avg-daily="extra.avgDaily"
-          :per-day-suffix="t('insights.perDaySuffix')"
+        <CategoryDistributionChart
+          v-if="detailedCategories.length"
+          :title="t('insights.categoryDistribution')"
+          :rows="detailedCategories"
+          :transactions="transactions.transactions"
+          :range="range"
+          :other-id="OTHER_ID"
         />
       </template>
 

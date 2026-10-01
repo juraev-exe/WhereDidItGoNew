@@ -21,7 +21,10 @@ import {
 } from '../src/lib/dates.ts'
 import {
   computeExecutiveKpis,
+  detailedSpendByCategoryInRange,
   isEssentialCategory,
+  spendSeries,
+  transactionsForCategoryInRange,
 } from '../src/services/stats.ts'
 
 let failures = 0
@@ -84,7 +87,18 @@ eq('day clamp high', clampDayOfMonth(31), 28)
 
 console.log('\n— executive financial kpis & pacing engine —')
 const mockCategories = [
-  { id: 'cat-groceries', name: 'Groceries', kind: 'expense', icon: 'utensils', color: '#e07a5f', sortOrder: 0 },
+  {
+    id: 'cat-groceries',
+    name: 'Groceries',
+    kind: 'expense',
+    icon: 'utensils',
+    color: '#e07a5f',
+    sortOrder: 0,
+    subcategories: [
+      { id: 'sub-produce', name: 'Produce' },
+      { id: 'sub-snacks', name: 'Snacks' },
+    ],
+  },
   { id: 'cat-bills', name: 'Utilities', kind: 'expense', icon: 'receipt', color: '#118ab2', sortOrder: 1 },
   { id: 'cat-games', name: 'Entertainment', kind: 'expense', icon: 'clapperboard', color: '#9b5de5', sortOrder: 2 },
   { id: 'cat-salary', name: 'Salary', kind: 'income', icon: 'briefcase', color: '#2a9d8f', sortOrder: 0 },
@@ -100,8 +114,9 @@ const mockRefDate = new Date(2026, 7, 10) // 10 days elapsed (Aug 1 to Aug 10)
 const mockTx = [
   // Income in range: $1000
   { id: 't1', type: 'income', amount: 100000, date: '2026-08-02', accountId: 'a1', categoryId: 'cat-salary', note: '' },
-  // Essential expense: $300
-  { id: 't2', type: 'expense', amount: 30000, date: '2026-08-05', accountId: 'a1', categoryId: 'cat-groceries', note: '' },
+  // Essential expense: $300 (split into produce $200 and snacks $100)
+  { id: 't2a', type: 'expense', amount: 20000, date: '2026-08-05', accountId: 'a1', categoryId: 'cat-groceries', subcategoryId: 'sub-produce', note: 'Fresh apples' },
+  { id: 't2b', type: 'expense', amount: 10000, date: '2026-08-06', accountId: 'a1', categoryId: 'cat-groceries', subcategoryId: 'sub-snacks', note: 'Chips' },
   // Discretionary expense: $200
   { id: 't3', type: 'expense', amount: 20000, date: '2026-08-08', accountId: 'a1', categoryId: 'cat-games', note: '' },
   // Prior range expense: $400 over 30 days = ~$13.33/day
@@ -143,6 +158,38 @@ eq('zero income edge case tone is warn', zeroIncomeKpis.savingsRate.tone, 'warn'
 const zeroAllKpis = computeExecutiveKpis([], mockCategories, mockRange, null, mockRefDate)
 eq('zero activity savings rate is 0%', zeroAllKpis.savingsRate.pct, 0)
 eq('zero activity tone is neutral', zeroAllKpis.savingsRate.tone, 'neutral')
+
+console.log('\n— interactive cash flow & category distribution (Phase 2) —')
+const detailed = detailedSpendByCategoryInRange(mockTx, mockCategories, mockRange)
+eq('detailed category count', detailed.length, 2)
+eq('top category is groceries', detailed[0].categoryId, 'cat-groceries')
+eq('groceries total amount', detailed[0].amount, 30000)
+eq('groceries total txCount', detailed[0].txCount, 2)
+eq('groceries subcategories count', detailed[0].subcategories.length, 2)
+eq('produce subcategory amount', detailed[0].subcategories[0].amount, 20000)
+eq('produce subcategory percent', Math.round(detailed[0].subcategories[0].percent), 67)
+eq('snacks subcategory amount', detailed[0].subcategories[1].amount, 10000)
+eq('snacks subcategory percent', Math.round(detailed[0].subcategories[1].percent), 33)
+
+// Drill-down filtering
+const groceryTxs = transactionsForCategoryInRange(mockTx, 'cat-groceries', mockRange)
+eq('drill-down all groceries tx count', groceryTxs.length, 2)
+
+const produceTxs = transactionsForCategoryInRange(mockTx, 'cat-groceries', mockRange, 'sub-produce')
+eq('drill-down sub-produce tx count', produceTxs.length, 1)
+eq('drill-down sub-produce tx note', produceTxs[0].note, 'Fresh apples')
+
+// Cash flow series with net
+const seriesDays = spendSeries(mockTx, mockRange, 'day', 'en')
+const incomeDay = seriesDays.find((d) => d.date === '2026-08-02')
+eq('cash flow income day inflow', incomeDay?.income, 100000)
+eq('cash flow income day outflow', incomeDay?.expense, 0)
+eq('cash flow income day net', incomeDay?.net, 100000)
+
+const expenseDay = seriesDays.find((d) => d.date === '2026-08-05')
+eq('cash flow expense day inflow', expenseDay?.income, 0)
+eq('cash flow expense day outflow', expenseDay?.expense, 20000)
+eq('cash flow expense day net', expenseDay?.net, -20000)
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

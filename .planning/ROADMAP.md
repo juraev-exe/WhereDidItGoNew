@@ -7,7 +7,7 @@ Build out the Advanced Financial Analytics & Interactive Reporting Suite within 
 ## Phases
 
 - [x] **Phase 1: Executive Financial KPIs & Pacing Engine** — Real-time savings rate, daily burn rate comparison, projected period-end spend, and essential vs discretionary spending ratios.
-- [ ] **Phase 2: Interactive Cash Flow & Category Distribution Charts** — Inflow vs. outflow comparison with day/week/month aggregation and interactive category/subcategory distribution share with transaction drill-down.
+- [x] **Phase 2: Interactive Cash Flow & Category Distribution Charts** — Inflow vs. outflow comparison with day/week/month aggregation and interactive category/subcategory distribution share with transaction drill-down.
 - [ ] **Phase 3: Budget Runway & Burn-Rate Gauge** — Pacing metrics comparing spending velocity against elapsed cycle days to warn of impending budget exhaustion.
 - [ ] **Phase 4: Flexible Period Filtering & Reports Export** — Period filters (This Month, Last Month, QTD, YTD, All Time) and CSV/JSON export via native share sheets.
 
@@ -39,7 +39,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 02-01: Build interactive CashFlowChart and CategoryDistributionChart components with touch inspection and drill-down.
+- [x] 02-01: Build interactive CashFlowChart and CategoryDistributionChart components with touch inspection and drill-down.
 
 ### Phase 3: Budget Runway & Burn-Rate Gauge
 **Goal**: Help users maintain budget discipline with pacing gauges and exhaustion warnings.
@@ -70,6 +70,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Executive Financial KPIs & Pacing Engine | 1/1 | Complete | 2026-09-29 |
-| 2. Interactive Cash Flow & Category Distribution Charts | 0/1 | Not started | - |
+| 2. Interactive Cash Flow & Category Distribution Charts | 1/1 | Complete | 2026-10-01 |
 | 3. Budget Runway & Burn-Rate Gauge | 0/1 | Not started | - |
 | 4. Flexible Period Filtering & Reports Export | 0/1 | Not started | - |

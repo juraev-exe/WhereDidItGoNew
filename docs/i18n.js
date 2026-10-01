@@ -4,6 +4,7 @@ const WDG_STRINGS = {
     'nav.page': 'Page',
     'nav.features': 'Features',
     'nav.privacy': 'Privacy',
+    'nav.download': 'Download',
     'nav.source': 'Source',
     'theme.toggle': 'Toggle dark theme',
     'lang.label': 'Language',
@@ -14,11 +15,18 @@ const WDG_STRINGS = {
     'hero.title': 'Know where every dollar went.',
     'hero.lede':
       'Log spending in a few taps, keep simple monthly budgets, and watch savings goals fill up. Nothing is uploaded. Backup is a JSON file you own.',
+    'hero.downloadApk': 'Download APK (v1.1.0)',
     'hero.viewSource': 'View source',
     'hero.build': 'Build it yourself',
     'hero.perk1': 'English, Русский, Тоҷикӣ',
     'hero.perk2': 'Light, dark, or system theme',
     'hero.perk3': 'Blur the balance, or hold to hide every amount',
+    'carousel.home': 'Home',
+    'carousel.activity': 'Activity',
+    'carousel.budgets': 'Budgets',
+    'carousel.goals': 'Goals',
+    'carousel.insights': 'Insights',
+    'carousel.dark': 'Dark Mode',
     'privacy.title': 'Your money never leaves this phone.',
     'privacy.body':
       'Transactions live in a local database on the device. There is no account to create, no cloud sync, and no analytics. Switch phones with a full JSON backup — or export transactions as CSV.',
@@ -46,6 +54,12 @@ const WDG_STRINGS = {
     'stack.title': 'Vue on the phone, SQLite-free on purpose.',
     'stack.lede':
       'Vue 3, Pinia, Dexie (IndexedDB), vue-i18n, and Capacitor for Android. Light enough to reason about, offline by default.',
+    'download.eyebrow': 'Direct Install',
+    'download.title': 'Get the app directly on your phone.',
+    'download.body':
+      'No store account needed. Download the official standalone APK, tap install, and start tracking your spending with 100% offline privacy.',
+    'download.btn': 'Download APK (v1.1.0)',
+    'download.meta': 'v1.1.0 · ~9.6 MB · Android 8.0+ · SHA-256 Verified',
     'source.eyebrow': 'Open source',
     'source.title': 'Clone it, run it, ship it to your phone.',
     'source.body':
@@ -58,6 +72,7 @@ const WDG_STRINGS = {
     'nav.page': 'Страница',
     'nav.features': 'Возможности',
     'nav.privacy': 'Приватность',
+    'nav.download': 'Скачать',
     'nav.source': 'Исходный код',
     'theme.toggle': 'Переключить тёмную тему',
     'lang.label': 'Язык',
@@ -68,11 +83,18 @@ const WDG_STRINGS = {
     'hero.title': 'Знайте, куда ушёл каждый рубль.',
     'hero.lede':
       'Записывайте траты за пару касаний, ведите месячные бюджеты и копите на цели. Ничего не загружается. Резервная копия — JSON-файл, который принадлежит вам.',
+    'hero.downloadApk': 'Скачать APK (v1.1.0)',
     'hero.viewSource': 'Исходный код',
     'hero.build': 'Собрать самостоятельно',
     'hero.perk1': 'English, Русский, Тоҷикӣ',
     'hero.perk2': 'Светлая, тёмная или системная тема',
     'hero.perk3': 'Размойте баланс или удерживайте, чтобы скрыть все суммы',
+    'carousel.home': 'Главная',
+    'carousel.activity': 'История',
+    'carousel.budgets': 'Бюджеты',
+    'carousel.goals': 'Цели',
+    'carousel.insights': 'Аналитика',
+    'carousel.dark': 'Тёмная тема',
     'privacy.title': 'Ваши деньги не покидают этот телефон.',
     'privacy.body':
       'Операции хранятся в локальной базе на устройстве. Нет аккаунта, облачной синхронизации и аналитики. Меняете телефон — экспортируете полный JSON или CSV с операциями.',
@@ -100,6 +122,12 @@ const WDG_STRINGS = {
     'stack.title': 'Vue на телефоне, без SQLite — нарочно.',
     'stack.lede':
       'Vue 3, Pinia, Dexie (IndexedDB), vue-i18n и Capacitor для Android. Достаточно простое, чтобы понимать, и сразу офлайн.',
+    'download.eyebrow': 'Прямая установка',
+    'download.title': 'Установите прямо на свой телефон.',
+    'download.body':
+      'Аккаунт Google Play не требуется. Скачайте официальный APK, установите в один клик и управляйте финансами в полной безопасности без интернета.',
+    'download.btn': 'Скачать APK (v1.1.0)',
+    'download.meta': 'v1.1.0 · ~9.6 МБ · Android 8.0+ · Проверено SHA-256',
     'source.eyebrow': 'Открытый код',
     'source.title': 'Склонируйте, запустите, поставьте на телефон.',
     'source.body':
@@ -112,6 +140,7 @@ const WDG_STRINGS = {
     'nav.page': 'Саҳифа',
     'nav.features': 'Имкониятҳо',
     'nav.privacy': 'Махфият',
+    'nav.download': 'Боргирӣ',
     'nav.source': 'Рамз',
     'theme.toggle': 'Мавзӯи торикро иваз кунед',
     'lang.label': 'Забон',
@@ -122,11 +151,18 @@ const WDG_STRINGS = {
     'hero.title': 'Донед, ки ҳар сомонӣ куҷо рафт.',
     'hero.lede':
       'Хароҷотро бо чанд зарба сабт кунед, буҷаҳои моҳона гузоред ва ҳадафҳои пасандозро пур кунед. Ҳеҷ чиз бор карда намешавад. Нусхаи эҳтиётӣ файли JSON-и худи шумост.',
+    'hero.downloadApk': 'Боргирии APK (v1.1.0)',
     'hero.viewSource': 'Рамзро бинед',
     'hero.build': 'Худатон ҷамъ кунед',
     'hero.perk1': 'English, Русский, Тоҷикӣ',
     'hero.perk2': 'Мавзӯи равшан, торик ё система',
     'hero.perk3': 'Тавозунро хира кунед ё нигоҳ доред, то ҳамаи рақамҳо пинҳон шаванд',
+    'carousel.home': 'Асосӣ',
+    'carousel.activity': 'Таърих',
+    'carousel.budgets': 'Буҷаҳо',
+    'carousel.goals': 'Ҳадафҳо',
+    'carousel.insights': 'Таҳлил',
+    'carousel.dark': 'Мавзӯи торик',
     'privacy.title': 'Пули шумо аз ин телефон берун намешавад.',
     'privacy.body':
       'Амалиётҳо дар пойгоҳи маҳаллии дастгоҳ нигоҳ дошта мешаванд. Ҳисоб нест, ҳамоҳангсозии абр нест, таҳлили беруна нест. Телефонро иваз мекунед — нусхаи пурраи JSON ё CSV-и амалиётҳоро содир кунед.',
@@ -154,6 +190,12 @@ const WDG_STRINGS = {
     'stack.title': 'Vue дар телефон, бе SQLite — қасдан.',
     'stack.lede':
       'Vue 3, Pinia, Dexie (IndexedDB), vue-i18n ва Capacitor барои Android. Ба қадри кофӣ содда ва аз аввал офлайн.',
+    'download.eyebrow': 'Насби мустақим',
+    'download.title': 'Барномаро мустақиман ба телефон гузоред.',
+    'download.body':
+      'Бе ҳисоби Google Play. Файли расмии APK-ро зеркашӣ кунед ва молияро бидуни интернет бо махфияти комил ҳисоб кунед.',
+    'download.btn': 'Боргирии APK (v1.1.0)',
+    'download.meta': 'v1.1.0 · ~9.6 МБ · Android 8.0+ · Бо SHA-256 тафтиш шудааст',
     'source.eyebrow': 'Рамзи кушода',
     'source.title': 'Клон кунед, иҷро кунед, ба телефон гузоред.',
     'source.body':

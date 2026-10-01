@@ -334,30 +334,197 @@ html[lang='tg'] h3 {
 .hero-device {
   display: flex;
   justify-content: center;
+  width: 100%;
+}
+
+.phone-showcase {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.phone-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px;
+  background: color-mix(in srgb, var(--color-outline) 10%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-outline) 14%, transparent);
+  border-radius: 9999px;
+  max-width: 100%;
+  scrollbar-width: none;
+}
+
+.phone-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.phone-tab {
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.phone-tab:hover {
+  color: var(--color-on-background);
+}
+
+.phone-tab.active {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 32%, transparent);
+}
+
+.phone-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.carousel-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 22%, transparent);
+  color: var(--color-on-background);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, color 0.2s ease;
+}
+
+.carousel-nav-btn:hover {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-nav-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.carousel-nav-btn.prev {
+  left: 0;
+}
+
+.carousel-nav-btn.next {
+  right: 0;
 }
 
 .phone {
-  width: min(100%, 300px);
+  width: min(100%, 280px);
   filter: drop-shadow(var(--shadow-lg));
+  position: relative;
 }
 
 .phone__bezel {
   background: #1c1b19;
-  border-radius: 36px;
+  border-radius: 38px;
   padding: 10px;
+  position: relative;
 }
 
 [data-theme='dark'] .phone__bezel {
-  background: #0a0b0b;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 8%, transparent);
+  background: #0d0f11;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 10%, transparent);
+}
+
+.phone-carousel-viewport {
+  overflow: hidden;
+  border-radius: 28px;
+  width: 100%;
+  aspect-ratio: 506 / 1095;
+  background: var(--color-background);
+  position: relative;
+  touch-action: pan-y pinch-zoom;
+}
+
+.phone-carousel-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+  will-change: transform;
+}
+
+.phone-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  position: relative;
 }
 
 .phone__preview {
   display: block;
   width: 100%;
-  height: auto;
-  border-radius: 26px;
-  background: var(--color-background);
+  height: 100%;
+  object-fit: cover;
+  border-radius: 28px;
+}
+
+.carousel-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.carousel-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.carousel-dots .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-outline) 25%, transparent);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.carousel-dots .dot:hover {
+  background: color-mix(in srgb, var(--color-outline) 50%, transparent);
+}
+
+.carousel-dots .dot.active {
+  width: 20px;
+  background: var(--color-primary);
+}
+
+.carousel-caption {
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  text-align: center;
+  min-height: 1.4em;
+  transition: opacity 0.2s ease;
 }
 
 .privacy {
@@ -922,25 +1089,182 @@ html[lang='tg'] h3 {
   padding: 0 0 64px;
 }
 
+.download-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 860px) {
+  .download-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .source-card {
   background: var(--color-surface);
   border-radius: var(--radius-xl);
   padding: clamp(24px, 4vw, 40px);
   box-shadow: var(--shadow-md);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 14%, transparent);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-.source-card pre {
+.apk-card {
+  border: 1.5px solid color-mix(in srgb, var(--color-primary) 32%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 6%, var(--color-surface)) 0%, var(--color-surface) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.apk-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), #14b8a6);
+}
+
+.apk-actions {
+  margin: 18px 0 16px;
+}
+
+.btn--apk-large {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 22px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-primary) 32%, transparent);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.btn--apk-large:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-primary) 45%, transparent);
+}
+
+.btn--apk-large:active {
+  transform: translateY(0);
+}
+
+.btn__text-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.btn__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.btn__subtitle {
+  font-size: 0.76rem;
+  font-weight: 500;
+  opacity: 0.88;
+}
+
+.apk-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.spec-pill {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-on-background);
+  background: color-mix(in srgb, var(--color-outline) 12%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-outline) 16%, transparent);
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+.apk-instructions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--color-outline) 12%, transparent);
+}
+
+.apk-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.apk-step strong {
+  color: var(--color-primary);
+}
+
+.apk-arrow {
+  color: var(--color-muted);
+  opacity: 0.6;
+}
+
+.code-container {
+  position: relative;
+  margin: 14px 0 16px;
+}
+
+.code-container pre {
+  margin: 0;
   overflow-x: auto;
   background: var(--color-background);
   border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 14%, transparent);
   padding: 16px 18px;
   font-size: 0.85rem;
   line-height: 1.55;
 }
 
-.source-card code {
+.code-container code {
   background: none;
   padding: 0;
+}
+
+.copy-code-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 20%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--color-on-background);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copy-code-btn:hover {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.copy-code-btn.copied {
+  background: var(--color-income);
+  color: #fff;
+  border-color: transparent;
 }
 
 :focus-visible {
@@ -1151,7 +1475,8 @@ html[lang='tg'] h3 {
     grid-column: 1;
   }
 
-  .card--wide .keypad-widget {
+  .card--wide .keypad-widget,
+  .card--wide .widget-spoiler {
     grid-column: 2;
     margin-top: 0;
   }

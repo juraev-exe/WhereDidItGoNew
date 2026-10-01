@@ -60,7 +60,7 @@
     <header class="site-header">
       <div class="wrap header-inner">
         <a class="brand" href="./">
-          <img src="./logo.png" width="32" height="32" alt="" />
+          <img src="./logo.png" width="32" height="32" alt="WhereDidItGo Logo" />
           WhereDidItGo
         </a>
         <nav class="header-nav" data-i18n-aria="nav.page" aria-label="Page">
@@ -137,58 +137,236 @@
           <h2 data-i18n="features.title">Built for the way you actually spend.</h2>
 
           <div class="bento">
+            <!-- 1. Hero Bento Card: Amount-first keypad -->
             <article class="card card--wide">
-              <h3 data-i18n="keypad.title">Amount-first keypad</h3>
-              <p data-i18n="keypad.body" data-i18n-html>
-                Open +, type the amount, optionally add <code>13+24+50</code> on the keypad, then
-                pick category and account. Fast enough for the checkout line.
-              </p>
-              <div class="keypad" aria-hidden="true">
-                <span>1</span><span>2</span><span>3</span><span class="op">+</span>
-                <span>4</span><span>5</span><span>6</span><span class="op">−</span>
-                <span>7</span><span>8</span><span>9</span><span class="op">C</span>
-                <span>.</span><span>0</span><span>⌫</span><span class="ok">✓</span>
+              <div class="card__text">
+                <span class="card__badge">⚡ Rapid Expense Logging</span>
+                <h3 data-i18n="keypad.title">Amount-first keypad</h3>
+                <p data-i18n="keypad.body" data-i18n-html>
+                  Open +, type the amount, optionally add <code>13+24+50</code> on the keypad, then
+                  pick category and account. Fast enough for the checkout line.
+                </p>
+                <div class="chip-row" role="group" aria-label="Quick category selector">
+                  <button type="button" class="chip-btn active" data-cat="☕ Coffee">☕ Coffee</button>
+                  <button type="button" class="chip-btn" data-cat="🛒 Groceries">🛒 Groceries</button>
+                  <button type="button" class="chip-btn" data-cat="🍔 Dining">🍔 Dining</button>
+                  <button type="button" class="chip-btn" data-cat="⛽ Fuel">⛽ Fuel</button>
+                </div>
+              </div>
+
+              <!-- Interactive Keypad Console -->
+              <div class="keypad-widget" aria-label="Interactive demo keypad">
+                <div class="keypad-screen">
+                  <div class="keypad-screen__meta">
+                    <span id="keypad-cat">☕ Coffee</span>
+                    <span>Checking (Chase)</span>
+                  </div>
+                  <div class="keypad-screen__main">
+                    <span class="keypad-currency">$</span>
+                    <span class="keypad-amount" id="keypad-val">24.50</span>
+                  </div>
+                  <div class="keypad-toast" id="keypad-toast">✓ Expense Logged!</div>
+                </div>
+
+                <div class="keypad-grid" role="group" aria-label="Keypad buttons">
+                  <button type="button" class="key-btn" data-k="1">1</button>
+                  <button type="button" class="key-btn" data-k="2">2</button>
+                  <button type="button" class="key-btn" data-k="3">3</button>
+                  <button type="button" class="key-btn op" data-k="+">+</button>
+
+                  <button type="button" class="key-btn" data-k="4">4</button>
+                  <button type="button" class="key-btn" data-k="5">5</button>
+                  <button type="button" class="key-btn" data-k="6">6</button>
+                  <button type="button" class="key-btn op" data-k="−">−</button>
+
+                  <button type="button" class="key-btn" data-k="7">7</button>
+                  <button type="button" class="key-btn" data-k="8">8</button>
+                  <button type="button" class="key-btn" data-k="9">9</button>
+                  <button type="button" class="key-btn clear" data-k="C">C</button>
+
+                  <button type="button" class="key-btn" data-k=".">.</button>
+                  <button type="button" class="key-btn" data-k="0">0</button>
+                  <button type="button" class="key-btn" data-k="back" aria-label="Backspace">⌫</button>
+                  <button type="button" class="key-btn ok" data-k="ok" aria-label="Save expense">✓</button>
+                </div>
               </div>
             </article>
 
+            <!-- 2. Budgets that stay monthly -->
             <article class="card">
-              <h3 data-i18n="budgets.title">Budgets that stay monthly</h3>
-              <p data-i18n="budgets.body">
-                Cap groceries, bills, or transport. See what’s left this month — not a lifetime
-                envelope mixed in with savings.
-              </p>
+              <div class="card__text">
+                <span class="card__badge">🎯 Monthly Discipline</span>
+                <h3 data-i18n="budgets.title">Budgets that stay monthly</h3>
+                <p data-i18n="budgets.body">
+                  Cap groceries, bills, or transport. See what’s left this month — not a lifetime
+                  envelope mixed in with savings.
+                </p>
+              </div>
+
+              <div class="widget-budget">
+                <div class="widget-header">
+                  <div class="widget-category">
+                    <span style="font-size: 1.25rem;">🛒</span>
+                    <span>Groceries</span>
+                  </div>
+                  <span class="widget-badge">On track</span>
+                </div>
+                <div class="widget-amounts">
+                  <span class="widget-spent">$340.00</span>
+                  <span class="widget-cap">Limit $500.00</span>
+                </div>
+                <div class="widget-progress-track">
+                  <div class="widget-progress-fill" style="width: 68%;"></div>
+                </div>
+                <div class="widget-meta">
+                  <span><strong>$160.00</strong> left to spend</span>
+                  <span>11 days remaining</span>
+                </div>
+              </div>
             </article>
 
+            <!-- 3. Savings goals -->
             <article class="card">
-              <h3 data-i18n="goals.title">Savings goals</h3>
-              <p data-i18n="goals.body">
-                A trip, a gadget, an emergency fund. Move money from an account into a goal. It is
-                not logged as a spend, and you pick any icon you like.
-              </p>
+              <div class="card__text">
+                <span class="card__badge">🏝️ Dedicated Targets</span>
+                <h3 data-i18n="goals.title">Savings goals</h3>
+                <p data-i18n="goals.body">
+                  A trip, a gadget, an emergency fund. Move money from an account into a goal. It is
+                  not logged as a spend, and you pick any icon you like.
+                </p>
+              </div>
+
+              <div class="widget-goal">
+                <div class="widget-header">
+                  <div class="widget-category">
+                    <span style="font-size: 1.25rem;">✈️</span>
+                    <span>Tokyo Trip</span>
+                  </div>
+                  <span class="widget-badge" style="color: #7c3aed; background: rgba(124, 58, 237, 0.12);">82% reached</span>
+                </div>
+                <div class="widget-amounts">
+                  <span class="widget-spent">$2,450.00</span>
+                  <span class="widget-cap">Target $3,000.00</span>
+                </div>
+                <div class="widget-progress-track">
+                  <div class="widget-progress-fill" style="width: 82%; background: linear-gradient(90deg, #7c3aed, #c084fc);"></div>
+                </div>
+                <div class="goal-deposit-cue">
+                  <span style="font-weight: 700;">↑</span> +$150.00 deposited yesterday
+                </div>
+              </div>
             </article>
 
+            <!-- 4. Insights that aren’t a chart dump -->
             <article class="card">
-              <h3 data-i18n="insights.title">Insights that aren’t a chart dump</h3>
-              <p data-i18n="insights.body">
-                Pace vs the calendar, vs last month, biggest expense, weekdays vs weekends, budget
-                health, and per-account in/out — plus category, daily, and six-month charts.
-              </p>
+              <div class="card__text">
+                <span class="card__badge">📊 Actionable Analytics</span>
+                <h3 data-i18n="insights.title">Insights that aren’t a chart dump</h3>
+                <p data-i18n="insights.body">
+                  Pace vs the calendar, vs last month, biggest expense, weekdays vs weekends, budget
+                  health, and per-account in/out — plus category, daily, and six-month charts.
+                </p>
+              </div>
+
+              <div class="widget-insights">
+                <div class="widget-header">
+                  <div class="widget-category">
+                    <span style="font-size: 1.1rem;">📈</span>
+                    <span>Daily Rhythm</span>
+                  </div>
+                  <span style="font-size: 0.8rem; color: var(--color-muted);">Avg $42/day</span>
+                </div>
+                <div class="spark-bars">
+                  <div class="spark-col"><div class="spark-bar" style="height: 38%;"></div><span class="spark-label">M</span></div>
+                  <div class="spark-col"><div class="spark-bar" style="height: 52%;"></div><span class="spark-label">T</span></div>
+                  <div class="spark-col"><div class="spark-bar" style="height: 30%;"></div><span class="spark-label">W</span></div>
+                  <div class="spark-col"><div class="spark-bar" style="height: 64%;"></div><span class="spark-label">T</span></div>
+                  <div class="spark-col"><div class="spark-bar active" style="height: 94%;"></div><span class="spark-label">F</span></div>
+                  <div class="spark-col"><div class="spark-bar" style="height: 75%;"></div><span class="spark-label">S</span></div>
+                  <div class="spark-col"><div class="spark-bar" style="height: 44%;"></div><span class="spark-label">S</span></div>
+                </div>
+                <div class="goal-deposit-cue" style="color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, transparent);">
+                  <span>📉</span> Pacing 14% under calendar limit
+                </div>
+              </div>
             </article>
 
+            <!-- 5. Activity you can trust -->
             <article class="card">
-              <h3 data-i18n="activity.title">Activity you can trust</h3>
-              <p data-i18n="activity.body">
-                Search notes and categories, filter by month and type, swipe left to delete. Same
-                compact rows as Home.
-              </p>
+              <div class="card__text">
+                <span class="card__badge">⚡ Clean History</span>
+                <h3 data-i18n="activity.title">Activity you can trust</h3>
+                <p data-i18n="activity.body">
+                  Search notes and categories, filter by month and type, swipe left to delete. Same
+                  compact rows as Home.
+                </p>
+              </div>
+
+              <div class="widget-activity">
+                <div class="activity-row">
+                  <div class="activity-left">
+                    <div class="activity-icon">☕</div>
+                    <div class="activity-meta">
+                      <span class="activity-title">Blue Bottle Coffee</span>
+                      <span class="activity-time">Yesterday · Food & Drink</span>
+                    </div>
+                  </div>
+                  <span class="activity-amount neg">-$5.40</span>
+                </div>
+                <div class="activity-row">
+                  <div class="activity-left">
+                    <div class="activity-icon">🥑</div>
+                    <div class="activity-meta">
+                      <span class="activity-title">Whole Foods Market</span>
+                      <span class="activity-time">Today · Groceries</span>
+                    </div>
+                  </div>
+                  <span class="activity-amount neg">-$48.20</span>
+                </div>
+                <div class="activity-row">
+                  <div class="activity-left">
+                    <div class="activity-icon">💼</div>
+                    <div class="activity-meta">
+                      <span class="activity-title">Client Consulting</span>
+                      <span class="activity-time">Sep 29 · Income</span>
+                    </div>
+                  </div>
+                  <span class="activity-amount pos">+$950.00</span>
+                </div>
+              </div>
             </article>
 
+            <!-- 6. Share the screen, not the numbers -->
             <article class="card">
-              <h3 data-i18n="hide.title">Share the screen, not the numbers</h3>
-              <p data-i18n="hide.body">
-                One tap hides amounts behind a spoiler. It stays hidden after you leave the app —
-                until you choose to show them again.
-              </p>
+              <div class="card__text">
+                <span class="card__badge">👁️ Privacy Shield</span>
+                <h3 data-i18n="hide.title">Share the screen, not the numbers</h3>
+                <p data-i18n="hide.body">
+                  One tap hides amounts behind a spoiler. It stays hidden after you leave the app —
+                  until you choose to show them again.
+                </p>
+              </div>
+
+              <div class="widget-spoiler">
+                <div class="spoiler-display">
+                  <span class="spoiler-account">Main Checking · Chase</span>
+                  <span class="spoiler-balance" id="spoiler-balance">$ 4,285.50</span>
+                  <span class="spoiler-account">Tap eye to toggle spoiler</span>
+                </div>
+                <button type="button" class="eye-toggle-btn" id="eye-toggle" aria-label="Toggle amount privacy mask">
+                  <svg id="eye-open-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg id="eye-closed-icon" style="display: none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m15 18-.722-3.25"></path>
+                    <path d="M2 8a10.645 10.645 0 0 0 20 0"></path>
+                    <path d="m20 15-1.726-2.05"></path>
+                    <path d="m4 15 1.726-2.05"></path>
+                    <path d="m9 18 .722-3.25"></path>
+                  </svg>
+                </button>
+              </div>
             </article>
           </div>
         </div>
@@ -240,11 +418,37 @@ npm run sync</code></pre>
 
     <footer class="site-footer">
       <div class="wrap footer-inner">
-        <span>WhereDidItGo</span>
-        <span data-i18n="footer.tagline">Local-first personal finance</span>
-        <a href="https://github.com/juraev-exe/wherediditgo" data-i18n="footer.source">Source</a>
+        <div class="footer-top">
+          <div>
+            <strong>WhereDidItGo</strong>
+            <p data-i18n="footer.tagline" style="margin: 4px 0 0; font-size: 0.9rem; color: var(--color-muted);">Local-first personal finance</p>
+          </div>
+          <ul class="footer-links">
+            <li><a href="./privacy.html">Privacy Policy</a></li>
+            <li><a href="./terms.html">Terms of Service</a></li>
+            <li><a href="./refund.html">Refund Policy</a></li>
+            <li><a href="./cookies.html">Cookie Policy</a></li>
+            <li><a href="./data-deletion.html">Data Deletion</a></li>
+            <li><a href="https://github.com/juraev-exe/wherediditgo" data-i18n="footer.source">Source</a></li>
+          </ul>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 WhereDidItGo by Juraev.exe. Open source under ISC License.</span>
+          <span>Contact & Inquiries: <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></span>
+        </div>
       </div>
     </footer>
+
+    <!-- Cookie & Local Storage Consent Banner -->
+    <div id="cookie-banner" class="cookie-banner" role="region" aria-label="Cookie and storage settings">
+      <div class="cookie-banner__content">
+        <strong>Privacy & Storage Notice:</strong> We use strictly essential local browser storage to remember your dark mode and language preferences. We do not use advertising or tracking cookies.
+      </div>
+      <div class="cookie-banner__actions">
+        <button type="button" class="btn btn--primary" id="cookie-accept">Accept Essential</button>
+        <a class="btn btn--ghost" href="./cookies.html">Cookie Policy</a>
+      </div>
+    </div>
 
     <script src="./i18n.js"></script>
     <script>
@@ -277,6 +481,80 @@ npm run sync</code></pre>
         toggle.addEventListener('click', function () {
           applyTheme(!isDark())
         })
+
+        // Cookie Consent Banner Handling
+        var cookieBanner = document.getElementById('cookie-banner')
+        var cookieAccept = document.getElementById('cookie-accept')
+        if (!localStorage.getItem('wdg-cookie-consent')) {
+          setTimeout(function () {
+            cookieBanner.classList.add('visible')
+          }, 600)
+        }
+        cookieAccept.addEventListener('click', function () {
+          try {
+            localStorage.setItem('wdg-cookie-consent', 'accepted')
+          } catch (e) {}
+          cookieBanner.classList.remove('visible')
+        })
+
+        // Interactive Keypad Demo
+        var keypadValEl = document.getElementById('keypad-val')
+        var keypadCatEl = document.getElementById('keypad-cat')
+        var keypadToast = document.getElementById('keypad-toast')
+        var currentExpr = '24.50'
+
+        document.querySelectorAll('.key-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var k = btn.getAttribute('data-k')
+            if (k === 'C') {
+              currentExpr = '0'
+            } else if (k === 'back') {
+              currentExpr = currentExpr.length > 1 ? currentExpr.slice(0, -1) : '0'
+            } else if (k === 'ok') {
+              keypadToast.classList.add('show')
+              setTimeout(function () {
+                keypadToast.classList.remove('show')
+                currentExpr = '0'
+                keypadValEl.textContent = currentExpr
+              }, 1200)
+              return
+            } else {
+              if (currentExpr === '0' && k !== '.') currentExpr = k
+              else if (currentExpr.length < 12) currentExpr += k
+            }
+            keypadValEl.textContent = currentExpr
+          })
+        })
+
+        document.querySelectorAll('.chip-btn').forEach(function (chip) {
+          chip.addEventListener('click', function () {
+            document.querySelectorAll('.chip-btn').forEach(function (c) { c.classList.remove('active') })
+            chip.classList.add('active')
+            keypadCatEl.textContent = chip.getAttribute('data-cat')
+          })
+        })
+
+        // Interactive Eye Spoiler Toggle Demo
+        var eyeBtn = document.getElementById('eye-toggle')
+        var spoilerBalance = document.getElementById('spoiler-balance')
+        var eyeOpen = document.getElementById('eye-open-icon')
+        var eyeClosed = document.getElementById('eye-closed-icon')
+        var isBlurred = false
+
+        if (eyeBtn && spoilerBalance) {
+          eyeBtn.addEventListener('click', function () {
+            isBlurred = !isBlurred
+            if (isBlurred) {
+              spoilerBalance.classList.add('blurred')
+              eyeOpen.style.display = 'none'
+              eyeClosed.style.display = 'block'
+            } else {
+              spoilerBalance.classList.remove('blurred')
+              eyeOpen.style.display = 'block'
+              eyeClosed.style.display = 'none'
+            }
+          })
+        }
       })()
     </script>
   </body>

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Data Deletion Instructions · WhereDidItGo</title>
+    <meta
+      name="description"
+      content="Instructions on how to delete your data in WhereDidItGo. Step-by-step guide for instant self-service deletion and support requests."
+    />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('wdg-theme')
+          var dark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="./">
+          <img src="./logo.png" width="32" height="32" alt="WhereDidItGo Logo" />
+          WhereDidItGo
+        </a>
+        <nav class="header-nav" aria-label="Page navigation">
+          <a href="./#features">Features</a>
+          <a href="./privacy.html">Privacy</a>
+          <a href="./terms.html">Terms</a>
+          <button type="button" class="theme-btn" id="theme-toggle" aria-label="Toggle dark theme">
+            <span class="theme-btn__sun" aria-hidden="true">☀</span>
+            <span class="theme-btn__moon" aria-hidden="true">☾</span>
+          </button>
+          <a class="btn btn--small" href="./">Back to Home</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="content" class="wrap legal-main">
+      <article class="legal-card">
+        <header class="legal-header">
+          <p class="eyebrow">User Rights & Compliance</p>
+          <h1>Data Deletion Instructions</h1>
+          <div class="legal-meta">
+            <span><strong>Effective Date:</strong> October 1, 2026</span>
+            <span><strong>Developer:</strong> WhereDidItGo (Juraev.exe)</span>
+            <span><strong>Contact:</strong> <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></span>
+          </div>
+        </header>
+
+        <section class="legal-section">
+          <h2>1. Immediate Self-Service Deletion (In-App)</h2>
+          <p>
+            Because WhereDidItGo operates on a <strong>100% local-first</strong> architecture, you hold direct, unilateral control over all stored data without needing to submit a ticket or wait for administrator approval:
+          </p>
+          <ol>
+            <li>Launch the <strong>WhereDidItGo</strong> app on your device.</li>
+            <li>Tap the <strong>Settings</strong> gear tab in the bottom navigation.</li>
+            <li>Scroll down to the <strong>Danger Zone</strong> section.</li>
+            <li>Tap <strong>Reset all local data</strong>.</li>
+            <li>Confirm the prompt. All stored transactions, balances, categories, debts, and savings goals will be permanently and irreversibly purged from your device's IndexedDB database.</li>
+          </ol>
+        </section>
+
+        <section class="legal-section">
+          <h2>2. Deletion by Application Uninstallation</h2>
+          <p>
+            Uninstalling the WhereDidItGo application through Android, iOS, or your desktop operating system immediately wipes the sandboxed local storage directory, permanently deleting all locally held data.
+          </p>
+        </section>
+
+        <section class="legal-section">
+          <h2>3. Requesting Erasure of Email Correspondence</h2>
+          <p>
+            We do not operate backend user accounts or cloud databases storing your financial numbers.
+            However, if you have corresponded with our developer support desk via email or sent feedback:
+          </p>
+          <ul>
+            <li>You can request full erasure of all email correspondence and support logs.</li>
+            <li>Send an email to <a href="mailto:support@wherediditgo.app?subject=Data%20Deletion%20Request">support@wherediditgo.app</a> with the subject line <strong>"Data Deletion Request"</strong>.</li>
+            <li>Our team will expunge and permanently shred all email message threads associated with your address within <strong>30 calendar days</strong>.</li>
+          </ul>
+        </section>
+
+        <section class="legal-section">
+          <h2>4. In-App Purchase Records</h2>
+          <p>
+            Purchase tokens and transaction receipts processed via Google Play or the Apple App Store are managed by Google LLC and Apple Inc. pursuant to tax regulations and commercial record retention laws. Consult your Google Play account or Apple ID billing settings to review or delete payment history.
+          </p>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-inner">
+        <div class="footer-top">
+          <span>WhereDidItGo · Local-first personal finance</span>
+          <ul class="footer-links">
+            <li><a href="./privacy.html">Privacy Policy</a></li>
+            <li><a href="./terms.html">Terms of Service</a></li>
+            <li><a href="./refund.html">Refund Policy</a></li>
+            <li><a href="./cookies.html">Cookie Policy</a></li>
+            <li><a href="./data-deletion.html">Data Deletion</a></li>
+            <li><a href="https://github.com/juraev-exe/wherediditgo">Source Code</a></li>
+          </ul>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 WhereDidItGo by Juraev.exe. All rights reserved.</span>
+          <span>Contact: <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        var root = document.documentElement
+        var toggle = document.getElementById('theme-toggle')
+        function isDark() { return root.dataset.theme === 'dark' }
+        function applyTheme(dark) {
+          root.dataset.theme = dark ? 'dark' : 'light'
+          toggle.setAttribute('aria-pressed', dark ? 'true' : 'false')
+          try { localStorage.setItem('wdg-theme', dark ? 'dark' : 'light') } catch (e) {}
+        }
+        toggle.addEventListener('click', function () { applyTheme(!isDark()) })
+      })()
+    </script>
+  </body>
+</html>

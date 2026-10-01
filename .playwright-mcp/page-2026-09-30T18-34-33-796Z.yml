@@ -1,0 +1,245 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link [ref=e5] [cursor=pointer]:
+        - /url: ./
+        - img "WhereDidItGo Logo" [ref=e6]
+        - text: WhereDidItGo
+      - navigation "Page" [ref=e7]:
+        - link "Features" [ref=e8] [cursor=pointer]:
+          - /url: "#features"
+        - link "Privacy" [ref=e9] [cursor=pointer]:
+          - /url: "#privacy"
+        - link "Source" [ref=e10] [cursor=pointer]:
+          - /url: "#source"
+        - group "Language" [ref=e11]:
+          - button "EN" [pressed] [ref=e12] [cursor=pointer]
+          - button "RU" [ref=e13] [cursor=pointer]
+          - button "TJ" [ref=e14] [cursor=pointer]
+        - button "Toggle dark theme" [ref=e15] [cursor=pointer]: ☀
+        - link "GitHub" [ref=e16] [cursor=pointer]:
+          - /url: https://github.com/juraev-exe/wherediditgo
+  - main [ref=e17]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - paragraph [ref=e21]: Android · local-first
+        - heading "Know where every dollar went." [level=1] [ref=e22]
+        - paragraph [ref=e23]: Log spending in a few taps, keep simple monthly budgets, and watch savings goals fill up. Nothing is uploaded. Backup is a JSON file you own.
+        - generic [ref=e24]:
+          - link "View source" [ref=e25] [cursor=pointer]:
+            - /url: https://github.com/juraev-exe/wherediditgo
+          - link "Build it yourself" [ref=e26] [cursor=pointer]:
+            - /url: "#source"
+        - list [ref=e27]:
+          - listitem [ref=e28]: · English, Русский, Тоҷикӣ
+          - listitem [ref=e29]: · Light, dark, or system theme
+          - listitem [ref=e30]: · Blur the balance, or hold to hide every amount
+      - img "WhereDidItGo home screen with available balance, spending categories, and bottom navigation" [ref=e34]
+    - generic [ref=e36]:
+      - heading "Your money never leaves this phone." [level=2] [ref=e37]
+      - paragraph [ref=e38]: Transactions live in a local database on the device. There is no account to create, no cloud sync, and no analytics. Switch phones with a full JSON backup — or export transactions as CSV.
+    - generic [ref=e40]:
+      - paragraph [ref=e41]: What it does
+      - heading "Built for the way you actually spend." [level=2] [ref=e42]
+      - generic [ref=e43]:
+        - article [ref=e44]:
+          - generic [ref=e45]:
+            - generic [ref=e46]: ⚡ Rapid Expense Logging
+            - heading "Amount-first keypad" [level=3] [ref=e47]
+            - paragraph [ref=e48]:
+              - text: Open +, type the amount, optionally add
+              - code [ref=e49]: 13+24+50
+              - text: on the keypad, then pick category and account. Fast enough for the checkout line.
+            - group "Quick category selector" [ref=e50]:
+              - button "☕ Coffee" [ref=e51] [cursor=pointer]
+              - button "🛒 Groceries" [ref=e52] [cursor=pointer]
+              - button "🍔 Dining" [ref=e53] [cursor=pointer]
+              - button "⛽ Fuel" [ref=e54] [cursor=pointer]
+          - generic "Interactive demo keypad" [ref=e55]:
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - generic [ref=e58]: ☕ Coffee
+                - generic [ref=e59]: Checking (Chase)
+              - generic [ref=e60]:
+                - generic [ref=e61]: $
+                - generic [ref=e62]: "24.50"
+              - generic: ✓ Expense Logged!
+            - group "Keypad buttons" [ref=e63]:
+              - button "1" [ref=e64] [cursor=pointer]
+              - button "2" [ref=e65] [cursor=pointer]
+              - button "3" [ref=e66] [cursor=pointer]
+              - button "+" [ref=e67] [cursor=pointer]
+              - button "4" [ref=e68] [cursor=pointer]
+              - button "5" [ref=e69] [cursor=pointer]
+              - button "6" [ref=e70] [cursor=pointer]
+              - button "−" [ref=e71] [cursor=pointer]
+              - button "7" [ref=e72] [cursor=pointer]
+              - button "8" [ref=e73] [cursor=pointer]
+              - button "9" [ref=e74] [cursor=pointer]
+              - button "C" [ref=e75] [cursor=pointer]
+              - button "." [ref=e76] [cursor=pointer]
+              - button "0" [ref=e77] [cursor=pointer]
+              - button "Backspace" [ref=e78] [cursor=pointer]: ⌫
+              - button "Save expense" [ref=e79] [cursor=pointer]: ✓
+        - article [ref=e80]:
+          - generic [ref=e81]:
+            - generic [ref=e82]: 🎯 Monthly Discipline
+            - heading "Budgets that stay monthly" [level=3] [ref=e83]
+            - paragraph [ref=e84]: Cap groceries, bills, or transport. See what’s left this month — not a lifetime envelope mixed in with savings.
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - generic [ref=e87]:
+                - generic [ref=e88]: 🛒
+                - generic [ref=e89]: Groceries
+              - generic [ref=e90]: On track
+            - generic [ref=e91]:
+              - generic [ref=e92]: $340.00
+              - generic [ref=e93]: Limit $500.00
+            - generic [ref=e96]:
+              - generic [ref=e97]:
+                - strong [ref=e98]: $160.00
+                - text: left to spend
+              - generic [ref=e99]: 11 days remaining
+        - article [ref=e100]:
+          - generic [ref=e101]:
+            - generic [ref=e102]: 🏝️ Dedicated Targets
+            - heading "Savings goals" [level=3] [ref=e103]
+            - paragraph [ref=e104]: A trip, a gadget, an emergency fund. Move money from an account into a goal. It is not logged as a spend, and you pick any icon you like.
+          - generic [ref=e105]:
+            - generic [ref=e106]:
+              - generic [ref=e107]:
+                - generic [ref=e108]: ✈️
+                - generic [ref=e109]: Tokyo Trip
+              - generic [ref=e110]: 82% reached
+            - generic [ref=e111]:
+              - generic [ref=e112]: $2,450.00
+              - generic [ref=e113]: Target $3,000.00
+            - generic [ref=e116]:
+              - generic [ref=e117]: ↑
+              - text: +$150.00 deposited yesterday
+        - article [ref=e118]:
+          - generic [ref=e119]:
+            - generic [ref=e120]: 📊 Actionable Analytics
+            - heading "Insights that aren’t a chart dump" [level=3] [ref=e121]
+            - paragraph [ref=e122]: Pace vs the calendar, vs last month, biggest expense, weekdays vs weekends, budget health, and per-account in/out — plus category, daily, and six-month charts.
+          - generic [ref=e123]:
+            - generic [ref=e124]:
+              - generic [ref=e125]:
+                - generic [ref=e126]: 📈
+                - generic [ref=e127]: Daily Rhythm
+              - generic [ref=e128]: Avg $42/day
+            - generic [ref=e129]:
+              - generic [ref=e130]: M
+              - generic [ref=e133]: T
+              - generic [ref=e136]: W
+              - generic [ref=e139]: T
+              - generic [ref=e142]: F
+              - generic [ref=e145]: S
+              - generic [ref=e148]: S
+            - generic [ref=e151]:
+              - generic [ref=e152]: 📉
+              - text: Pacing 14% under calendar limit
+        - article [ref=e153]:
+          - generic [ref=e154]:
+            - generic [ref=e155]: ⚡ Clean History
+            - heading "Activity you can trust" [level=3] [ref=e156]
+            - paragraph [ref=e157]: Search notes and categories, filter by month and type, swipe left to delete. Same compact rows as Home.
+          - generic [ref=e158]:
+            - generic [ref=e159]:
+              - generic [ref=e160]:
+                - generic [ref=e161]: ☕
+                - generic [ref=e162]:
+                  - generic [ref=e163]: Blue Bottle Coffee
+                  - generic [ref=e164]: Yesterday · Food & Drink
+              - generic [ref=e165]: "-$5.40"
+            - generic [ref=e166]:
+              - generic [ref=e167]:
+                - generic [ref=e168]: 🥑
+                - generic [ref=e169]:
+                  - generic [ref=e170]: Whole Foods Market
+                  - generic [ref=e171]: Today · Groceries
+              - generic [ref=e172]: "-$48.20"
+            - generic [ref=e173]:
+              - generic [ref=e174]:
+                - generic [ref=e175]: 💼
+                - generic [ref=e176]:
+                  - generic [ref=e177]: Client Consulting
+                  - generic [ref=e178]: Sep 29 · Income
+              - generic [ref=e179]: +$950.00
+        - article [ref=e180]:
+          - generic [ref=e181]:
+            - generic [ref=e182]: 👁️ Privacy Shield
+            - heading "Share the screen, not the numbers" [level=3] [ref=e183]
+            - paragraph [ref=e184]: Tap the eye to blur the balance. Hold it to hide every amount — it stays that way after you leave the app.
+          - generic [ref=e185]:
+            - generic [ref=e186]:
+              - generic [ref=e187]: Main Checking · Chase
+              - generic [ref=e188]: $ 4,285.50
+              - generic [ref=e189]: Tap eye to toggle spoiler
+            - button "Toggle amount privacy mask" [ref=e190] [cursor=pointer]
+    - generic [ref=e195]:
+      - generic [ref=e196]:
+        - paragraph [ref=e197]: Stack
+        - heading "Vue on the phone, SQLite-free on purpose." [level=2] [ref=e198]
+        - paragraph [ref=e199]: Vue 3, Pinia, Dexie (IndexedDB), vue-i18n, and Capacitor for Android. Light enough to reason about, offline by default.
+      - list [ref=e200]:
+        - listitem [ref=e201]: Vue 3
+        - listitem [ref=e202]: TypeScript
+        - listitem [ref=e203]: Pinia
+        - listitem [ref=e204]: Dexie
+        - listitem [ref=e205]: Capacitor 8
+        - listitem [ref=e206]: Chart.js
+        - listitem [ref=e207]: English
+        - listitem [ref=e208]: Русский
+        - listitem [ref=e209]: Тоҷикӣ
+    - generic [ref=e211]:
+      - paragraph [ref=e212]: Open source
+      - heading "Clone it, run it, ship it to your phone." [level=2] [ref=e213]
+      - code [ref=e215]: git clone https://github.com/juraev-exe/wherediditgo.git cd wherediditgo npm install npm run dev npm run sync
+      - paragraph [ref=e216]:
+        - text: Open the
+        - code [ref=e217]: android/
+        - text: folder in Android Studio to install on a device. ISC licensed.
+      - link "github.com/juraev-exe/wherediditgo" [ref=e218] [cursor=pointer]:
+        - /url: https://github.com/juraev-exe/wherediditgo
+  - contentinfo [ref=e219]:
+    - generic [ref=e220]:
+      - generic [ref=e221]:
+        - generic [ref=e222]:
+          - strong [ref=e223]: WhereDidItGo
+          - paragraph [ref=e224]: Local-first personal finance
+        - list [ref=e225]:
+          - listitem [ref=e226]:
+            - link "Privacy Policy" [ref=e227] [cursor=pointer]:
+              - /url: ./privacy.html
+          - listitem [ref=e228]:
+            - link "Terms of Service" [ref=e229] [cursor=pointer]:
+              - /url: ./terms.html
+          - listitem [ref=e230]:
+            - link "Refund Policy" [ref=e231] [cursor=pointer]:
+              - /url: ./refund.html
+          - listitem [ref=e232]:
+            - link "Cookie Policy" [ref=e233] [cursor=pointer]:
+              - /url: ./cookies.html
+          - listitem [ref=e234]:
+            - link "Data Deletion" [ref=e235] [cursor=pointer]:
+              - /url: ./data-deletion.html
+          - listitem [ref=e236]:
+            - link "Source" [ref=e237] [cursor=pointer]:
+              - /url: https://github.com/juraev-exe/wherediditgo
+      - generic [ref=e238]:
+        - generic [ref=e239]: © 2026 WhereDidItGo by Juraev.exe. Open source under ISC License.
+        - generic [ref=e240]:
+          - text: "Contact & Inquiries:"
+          - link "support@wherediditgo.app" [ref=e241] [cursor=pointer]:
+            - /url: mailto:support@wherediditgo.app
+  - region "Cookie and storage settings" [ref=e242]:
+    - generic [ref=e243]:
+      - strong [ref=e244]: "Privacy & Storage Notice:"
+      - text: We use strictly essential local browser storage to remember your dark mode and language preferences. We do not use advertising or tracking cookies.
+    - generic [ref=e245]:
+      - button "Accept Essential" [ref=e246] [cursor=pointer]
+      - link "Cookie Policy" [ref=e247] [cursor=pointer]:
+        - /url: ./cookies.html

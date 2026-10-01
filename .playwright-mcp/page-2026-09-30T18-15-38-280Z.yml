@@ -1,0 +1,119 @@
+- generic [active] [ref=f2e1]:
+  - link "Skip to content" [ref=f2e2] [cursor=pointer]:
+    - /url: "#content"
+  - banner [ref=f2e3]:
+    - generic [ref=f2e4]:
+      - link [ref=f2e5] [cursor=pointer]:
+        - /url: ./
+        - img "WhereDidItGo Logo" [ref=f2e6]
+        - text: WhereDidItGo
+      - navigation "Page navigation" [ref=f2e7]:
+        - link "Features" [ref=f2e8] [cursor=pointer]:
+          - /url: ./#features
+        - link "Privacy" [ref=f2e9] [cursor=pointer]:
+          - /url: ./privacy.html
+        - link "Terms" [ref=f2e10] [cursor=pointer]:
+          - /url: ./terms.html
+        - button "Toggle dark theme" [ref=f2e11] [cursor=pointer]: ☀
+        - link "Back to Home" [ref=f2e12] [cursor=pointer]:
+          - /url: ./
+  - main [ref=f2e13]:
+    - article [ref=f2e14]:
+      - generic [ref=f2e15]:
+        - paragraph [ref=f2e16]: Legal & Compliance
+        - heading "Cookie & Local Storage Policy" [level=1] [ref=f2e17]
+        - generic [ref=f2e18]:
+          - generic [ref=f2e19]:
+            - strong [ref=f2e20]: "Effective Date:"
+            - text: October 1, 2026
+          - generic [ref=f2e21]:
+            - strong [ref=f2e22]: "Developer:"
+            - text: WhereDidItGo (Juraev.exe)
+          - generic [ref=f2e23]:
+            - strong [ref=f2e24]: "Contact:"
+            - link "support@wherediditgo.app" [ref=f2e25] [cursor=pointer]:
+              - /url: mailto:support@wherediditgo.app
+      - generic [ref=f2e26]:
+        - heading "1. No Third-Party Tracking or Advertising Cookies" [level=2] [ref=f2e27]
+        - paragraph [ref=f2e28]:
+          - text: WhereDidItGo believes that web tracking is unnecessary and invasive.
+          - strong [ref=f2e29]: We do not use advertising cookies, social media tracking pixels, or cross-site analytics scripts.
+          - text: We do not monetize your browsing habits or share visitor data with data brokers.
+      - generic [ref=f2e30]:
+        - 'heading "2. What We Store: Strictly Essential Local Storage" [level=2] [ref=f2e31]'
+        - paragraph [ref=f2e32]:
+          - text: Instead of tracking cookies, our website utilizes standard browser
+          - code [ref=f2e33]: localStorage
+          - text: "purely to remember your chosen interface settings:"
+        - table [ref=f2e35]:
+          - rowgroup [ref=f2e36]:
+            - row [ref=f2e37]:
+              - columnheader "Storage Key" [ref=f2e38]
+              - columnheader "Category" [ref=f2e39]
+              - columnheader "Function / Purpose" [ref=f2e40]
+              - columnheader "Duration" [ref=f2e41]
+          - rowgroup [ref=f2e42]:
+            - row [ref=f2e43]:
+              - cell [ref=f2e44]:
+                - code [ref=f2e45]: wdg-theme
+              - cell "Strictly Necessary" [ref=f2e46]
+              - cell "Remembers your selected appearance (Light Mode vs Dark Mode)." [ref=f2e47]
+              - cell "Persistent until cleared" [ref=f2e48]
+            - row [ref=f2e49]:
+              - cell [ref=f2e50]:
+                - code [ref=f2e51]: wdg-locale
+              - cell "Strictly Necessary" [ref=f2e52]
+              - cell "Remembers your preferred language (English, Russian, or Tajik)." [ref=f2e53]
+              - cell "Persistent until cleared" [ref=f2e54]
+            - row [ref=f2e55]:
+              - cell [ref=f2e56]:
+                - code [ref=f2e57]: wdg-cookie-consent
+              - cell "Compliance / Essential" [ref=f2e58]
+              - cell "Remembers that you have dismissed the cookie and privacy disclosure notice." [ref=f2e59]
+              - cell "Persistent until cleared" [ref=f2e60]
+      - generic [ref=f2e61]:
+        - heading "3. Managing and Deleting Your Storage" [level=2] [ref=f2e62]
+        - paragraph [ref=f2e63]: "You are always in total control of what is stored on your device:"
+        - list [ref=f2e64]:
+          - listitem [ref=f2e65]:
+            - strong [ref=f2e66]: "Browser Settings:"
+            - text: You can wipe all local storage keys anytime through your browser's "Clear Browsing Data" menu.
+          - listitem [ref=f2e67]:
+            - strong [ref=f2e68]: "Incognito / Private Mode:"
+            - text: Browsing our website in Private mode ensures all storage is automatically cleared when you close the tab.
+      - generic [ref=f2e69]:
+        - heading "4. Inquiries & Feedback" [level=2] [ref=f2e70]
+        - paragraph [ref=f2e71]:
+          - text: Questions regarding our cookie practices can be directed to our support team at
+          - link "support@wherediditgo.app" [ref=f2e72] [cursor=pointer]:
+            - /url: mailto:support@wherediditgo.app
+          - text: .
+  - contentinfo [ref=f2e73]:
+    - generic [ref=f2e74]:
+      - generic [ref=f2e75]:
+        - generic [ref=f2e76]: WhereDidItGo · Local-first personal finance
+        - list [ref=f2e77]:
+          - listitem [ref=f2e78]:
+            - link "Privacy Policy" [ref=f2e79] [cursor=pointer]:
+              - /url: ./privacy.html
+          - listitem [ref=f2e80]:
+            - link "Terms of Service" [ref=f2e81] [cursor=pointer]:
+              - /url: ./terms.html
+          - listitem [ref=f2e82]:
+            - link "Refund Policy" [ref=f2e83] [cursor=pointer]:
+              - /url: ./refund.html
+          - listitem [ref=f2e84]:
+            - link "Cookie Policy" [ref=f2e85] [cursor=pointer]:
+              - /url: ./cookies.html
+          - listitem [ref=f2e86]:
+            - link "Data Deletion" [ref=f2e87] [cursor=pointer]:
+              - /url: ./data-deletion.html
+          - listitem [ref=f2e88]:
+            - link "Source Code" [ref=f2e89] [cursor=pointer]:
+              - /url: https://github.com/juraev-exe/wherediditgo
+      - generic [ref=f2e90]:
+        - generic [ref=f2e91]: © 2026 WhereDidItGo by Juraev.exe. All rights reserved.
+        - generic [ref=f2e92]:
+          - text: "Contact:"
+          - link "support@wherediditgo.app" [ref=f2e93] [cursor=pointer]:
+            - /url: mailto:support@wherediditgo.app

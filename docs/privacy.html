@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy · WhereDidItGo</title>
+    <meta
+      name="description"
+      content="Privacy Policy for WhereDidItGo. Discover our 100% local-first data architecture, zero financial data transmission, GDPR/CCPA compliance, and user rights."
+    />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('wdg-theme')
+          var dark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="./">
+          <img src="./logo.png" width="32" height="32" alt="WhereDidItGo Logo" />
+          WhereDidItGo
+        </a>
+        <nav class="header-nav" aria-label="Page navigation">
+          <a href="./#features">Features</a>
+          <a href="./privacy.html" style="color: var(--color-primary); font-weight: 600;">Privacy</a>
+          <a href="./terms.html">Terms</a>
+          <button type="button" class="theme-btn" id="theme-toggle" aria-label="Toggle dark theme">
+            <span class="theme-btn__sun" aria-hidden="true">☀</span>
+            <span class="theme-btn__moon" aria-hidden="true">☾</span>
+          </button>
+          <a class="btn btn--small" href="./">Back to Home</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="content" class="wrap legal-main">
+      <article class="legal-card">
+        <header class="legal-header">
+          <p class="eyebrow">Legal & Compliance</p>
+          <h1>Privacy Policy</h1>
+          <div class="legal-meta">
+            <span><strong>Effective Date:</strong> October 1, 2026</span>
+            <span><strong>Developer:</strong> WhereDidItGo (Juraev.exe)</span>
+            <span><strong>Contact:</strong> <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></span>
+          </div>
+        </header>
+
+        <section class="legal-section">
+          <h2>1. 100% Local-First Data Storage</h2>
+          <p>
+            WhereDidItGo ("we", "our", or "us") operates on a foundational <strong>local-first</strong> architectural model.
+            Your financial records are strictly yours:
+          </p>
+          <ul>
+            <li><strong>On-Device Records:</strong> All transaction records, income logs, expenses, category budgets, debts, savings goals, and transaction notes are stored exclusively in your device's isolated IndexedDB local storage sandbox.</li>
+            <li><strong>Zero Server Transmission:</strong> We do not operate or maintain remote financial databases. We never transmit, upload, inspect, or process your personal bookkeeping records on external cloud servers.</li>
+            <li><strong>No Account Required:</strong> You do not need to register, create a username, or link an email address to use the application.</li>
+          </ul>
+        </section>
+
+        <section class="legal-section">
+          <h2>2. No Unnecessary Data & Permissions (Data Minimization)</h2>
+          <p>We respect the principle of data minimization and request only the bare minimum operating system capabilities:</p>
+          <ul>
+            <li><strong>No Location Data:</strong> We never track, request, or record GPS or network locations.</li>
+            <li><strong>No Contacts / Address Book:</strong> We do not inspect or upload your contacts.</li>
+            <li><strong>No Camera / Media Access:</strong> The app does not access your camera, microphone, or photo gallery.</li>
+            <li><strong>Permitted OS Features:</strong>
+              <ul>
+                <li><code>VIBRATE</code> — provides subtle haptic clicks during numeric keypad logging.</li>
+                <li><code>POST_NOTIFICATIONS</code> — allows you to receive optional local budget reminders if you choose to set them.</li>
+                <li><code>INTERNET</code> — utilized strictly for Google Play / Apple App Store in-app billing verification.</li>
+              </ul>
+            </li>
+          </ul>
+        </section>
+
+        <section class="legal-section">
+          <h2>3. In-App Purchases, Billing & No Hidden Fees</h2>
+          <p>
+            WhereDidItGo offers an optional upgrade ("WhereDidItGo Pro") to unlock advanced tools.
+            All purchases are processed with complete transparency:
+          </p>
+          <ul>
+            <li>Payments are executed directly through the official <strong>Google Play Store</strong> (Google Play Billing) or <strong>Apple App Store</strong>.</li>
+            <li>We never receive or store your credit card credentials, debit card numbers, or billing addresses.</li>
+            <li>We utilize <strong>RevenueCat</strong> solely to validate store purchase receipts. RevenueCat receives an anonymous, randomly generated application user ID and the receipt token. No financial amounts or expense details are ever transmitted.</li>
+            <li><strong>No Hidden Fees:</strong> Pro licenses are clearly displayed with upfront pricing. There are no sneaky renewal charges, surprise fees, or dark patterns.</li>
+          </ul>
+        </section>
+
+        <section class="legal-section">
+          <h2>4. Third-Party SDK Audit</h2>
+          <p>We routinely audit all software libraries to ensure user safety and compliance:</p>
+          <ul>
+            <li><strong>No Ad Networks:</strong> We contain zero ad network SDKs (no AdMob, Meta, Unity Ads, etc.).</li>
+            <li><strong>No Tracking / Profiling SDKs:</strong> We do not integrate Firebase Analytics, AppsFlyer, or behavioral tracking trackers.</li>
+            <li>Review our complete <a href="https://github.com/juraev-exe/wherediditgo/blob/main/THIRD_PARTY_AUDIT.md">Third-Party SDK Audit</a> for itemized technical breakdowns.</li>
+          </ul>
+        </section>
+
+        <section class="legal-section">
+          <h2>5. Age Consent & Children's Privacy (COPPA / GDPR-K)</h2>
+          <p>
+            WhereDidItGo is designed for general audiences aged 18 and older. We do not knowingly solicit, collect, or process personal information from children under the age of 13 (or under 16 in the European Economic Area).
+            Because the application operates without remote user accounts or data scraping, no identities or profiles of children are compiled.
+          </p>
+        </section>
+
+        <section class="legal-section">
+          <h2>6. Email Communications & Anti-Spam (Unsubscribe Guarantee)</h2>
+          <p>
+            We respect your inbox:
+          </p>
+          <ul>
+            <li>We do not send unsolicited promotional marketing emails or sell your email address.</li>
+            <li>When you email our support desk at <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a>, your email is used solely to answer your question.</li>
+            <li>If any optional email announcement list is made available in the future, every message will feature a prominent, one-click <strong>Unsubscribe</strong> link complying with the CAN-SPAM Act and GDPR Article 7.</li>
+          </ul>
+        </section>
+
+        <section class="legal-section">
+          <h2>7. Data Deletion & Your Legal Rights (GDPR & CCPA)</h2>
+          <p>You have full autonomy over your data under GDPR (Articles 15–22) and CCPA:</p>
+          <ul>
+            <li><strong>Instant Self-Service Erasure:</strong> Inside the app, go to <strong>Settings → Danger Zone → Reset all local data</strong> to permanently wipe all financial records immediately.</li>
+            <li><strong>Uninstalling the App:</strong> Deleting the app from your device automatically destroys the application's isolated local database.</li>
+            <li><strong>Data Export:</strong> You can export full JSON backups or CSV files at any time.</li>
+            <li><strong>Correspondence Erasure:</strong> To request deletion of any support email correspondence, consult our <a href="./data-deletion.html">Data Deletion Guide</a> or email <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a>.</li>
+          </ul>
+        </section>
+
+        <section class="legal-section">
+          <h2>8. Cookies & Web Local Storage</h2>
+          <p>
+            Our website does not use third-party advertising or tracking cookies. We store only strictly necessary local preferences:
+            theme (<code>wdg-theme</code>), language (<code>wdg-locale</code>), and cookie banner state (<code>wdg-cookie-consent</code>).
+            For more information, see our <a href="./cookies.html">Cookie Policy</a>.
+          </p>
+        </section>
+
+        <section class="legal-section">
+          <h2>9. Contact & Business Details</h2>
+          <p>For questions, formal data requests, or privacy concerns:</p>
+          <ul>
+            <li><strong>Legal Entity / Developer:</strong> WhereDidItGo Project (Juraev.exe)</li>
+            <li><strong>Support Email:</strong> <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></li>
+            <li><strong>Open Source Repository:</strong> <a href="https://github.com/juraev-exe/wherediditgo">github.com/juraev-exe/wherediditgo</a></li>
+          </ul>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-inner">
+        <div class="footer-top">
+          <span>WhereDidItGo · Local-first personal finance</span>
+          <ul class="footer-links">
+            <li><a href="./privacy.html">Privacy Policy</a></li>
+            <li><a href="./terms.html">Terms of Service</a></li>
+            <li><a href="./refund.html">Refund Policy</a></li>
+            <li><a href="./cookies.html">Cookie Policy</a></li>
+            <li><a href="./data-deletion.html">Data Deletion</a></li>
+            <li><a href="https://github.com/juraev-exe/wherediditgo">Source Code</a></li>
+          </ul>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 WhereDidItGo by Juraev.exe. All rights reserved.</span>
+          <span>Contact: <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        var root = document.documentElement
+        var toggle = document.getElementById('theme-toggle')
+        function isDark() { return root.dataset.theme === 'dark' }
+        function applyTheme(dark) {
+          root.dataset.theme = dark ? 'dark' : 'light'
+          toggle.setAttribute('aria-pressed', dark ? 'true' : 'false')
+          try { localStorage.setItem('wdg-theme', dark ? 'dark' : 'light') } catch (e) {}
+        }
+        toggle.addEventListener('click', function () { applyTheme(!isDark()) })
+      })()
+    </script>
+  </body>
+</html>

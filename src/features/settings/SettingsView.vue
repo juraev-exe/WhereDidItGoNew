@@ -12,12 +12,14 @@ import {
   Lock,
   Palette,
   RefreshCw,
+  Scale,
   Sliders,
   Wallet,
 } from '@lucide/vue'
 import AppearanceSettings from './components/AppearanceSettings.vue'
 import BackupsSettings from './components/BackupsSettings.vue'
 import FormattingSettings from './components/FormattingSettings.vue'
+import LegalSettings from './components/LegalSettings.vue'
 import NavigationSettings from './components/NavigationSettings.vue'
 import SecurityPrivacySettings from './components/SecurityPrivacySettings.vue'
 import Snackbar from '@/components/ui/Snackbar.vue'
@@ -27,7 +29,7 @@ import { useUiStore } from '@/stores/ui'
 import { usePremiumStore } from '@/stores/premium'
 import pkg from '../../../package.json'
 
-type Subpage = 'root' | 'formatting' | 'appearance' | 'navigation' | 'securityPrivacy' | 'backups'
+type Subpage = 'root' | 'formatting' | 'appearance' | 'navigation' | 'securityPrivacy' | 'backups' | 'legal'
 
 const APP_VERSION = pkg.version
 const REPO_URL = 'https://github.com/juraev-exe/wherediditgo'
@@ -100,6 +102,12 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
       v-else-if="activeSubpage === 'backups'"
       @back="activeSubpage = 'root'"
       @notify="onNotify"
+    />
+
+    <LegalSettings
+      v-else-if="activeSubpage === 'legal'"
+      @back="activeSubpage = 'root'"
+      @open-backups="activeSubpage = 'backups'"
     />
 
     <!-- Main Apple Inset Grouped Settings Hub -->
@@ -242,12 +250,31 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
         </button>
       </div>
 
-      <!-- Group 4: Attribution & About -->
+      <!-- Group 4: Legal & Compliance -->
+      <div class="group-card surface-glass">
+        <button type="button" class="group-row" @click="openSubpage('legal')">
+          <div class="row-left">
+            <div class="icon-squircle icon-teal">
+              <Scale :size="19" />
+            </div>
+            <div class="row-text">
+              <span class="row-title">{{ t('settings.legalTitle', 'Legal & Compliance') }}</span>
+              <span class="row-sub">{{ t('settings.legalSub', 'Privacy policy, terms, refunds & data rights') }}</span>
+            </div>
+          </div>
+          <ChevronRight :size="18" class="chevron-right" />
+        </button>
+      </div>
+
+      <!-- Group 5: Attribution & About -->
       <div class="group-card about-card surface-glass">
         <div class="about-content">
           <span class="app-name">WhereDidItGo</span>
           <span class="app-version">{{ t('settings.version', { version: APP_VERSION }) }}</span>
           <span class="author-tag">{{ t('settings.craftedBy', 'Crafted by Juraev.exe') }}</span>
+          <a href="mailto:support@wherediditgo.app" class="github-link">
+            support@wherediditgo.app
+          </a>
           <a :href="REPO_URL" target="_blank" rel="noopener noreferrer" class="github-link">
             <ExternalLink :size="14" />
             {{ t('settings.viewOnGithub', 'View on GitHub') }}

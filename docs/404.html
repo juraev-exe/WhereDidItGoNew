@@ -3,18 +3,590 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Not found · WhereDidItGo</title>
+    <title>404 · Boo! Page missing! — WhereDidItGo</title>
+    <meta
+      name="description"
+      content="Whoops! This page must be a ghost - it's not here! Error 404 page for WhereDidItGo."
+    />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="stylesheet" href="./styles.css" />
-    <meta http-equiv="refresh" content="0; url=./" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Signika:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg-color: #ffffff;
+        --text-primary: #222222;
+        --btn-bg: #222222;
+        --btn-text: #ffffff;
+        --btn-hover: #000000;
+        --card-bg: rgba(0, 0, 0, 0.04);
+        --card-border: rgba(0, 0, 0, 0.08);
+        --ghost-filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.08));
+      }
+
+      [data-theme='dark'] {
+        --bg-color: #121415;
+        --text-primary: #ece8e1;
+        --btn-bg: #f3f0ea;
+        --btn-text: #121415;
+        --btn-hover: #ffffff;
+        --card-bg: rgba(255, 255, 255, 0.05);
+        --card-border: rgba(255, 255, 255, 0.1);
+        --ghost-filter: drop-shadow(0 12px 28px rgba(77, 208, 200, 0.18)) brightness(1.08);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        min-height: 100vh;
+        width: 100%;
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        transition: background-color 0.3s ease, color 0.3s ease;
+        overflow-x: hidden;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1.25rem;
+        position: relative;
+      }
+
+      /* Top navigation bar */
+      .top-nav {
+        position: absolute;
+        top: 1.25rem;
+        left: 1.25rem;
+        right: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        pointer-events: auto;
+      }
+
+      .brand-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        text-decoration: none;
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.95rem;
+        opacity: 0.8;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .brand-link:hover {
+        opacity: 1;
+        transform: translateY(-1px);
+      }
+
+      .brand-link img {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+      }
+
+      .theme-btn {
+        background: none;
+        border: 1px solid var(--card-border);
+        color: var(--text-primary);
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.75;
+        transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
+      }
+
+      .theme-btn:hover {
+        opacity: 1;
+        transform: scale(1.06);
+        background: var(--card-bg);
+      }
+
+      .theme-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      /* Main container */
+      .container {
+        text-align: center;
+        max-width: 640px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      /* Numbers & Ghost Row */
+      .digits-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      @media (min-width: 768px) {
+        .digits-row {
+          gap: 1.5rem;
+          margin-bottom: 3rem;
+        }
+      }
+
+      .digit {
+        font-family: 'Signika', sans-serif;
+        font-size: 80px;
+        line-height: 1;
+        font-weight: 700;
+        color: var(--text-primary);
+        opacity: 0.7;
+        letter-spacing: -0.02em;
+        will-change: transform, opacity;
+      }
+
+      @media (min-width: 768px) {
+        .digit {
+          font-size: 120px;
+        }
+      }
+
+      .digit.left {
+        animation: enterDigitLeft 0.8s cubic-bezier(0.43, 0.13, 0.23, 0.96) forwards;
+      }
+
+      .digit.right {
+        animation: enterDigitRight 0.8s cubic-bezier(0.43, 0.13, 0.23, 0.96) forwards;
+      }
+
+      @keyframes enterDigitLeft {
+        0% {
+          opacity: 0;
+          transform: translate(-40px, 15px) rotate(-5deg);
+        }
+        100% {
+          opacity: 0.7;
+          transform: translate(0, 0) rotate(0deg);
+        }
+      }
+
+      @keyframes enterDigitRight {
+        0% {
+          opacity: 0;
+          transform: translate(40px, 15px) rotate(5deg);
+        }
+        100% {
+          opacity: 0.7;
+          transform: translate(0, 0) rotate(0deg);
+        }
+      }
+
+      /* Ghost element */
+      .ghost-container {
+        position: relative;
+        cursor: grab;
+        will-change: transform;
+        animation: enterGhost 0.6s cubic-bezier(0.43, 0.13, 0.23, 0.96) forwards;
+      }
+
+      .ghost-container:active {
+        cursor: grabbing;
+      }
+
+      @keyframes enterGhost {
+        0% {
+          opacity: 0;
+          transform: scale(0.8) translateY(15px) rotate(-5deg);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1) translateY(0) rotate(0deg);
+        }
+      }
+
+      .ghost-img-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: floatGhost 2s ease-in-out infinite alternate;
+        transition: transform 0.4s cubic-bezier(0.43, 0.13, 0.23, 0.96);
+      }
+
+      @keyframes floatGhost {
+        0% {
+          transform: translateY(-6px);
+        }
+        100% {
+          transform: translateY(6px);
+        }
+      }
+
+      .ghost-img {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        filter: var(--ghost-filter);
+        pointer-events: auto;
+        user-select: none;
+        -webkit-user-drag: none;
+        transition: filter 0.3s ease;
+      }
+
+      @media (min-width: 768px) {
+        .ghost-img {
+          width: 120px;
+          height: 120px;
+        }
+      }
+
+      /* Ghost hover animation */
+      .ghost-container:hover .ghost-img-wrapper {
+        animation: wiggleGhost 1.8s ease-in-out infinite alternate;
+      }
+
+      @keyframes wiggleGhost {
+        0% {
+          transform: scale(1.1) translateY(-10px) rotate(0deg);
+        }
+        25% {
+          transform: scale(1.12) translateY(-12px) rotate(-6deg);
+        }
+        75% {
+          transform: scale(1.12) translateY(-12px) rotate(6deg);
+        }
+        100% {
+          transform: scale(1.1) translateY(-10px) rotate(-3deg);
+        }
+      }
+
+      /* Heading */
+      .title {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 1.875rem;
+        line-height: 1.25;
+        font-weight: 700;
+        color: var(--text-primary);
+        opacity: 0;
+        margin-bottom: 1rem;
+        animation: fadeInUp 0.6s cubic-bezier(0.43, 0.13, 0.23, 0.96) 0.1s forwards;
+      }
+
+      @media (min-width: 768px) {
+        .title {
+          font-size: 3rem;
+          margin-bottom: 1.5rem;
+        }
+      }
+
+      /* Description */
+      .subtitle {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 1.125rem;
+        line-height: 1.4;
+        color: var(--text-primary);
+        opacity: 0;
+        margin-bottom: 2rem;
+        max-width: 440px;
+        animation: fadeInUpSubtitle 0.6s cubic-bezier(0.43, 0.13, 0.23, 0.96) 0.2s forwards;
+      }
+
+      @media (min-width: 768px) {
+        .subtitle {
+          font-size: 1.25rem;
+          margin-bottom: 3rem;
+        }
+      }
+
+      @keyframes fadeInUp {
+        0% {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        100% {
+          opacity: 0.7;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeInUpSubtitle {
+        0% {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        100% {
+          opacity: 0.5;
+          transform: translateY(0);
+        }
+      }
+
+      /* Action Button */
+      .action-wrapper {
+        opacity: 0;
+        animation: fadeInUpButton 0.6s cubic-bezier(0.43, 0.13, 0.23, 0.96) 0.3s forwards;
+      }
+
+      @keyframes fadeInUpButton {
+        0% {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .btn-shelter {
+        display: inline-block;
+        background-color: var(--btn-bg);
+        color: var(--btn-text);
+        padding: 0.85rem 2.25rem;
+        border-radius: 9999px;
+        font-size: 1.125rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: transform 0.3s cubic-bezier(0.43, 0.13, 0.23, 0.96),
+                    background-color 0.2s ease,
+                    box-shadow 0.3s ease;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-shelter:hover {
+        background-color: var(--btn-hover);
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+      }
+
+      .btn-shelter:active {
+        transform: scale(0.98);
+      }
+
+      /* Secondary 404 Info Link */
+      .info-wrapper {
+        margin-top: 3rem;
+        opacity: 0;
+        animation: fadeInUpLink 0.6s cubic-bezier(0.43, 0.13, 0.23, 0.96) 0.4s forwards;
+      }
+
+      @keyframes fadeInUpLink {
+        0% {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .info-toggle {
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        opacity: 0.5;
+        font-size: 0.95rem;
+        text-decoration: underline;
+        cursor: pointer;
+        font-family: inherit;
+        transition: opacity 0.2s ease;
+      }
+
+      .info-toggle:hover {
+        opacity: 0.8;
+      }
+
+      /* Popover Card for 404 Info */
+      .info-card {
+        margin-top: 1rem;
+        max-width: 380px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: var(--text-primary);
+        opacity: 0.8;
+        display: none;
+        text-align: left;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+
+      .info-card.open {
+        display: block;
+        animation: popIn 0.3s cubic-bezier(0.43, 0.13, 0.23, 0.96);
+      }
+
+      @keyframes popIn {
+        0% {
+          opacity: 0;
+          transform: translateY(8px) scale(0.97);
+        }
+        100% {
+          opacity: 0.8;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      /* Sound or interaction badge */
+      .easter-egg {
+        font-size: 0.75rem;
+        margin-top: 0.6rem;
+        opacity: 0.45;
+        font-style: italic;
+      }
+    </style>
   </head>
   <body>
-    <main class="wrap" style="padding-block: 20vh; text-align: center">
-      <h1>Page not found</h1>
-      <p class="lede" style="margin-inline: auto">
-        This GitHub Pages site is a single landing page.
-        <a href="./">Go home</a>
-      </p>
-    </main>
+    <div class="page-wrapper">
+      <header class="top-nav">
+        <a href="./" class="brand-link" title="WhereDidItGo Homepage">
+          <img src="./favicon.svg" alt="WhereDidItGo Logo" />
+          <span>WhereDidItGo</span>
+        </a>
+
+        <button type="button" class="theme-btn" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+          <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+          <svg id="sun-icon" style="display: none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+        </button>
+      </header>
+
+      <main class="container">
+        <!-- 4 [Ghost] 4 Row -->
+        <div class="digits-row">
+          <span class="digit left">4</span>
+          
+          <div class="ghost-container" id="ghost-box" title="Spook the ghost!">
+            <div class="ghost-img-wrapper" id="ghost-wrapper">
+              <img
+                src="./ghost.png"
+                alt="Ghost"
+                class="ghost-img"
+                draggable="false"
+              />
+            </div>
+          </div>
+
+          <span class="digit right">4</span>
+        </div>
+
+        <!-- Headings -->
+        <h1 class="title">Boo! Page missing!</h1>
+        <p class="subtitle">Whoops! This page must be a ghost - it's not here!</p>
+
+        <!-- Primary Action -->
+        <div class="action-wrapper">
+          <a href="./" class="btn-shelter">Find shelter</a>
+        </div>
+
+        <!-- 404 Info Toggle -->
+        <div class="info-wrapper">
+          <button type="button" class="info-toggle" id="info-toggle" aria-expanded="false">
+            What means 404?
+          </button>
+          <div class="info-card" id="info-card" role="region">
+            <strong>HTTP 404 Not Found</strong> means the server reached your request, but couldn't find the resource at this URL. The link might be outdated or mistyped.
+            <div class="easter-egg">Tip: Tap or hover over the ghost to play with it! 👻</div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        // Theme synchronization with main site
+        const root = document.documentElement;
+        const themeBtn = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+
+        function getTheme() {
+          const saved = localStorage.getItem('wdg-theme');
+          if (saved === 'dark' || saved === 'light') return saved;
+          return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        function applyTheme(theme) {
+          if (theme === 'dark') {
+            root.setAttribute('data-theme', 'dark');
+            sunIcon.style.display = 'block';
+            moonIcon.style.display = 'none';
+          } else {
+            root.removeAttribute('data-theme');
+            sunIcon.style.display = 'none';
+            moonIcon.style.display = 'block';
+          }
+        }
+
+        applyTheme(getTheme());
+
+        themeBtn.addEventListener('click', function () {
+          const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+          const next = current === 'dark' ? 'light' : 'dark';
+          localStorage.setItem('wdg-theme', next);
+          applyTheme(next);
+        });
+
+        // Toggle 404 explainer
+        const infoToggle = document.getElementById('info-toggle');
+        const infoCard = document.getElementById('info-card');
+
+        infoToggle.addEventListener('click', function () {
+          const isOpen = infoCard.classList.toggle('open');
+          infoToggle.setAttribute('aria-expanded', isOpen);
+        });
+
+        // Interactive ghost click reaction
+        const ghostBox = document.getElementById('ghost-box');
+        const ghostWrapper = document.getElementById('ghost-wrapper');
+        let boos = ['Boo!', 'Eek!', '👻', 'Whoosh!'];
+        
+        ghostBox.addEventListener('click', function () {
+          ghostWrapper.style.transform = 'scale(1.25) translateY(-16px) rotate(' + (Math.random() > 0.5 ? 12 : -12) + 'deg)';
+          setTimeout(function () {
+            ghostWrapper.style.transform = '';
+          }, 400);
+        });
+      })();
+    </script>
   </body>
 </html>

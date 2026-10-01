@@ -22,7 +22,7 @@ WhereDidItGo requires no account creation, no subscriptions, and never sends you
 Key Features:
 
 🔒 100% PRIVACY FIRST & LOCAL-FIRST
-Your financial life is nobody else’s business. All transactions, account balances, savings goals, and notes remain encrypted and saved strictly on your physical device.
+Your financial life is nobody else’s business. All transactions, account balances, savings goals, and notes remain saved strictly in your private local device storage without external cloud servers.
 
 ⚡ FAST & INTUITIVE EXPENSE ENTRY
 Log expenses, income, and account transfers in seconds with our optimized amount-first keypad and smart category suggestions.

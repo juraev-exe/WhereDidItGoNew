@@ -1,0 +1,18 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "WhereDidItGo Logo WhereDidItGo" [ref=e4] [cursor=pointer]:
+      - /url: ./
+      - img "WhereDidItGo Logo" [ref=e5]
+      - generic [ref=e6]: WhereDidItGo
+    - button "Toggle theme" [ref=e7] [cursor=pointer]
+  - main [ref=e10]:
+    - generic [ref=e11]:
+      - generic [ref=e12]: "4"
+      - generic "Spook the ghost!" [ref=e13]:
+        - img "Ghost" [ref=e15]
+      - generic [ref=e16]: "4"
+    - heading "Boo! Page missing!" [level=1] [ref=e17]
+    - paragraph [ref=e18]: Whoops! This page must be a ghost - it's not here!
+    - link "Find shelter" [ref=e20] [cursor=pointer]:
+      - /url: ./
+    - button "What means 404?" [ref=e22] [cursor=pointer]

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cookie Policy · WhereDidItGo</title>
+    <meta
+      name="description"
+      content="Cookie & Local Storage Policy for WhereDidItGo. Zero third-party tracking, strictly essential browser preferences."
+    />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('wdg-theme')
+          var dark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="./">
+          <img src="./logo.png" width="32" height="32" alt="WhereDidItGo Logo" />
+          WhereDidItGo
+        </a>
+        <nav class="header-nav" aria-label="Page navigation">
+          <a href="./#features">Features</a>
+          <a href="./privacy.html">Privacy</a>
+          <a href="./terms.html">Terms</a>
+          <button type="button" class="theme-btn" id="theme-toggle" aria-label="Toggle dark theme">
+            <span class="theme-btn__sun" aria-hidden="true">☀</span>
+            <span class="theme-btn__moon" aria-hidden="true">☾</span>
+          </button>
+          <a class="btn btn--small" href="./">Back to Home</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="content" class="wrap legal-main">
+      <article class="legal-card">
+        <header class="legal-header">
+          <p class="eyebrow">Legal & Compliance</p>
+          <h1>Cookie & Local Storage Policy</h1>
+          <div class="legal-meta">
+            <span><strong>Effective Date:</strong> October 1, 2026</span>
+            <span><strong>Developer:</strong> WhereDidItGo (Juraev.exe)</span>
+            <span><strong>Contact:</strong> <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></span>
+          </div>
+        </header>
+
+        <section class="legal-section">
+          <h2>1. No Third-Party Tracking or Advertising Cookies</h2>
+          <p>
+            WhereDidItGo believes that web tracking is unnecessary and invasive.
+            <strong>We do not use advertising cookies, social media tracking pixels, or cross-site analytics scripts.</strong>
+            We do not monetize your browsing habits or share visitor data with data brokers.
+          </p>
+        </section>
+
+        <section class="legal-section">
+          <h2>2. What We Store: Strictly Essential Local Storage</h2>
+          <p>
+            Instead of tracking cookies, our website utilizes standard browser <code>localStorage</code> purely to remember your chosen interface settings:
+          </p>
+
+          <div class="legal-table-wrap">
+            <table class="legal-table">
+              <thead>
+                <tr>
+                  <th>Storage Key</th>
+                  <th>Category</th>
+                  <th>Function / Purpose</th>
+                  <th>Duration</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>wdg-theme</code></td>
+                  <td>Strictly Necessary</td>
+                  <td>Remembers your selected appearance (Light Mode vs Dark Mode).</td>
+                  <td>Persistent until cleared</td>
+                </tr>
+                <tr>
+                  <td><code>wdg-locale</code></td>
+                  <td>Strictly Necessary</td>
+                  <td>Remembers your preferred language (English, Russian, or Tajik).</td>
+                  <td>Persistent until cleared</td>
+                </tr>
+                <tr>
+                  <td><code>wdg-cookie-consent</code></td>
+                  <td>Compliance / Essential</td>
+                  <td>Remembers that you have dismissed the cookie and privacy disclosure notice.</td>
+                  <td>Persistent until cleared</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="legal-section">
+          <h2>3. Managing and Deleting Your Storage</h2>
+          <p>
+            You are always in total control of what is stored on your device:
+          </p>
+          <ul>
+            <li><strong>Browser Settings:</strong> You can wipe all local storage keys anytime through your browser's "Clear Browsing Data" menu.</li>
+            <li><strong>Incognito / Private Mode:</strong> Browsing our website in Private mode ensures all storage is automatically cleared when you close the tab.</li>
+          </ul>
+        </section>
+
+        <section class="legal-section">
+          <h2>4. Inquiries & Feedback</h2>
+          <p>
+            Questions regarding our cookie practices can be directed to our support team at <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a>.
+          </p>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-inner">
+        <div class="footer-top">
+          <span>WhereDidItGo · Local-first personal finance</span>
+          <ul class="footer-links">
+            <li><a href="./privacy.html">Privacy Policy</a></li>
+            <li><a href="./terms.html">Terms of Service</a></li>
+            <li><a href="./refund.html">Refund Policy</a></li>
+            <li><a href="./cookies.html">Cookie Policy</a></li>
+            <li><a href="./data-deletion.html">Data Deletion</a></li>
+            <li><a href="https://github.com/juraev-exe/wherediditgo">Source Code</a></li>
+          </ul>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 WhereDidItGo by Juraev.exe. All rights reserved.</span>
+          <span>Contact: <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        var root = document.documentElement
+        var toggle = document.getElementById('theme-toggle')
+        function isDark() { return root.dataset.theme === 'dark' }
+        function applyTheme(dark) {
+          root.dataset.theme = dark ? 'dark' : 'light'
+          toggle.setAttribute('aria-pressed', dark ? 'true' : 'false')
+          try { localStorage.setItem('wdg-theme', dark ? 'dark' : 'light') } catch (e) {}
+        }
+        toggle.addEventListener('click', function () { applyTheme(!isDark()) })
+      })()
+    </script>
+  </body>
+</html>

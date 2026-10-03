@@ -1211,4 +1211,145 @@ export function computeExecutiveKpis(
   }
 }
 
+// ─── Phase 3: Budget Runway & Burn-Rate Gauge ─────────────────────────
+
+export type RunwaySeverity = 'on-track' | 'at-risk' | 'over-budget'
+
+export interface BudgetRunwayCategory {
+  categoryId: string
+  categoryName: string
+  categoryColor: string
+  categoryIcon: string
+  limitAmount: number
+  spentAmount: number
+  remaining: number
+  /** 0–100+  (can exceed 100 when overbudget) */
+  spentPercent: number
+  /** Expected spend % based on elapsed cycle days (0–100) */
+  idealPercent: number
+  /** How far ahead/behind the user is:  spentPercent – idealPercent */
+  pacingDelta: number
+  severity: RunwaySeverity
+  /** Estimated day the budget runs out (1-based from cycle start), null if pace ≤ 0 */
+  projectedExhaustionDay: number | null
+}
+
+export interface BudgetRunway {
+  /** Current month key this snapshot applies to */
+  month: string
+  /** Day of cycle elapsed (1-based) */
+  elapsedDays: number
+  /** Total days in the cycle */
+  totalDays: number
+  /** 0–100: elapsed % of the cycle */
+  elapsedPercent: number
+  /** Per-category runway breakdown, sorted worst-first */
+  categories: BudgetRunwayCategory[]
+  /** Overall budget spend / total limit (0–100+) */
+  overallSpentPercent: number
+  /** Overall severity: worst of any category, or 'on-track' if none */
+  overallSeverity: RunwaySeverity
+}
+
+/**
+ * Classify how worried the user should be about a category's pace.
+ *  - over-budget:  already spent more than limit
+ *  - at-risk:      spending pace would exhaust the budget before end of cycle
+ *  - on-track:     spending is at or below ideal linear pace
+ */
+function classifySeverity(spentPct: number, idealPct: number): RunwaySeverity {
+  if (spentPct >= 100) return 'over-budget'
+  // Running more than 15 pp ahead of ideal linear pace → at risk
+  if (idealPct > 0 && spentPct > idealPct + 15) return 'at-risk'
+  // Also at-risk if in first half but already past 60%
+  if (idealPct < 50 && spentPct > 60) return 'at-risk'
+  return 'on-track'
+}
+
+function worstSeverity(cats: BudgetRunwayCategory[]): RunwaySeverity {
+  if (cats.some((c) => c.severity === 'over-budget')) return 'over-budget'
+  if (cats.some((c) => c.severity === 'at-risk')) return 'at-risk'
+  return 'on-track'
+}
+
+export function computeBudgetRunway(
+  transactions: Transaction[],
+  budgets: Budget[],
+  categories: Category[],
+  month = monthKey(),
+  referenceDate = new Date(),
+): BudgetRunway {
+  const range = monthRange(month)
+  const startDate = parseLocalDay(range.start)
+  const endDate = parseLocalDay(range.end)
+  const totalDays = Math.max(1, differenceInCalendarDays(endDate, startDate) + 1)
+  const refDay = startOfDay(referenceDate)
+
+  let elapsed: number
+  if (refDay < startDate) {
+    elapsed = 0
+  } else if (refDay > endDate) {
+    elapsed = totalDays
+  } else {
+    elapsed = differenceInCalendarDays(refDay, startDate) + 1
+  }
+
+  const elapsedPercent = Math.round((elapsed / totalDays) * 100)
+  const idealPercent = elapsedPercent // linear pace
+
+  const progress = budgetProgress(budgets, transactions, categories, month)
+  const runwayCategories: BudgetRunwayCategory[] = progress.map((row) => {
+    const spentPct = row.budget.limitAmount > 0
+      ? (row.spent / row.budget.limitAmount) * 100
+      : 0
+    const severity = classifySeverity(spentPct, idealPercent)
+
+    // Projected exhaustion day: at current daily burn, when does the limit run out?
+    let projectedExhaustionDay: number | null = null
+    if (elapsed > 0 && row.spent > 0 && row.budget.limitAmount > 0 && spentPct < 100) {
+      const dailyRate = row.spent / elapsed
+      const daysToExhaust = Math.ceil(row.budget.limitAmount / dailyRate)
+      projectedExhaustionDay = daysToExhaust <= totalDays ? daysToExhaust : null
+    }
+
+    return {
+      categoryId: row.category.id,
+      categoryName: row.category.name,
+      categoryColor: row.category.color,
+      categoryIcon: row.category.icon,
+      limitAmount: row.budget.limitAmount,
+      spentAmount: row.spent,
+      remaining: row.remaining,
+      spentPercent: Math.round(spentPct),
+      idealPercent,
+      pacingDelta: Math.round(spentPct - idealPercent),
+      severity,
+      projectedExhaustionDay,
+    }
+  })
+
+  // Sort worst first: over-budget → at-risk → on-track, then by spentPercent desc
+  const severityOrder: Record<RunwaySeverity, number> = {
+    'over-budget': 0,
+    'at-risk': 1,
+    'on-track': 2,
+  }
+  runwayCategories.sort(
+    (a, b) => severityOrder[a.severity] - severityOrder[b.severity] || b.spentPercent - a.spentPercent,
+  )
+
+  const totalLimit = runwayCategories.reduce((s, c) => s + c.limitAmount, 0)
+  const totalSpent = runwayCategories.reduce((s, c) => s + c.spentAmount, 0)
+  const overallSpentPct = totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : 0
+
+  return {
+    month,
+    elapsedDays: elapsed,
+    totalDays,
+    elapsedPercent,
+    categories: runwayCategories,
+    overallSpentPercent: overallSpentPct,
+    overallSeverity: worstSeverity(runwayCategories),
+  }
+}
 

@@ -21,6 +21,7 @@ import {
 } from '../src/lib/dates.ts'
 import {
   computeExecutiveKpis,
+  computeBudgetRunway,
   detailedSpendByCategoryInRange,
   isEssentialCategory,
   spendSeries,
@@ -190,6 +191,53 @@ const expenseDay = seriesDays.find((d) => d.date === '2026-08-05')
 eq('cash flow expense day inflow', expenseDay?.income, 0)
 eq('cash flow expense day outflow', expenseDay?.expense, 20000)
 eq('cash flow expense day net', expenseDay?.net, -20000)
+
+console.log('\n— budget runway & burn-rate gauge (Phase 3) —')
+const mockBudgets = [
+  { id: 'b-groceries', categoryId: 'cat-groceries', month: '2026-08', limitAmount: 50000 },
+  { id: 'b-games', categoryId: 'cat-games', month: '2026-08', limitAmount: 10000 },
+  { id: 'b-bills', categoryId: 'cat-bills', month: '2026-08', limitAmount: 40000 },
+]
+
+const runway = computeBudgetRunway(mockTx, mockBudgets, mockCategories, '2026-08', mockRefDate)
+eq('runway month', runway.month, '2026-08')
+eq('runway elapsed days', runway.elapsedDays, 10)
+eq('runway total days', runway.totalDays, 31)
+eq('runway elapsed percent', runway.elapsedPercent, 32)
+eq('runway overall spent percent', runway.overallSpentPercent, 50)
+eq('runway overall severity is over-budget', runway.overallSeverity, 'over-budget')
+eq('runway category count', runway.categories.length, 3)
+
+// Sort worst first: over-budget (games) -> at-risk (groceries) -> on-track (bills)
+eq('runway top category is games (over-budget)', runway.categories[0].categoryId, 'cat-games')
+eq('games severity', runway.categories[0].severity, 'over-budget')
+eq('games spentPercent', runway.categories[0].spentPercent, 200)
+eq('games pacingDelta', runway.categories[0].pacingDelta, 168)
+eq('games projectedExhaustionDay is null when already over', runway.categories[0].projectedExhaustionDay, null)
+
+eq('runway second category is groceries (at-risk)', runway.categories[1].categoryId, 'cat-groceries')
+eq('groceries severity', runway.categories[1].severity, 'at-risk')
+eq('groceries spentPercent', runway.categories[1].spentPercent, 60)
+eq('groceries pacingDelta', runway.categories[1].pacingDelta, 28)
+eq('groceries projectedExhaustionDay', runway.categories[1].projectedExhaustionDay, 17)
+
+eq('runway third category is bills (on-track)', runway.categories[2].categoryId, 'cat-bills')
+eq('bills severity', runway.categories[2].severity, 'on-track')
+eq('bills spentPercent', runway.categories[2].spentPercent, 0)
+eq('bills pacingDelta', runway.categories[2].pacingDelta, -32)
+
+// Edge cases
+const emptyRunway = computeBudgetRunway(mockTx, [], mockCategories, '2026-08', mockRefDate)
+eq('empty budgets runway categories count', emptyRunway.categories.length, 0)
+eq('empty budgets runway overall spent percent', emptyRunway.overallSpentPercent, 0)
+eq('empty budgets runway overall severity is on-track', emptyRunway.overallSeverity, 'on-track')
+
+const onTrackBudgets = [
+  { id: 'b-groceries', categoryId: 'cat-groceries', month: '2026-08', limitAmount: 200000 },
+]
+const onTrackRunway = computeBudgetRunway(mockTx, onTrackBudgets, mockCategories, '2026-08', mockRefDate)
+eq('on-track single category severity', onTrackRunway.categories[0].severity, 'on-track')
+eq('on-track overall severity is on-track', onTrackRunway.overallSeverity, 'on-track')
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

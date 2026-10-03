@@ -15,6 +15,7 @@ import {
 import EmptyState from '@/components/ui/EmptyState.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
 import ActivityCalendar from '@/features/insights/ActivityCalendar.vue'
+import BudgetRunwayGauge from '@/features/insights/BudgetRunwayGauge.vue'
 import CashFlowChart from '@/features/insights/CashFlowChart.vue'
 import CategoryDistributionChart from '@/features/insights/CategoryDistributionChart.vue'
 import ExecutiveKpiGrid from '@/features/insights/ExecutiveKpiGrid.vue'
@@ -23,6 +24,7 @@ import { monthKey, shortDayLabel } from '@/lib/dates'
 import {
   activityHeatmap,
   buildInsightCards,
+  computeBudgetRunway,
   computeExecutiveKpis,
   detailedSpendByCategoryInRange,
   formatTxDate,
@@ -116,6 +118,13 @@ const cards = computed(() =>
   ),
 )
 const heroCard = computed(() => selectHeroCard(cards.value))
+const budgetRunway = computed(() =>
+  computeBudgetRunway(
+    transactions.transactions,
+    budgets.budgets,
+    categories.categories,
+  ),
+)
 const supportCard = computed(
   () => cards.value.find((card) => card.kind === 'categoryDrop' || card.kind === 'categoryRise') ?? null,
 )
@@ -423,6 +432,11 @@ function onStory(story: StoryView) {
           :transactions="transactions.transactions"
           :range="range"
           :other-id="OTHER_ID"
+        />
+
+        <BudgetRunwayGauge
+          v-if="budgetRunway.categories.length"
+          :runway="budgetRunway"
         />
       </template>
 

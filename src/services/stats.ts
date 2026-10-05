@@ -4,6 +4,7 @@ import {
   eachMonthOfInterval,
   eachWeekOfInterval,
   endOfWeek,
+  format,
   getDay,
   startOfDay,
   startOfWeek,
@@ -20,11 +21,20 @@ import {
   monthKey,
   monthRange,
   parseLocalDay,
+  previousMonthKey,
   shortDayLabel,
   shortMonthLabel,
 } from '@/lib/dates'
 
-export type InsightsPeriod = '7d' | '30d' | '90d' | 'all'
+export type InsightsPeriod =
+  | 'this_month'
+  | 'last_month'
+  | 'qtd'
+  | 'ytd'
+  | '7d'
+  | '30d'
+  | '90d'
+  | 'all'
 
 export interface StatsRange {
   start: string | null
@@ -34,6 +44,21 @@ export interface StatsRange {
 export function rangeForPeriod(period: InsightsPeriod, now = new Date()): StatsRange {
   const end = dayKey(now)
   if (period === 'all') return { start: null, end }
+  if (period === 'this_month') {
+    return monthRange(monthKey(now))
+  }
+  if (period === 'last_month') {
+    return monthRange(previousMonthKey(monthKey(now)))
+  }
+  if (period === 'qtd') {
+    const qMonth = Math.floor(now.getMonth() / 3) * 3
+    const qStart = format(new Date(now.getFullYear(), qMonth, 1), 'yyyy-MM-dd')
+    return { start: qStart, end }
+  }
+  if (period === 'ytd') {
+    const yStart = format(new Date(now.getFullYear(), 0, 1), 'yyyy-MM-dd')
+    return { start: yStart, end }
+  }
   const span = period === '7d' ? 6 : period === '30d' ? 29 : 89
   return { start: dayKey(subDays(now, span)), end }
 }

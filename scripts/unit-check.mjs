@@ -24,9 +24,11 @@ import {
   computeBudgetRunway,
   detailedSpendByCategoryInRange,
   isEssentialCategory,
+  rangeForPeriod,
   spendSeries,
   transactionsForCategoryInRange,
 } from '../src/services/stats.ts'
+import { generateAnalyticsReportCsv } from '../src/services/export.ts'
 
 let failures = 0
 
@@ -238,6 +240,62 @@ const onTrackBudgets = [
 const onTrackRunway = computeBudgetRunway(mockTx, onTrackBudgets, mockCategories, '2026-08', mockRefDate)
 eq('on-track single category severity', onTrackRunway.categories[0].severity, 'on-track')
 eq('on-track overall severity is on-track', onTrackRunway.overallSeverity, 'on-track')
+
+console.log('\n— flexible period filtering & reports export (Phase 4) —')
+const pRef = new Date(2026, 7, 10) // 2026-08-10
+
+const rThisMonth = rangeForPeriod('this_month', pRef)
+eq('range this_month start', rThisMonth.start, '2026-08-01')
+eq('range this_month end', rThisMonth.end, '2026-08-31')
+
+const rLastMonth = rangeForPeriod('last_month', pRef)
+eq('range last_month start', rLastMonth.start, '2026-07-01')
+eq('range last_month end', rLastMonth.end, '2026-07-31')
+
+const rQtd = rangeForPeriod('qtd', pRef)
+eq('range qtd start', rQtd.start, '2026-07-01')
+eq('range qtd end', rQtd.end, '2026-08-10')
+
+const rYtd = rangeForPeriod('ytd', pRef)
+eq('range ytd start', rYtd.start, '2026-01-01')
+eq('range ytd end', rYtd.end, '2026-08-10')
+
+const r7d = rangeForPeriod('7d', pRef)
+eq('range 7d start', r7d.start, '2026-08-04')
+eq('range 7d end', r7d.end, '2026-08-10')
+
+const r30d = rangeForPeriod('30d', pRef)
+eq('range 30d start', r30d.start, '2026-07-12')
+eq('range 30d end', r30d.end, '2026-08-10')
+
+const rAll = rangeForPeriod('all', pRef)
+eq('range all start', rAll.start, null)
+eq('range all end', rAll.end, '2026-08-10')
+
+// CSV report generation check
+const mockDetailedCats = detailedSpendByCategoryInRange(mockTx, mockCategories, mockRange)
+const mockAccounts = [{ id: 'a1', name: 'Main Checking' }]
+
+const csvOutput = generateAnalyticsReportCsv({
+  transactions: mockTx,
+  categories: mockCategories,
+  accounts: mockAccounts,
+  range: mockRange,
+  rangeLabel: 'Aug 1 – Aug 30, 2026',
+  period: 'this_month',
+  kpis,
+  detailedCategories: mockDetailedCats,
+  currency: 'USD',
+})
+
+eq('csv starts with UTF-8 BOM', csvOutput.startsWith('\ufeff'), true)
+eq('csv contains title', csvOutput.includes('"WhereDidItGo Financial Analytics Report"'), true)
+eq('csv contains period', csvOutput.includes('"this_month"'), true)
+eq('csv contains Total Inflow row', csvOutput.includes('"Total Inflow","1000.00","USD"'), true)
+eq('csv contains Total Outflow row', csvOutput.includes('"Total Outflow","500.00","USD"'), true)
+eq('csv contains Category breakdown', csvOutput.includes('"Groceries","(All)","300.00","60%","2"'), true)
+eq('csv contains Subcategory row', csvOutput.includes('"Groceries","Produce","200.00","40%","1"'), true)
+eq('csv contains escaped transactions', csvOutput.includes('"Fresh apples"'), true)
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

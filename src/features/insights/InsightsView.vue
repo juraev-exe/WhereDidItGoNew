@@ -5,6 +5,9 @@ import { useRouter } from 'vue-router'
 import {
   ArrowUpRight,
   CalendarDays,
+  Check,
+  Download,
+  Loader2,
   PieChart,
   PiggyBank,
   Sparkles,
@@ -21,6 +24,7 @@ import CategoryDistributionChart from '@/features/insights/CategoryDistributionC
 import ExecutiveKpiGrid from '@/features/insights/ExecutiveKpiGrid.vue'
 import InsightHero from '@/features/insights/InsightHero.vue'
 import { monthKey, shortDayLabel } from '@/lib/dates'
+import { exportAnalyticsReport } from '@/services/export'
 import {
   activityHeatmap,
   buildInsightCards,
@@ -37,14 +41,39 @@ import {
   type InsightsPeriod,
 } from '@/services/stats'
 import { tickFeedback } from '@/services/native/haptics'
+import { useAccountsStore } from '@/stores/accounts'
 import { useBudgetsStore } from '@/stores/budgets'
 import { useCategoriesStore } from '@/stores/categories'
+import { usePremiumStore } from '@/stores/premium'
 import { useSettingsStore } from '@/stores/settings'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useUiStore } from '@/stores/ui'
 
-const PERIODS: InsightsPeriod[] = ['7d', '30d', '90d', 'all']
-const periodLabelKey: Record<InsightsPeriod, 'period7d' | 'period30d' | 'period90d' | 'periodAll'> = {
+const PERIODS: InsightsPeriod[] = [
+  'this_month',
+  'last_month',
+  'qtd',
+  'ytd',
+  '7d',
+  '30d',
+  '90d',
+  'all',
+]
+const periodLabelKey: Record<
+  InsightsPeriod,
+  | 'periodThisMonth'
+  | 'periodLastMonth'
+  | 'periodQtd'
+  | 'periodYtd'
+  | 'period7d'
+  | 'period30d'
+  | 'period90d'
+  | 'periodAll'
+> = {
+  this_month: 'periodThisMonth',
+  last_month: 'periodLastMonth',
+  qtd: 'periodQtd',
+  ytd: 'periodYtd',
   '7d': 'period7d',
   '30d': 'period30d',
   '90d': 'period90d',
@@ -57,11 +86,16 @@ const { t } = useI18n()
 const router = useRouter()
 const transactions = useTransactionsStore()
 const categories = useCategoriesStore()
+const accounts = useAccountsStore()
 const budgets = useBudgetsStore()
 const settings = useSettingsStore()
+const premium = usePremiumStore()
 const ui = useUiStore()
 
-const period = ref<InsightsPeriod>('30d')
+const period = ref<InsightsPeriod>('this_month')
+const isExporting = ref(false)
+const exportFeedback = ref<string | null>(null)
+
 const range = computed(() => rangeForPeriod(period.value))
 const rangeLabel = computed(() => {
   if (period.value === 'all' || !range.value.start) return t('insights.allTime')
@@ -72,6 +106,41 @@ function setPeriod(next: InsightsPeriod) {
   if (period.value === next) return
   period.value = next
   void tickFeedback()
+}
+
+async function handleExportReport() {
+  if (!premium.isPremiumUser) {
+    premium.openPaywall(t('premium.limitExport', 'Analytics export is a Pro feature.'))
+    return
+  }
+  if (isExporting.value) return
+  isExporting.value = true
+  void tickFeedback()
+  try {
+    await exportAnalyticsReport({
+      transactions: transactions.transactions,
+      categories: categories.categories,
+      accounts: accounts.accounts,
+      range: range.value,
+      rangeLabel: rangeLabel.value,
+      period: period.value,
+      kpis: executiveKpis.value,
+      detailedCategories: detailedCategories.value,
+      currency: settings.currency,
+      locale: settings.intlLocale,
+    })
+    exportFeedback.value = t('insights.exportSuccess')
+    setTimeout(() => {
+      exportFeedback.value = null
+    }, 3000)
+  } catch (err: unknown) {
+    exportFeedback.value = t('insights.exportError')
+    setTimeout(() => {
+      exportFeedback.value = null
+    }, 3000)
+  } finally {
+    isExporting.value = false
+  }
 }
 
 function openCategory(categoryId: string) {
@@ -329,7 +398,7 @@ function onStory(story: StoryView) {
         <h1>{{ t('insights.title') }}</h1>
         <HeaderActions />
       </div>
-      <div class="seg" role="radiogroup" :aria-label="t('insights.periodAria')">
+      <div class="seg-scroll" role="radiogroup" :aria-label="t('insights.periodAria')">
         <button
           v-for="p in PERIODS"
           :key="p"
@@ -342,6 +411,28 @@ function onStory(story: StoryView) {
           {{ t(`insights.${periodLabelKey[p]}`) }}
         </button>
       </div>
+
+      <div class="period-action-bar">
+        <span class="range-pill">{{ rangeLabel }}</span>
+        <button
+          type="button"
+          class="export-btn"
+          :disabled="isExporting"
+          :aria-label="t('insights.exportReport')"
+          @click="handleExportReport"
+        >
+          <Loader2 v-if="isExporting" :size="14" class="spin" />
+          <Download v-else :size="14" />
+          <span>{{ isExporting ? t('insights.exportingReport') : t('insights.exportReport') }}</span>
+        </button>
+      </div>
+
+      <transition name="toast-fade">
+        <div v-if="exportFeedback" class="export-toast surface-glass">
+          <Check :size="15" class="toast-icon-ok" />
+          <span>{{ exportFeedback }}</span>
+        </div>
+      </transition>
     </header>
 
     <EmptyState
@@ -477,23 +568,31 @@ h1 {
   margin-bottom: var(--space-3);
 }
 
-.seg {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+.seg-scroll {
+  display: flex;
+  align-items: center;
   gap: var(--space-1);
   padding: 4px;
   background: var(--color-surface-container);
   border-radius: var(--radius-full);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-.seg button {
-  min-height: 38px;
+.seg-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.seg-scroll button {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--color-muted);
   white-space: nowrap;
-  padding: 0 var(--space-1);
   border: none;
   background: transparent;
   cursor: pointer;
@@ -503,26 +602,108 @@ h1 {
               transform var(--duration-fast) var(--ease-spring-snappy);
 }
 
-.seg button:active {
+.seg-scroll button:active {
   transform: scale(0.95);
 }
 
-.seg button.active {
+.seg-scroll button.active {
   background: var(--color-surface);
   color: var(--color-on-surface);
   box-shadow: var(--shadow-sm), 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.seg button:focus-visible,
+.seg-scroll button:focus-visible,
 button.story:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-@media (max-width: 360px) {
-  .seg button {
-    font-size: 0.75rem;
-  }
+.period-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: 0 var(--space-1);
+}
+
+.range-pill {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-outline-variant);
+  background: color-mix(in srgb, var(--color-surface-container) 80%, transparent);
+  color: var(--color-on-surface);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.export-btn:hover:not(:disabled) {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.export-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.export-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.export-toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--space-2);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid var(--color-outline-variant);
+  box-shadow: var(--shadow-sm);
+  animation: fadeSlideUp var(--duration-fast) var(--ease-emphasized) both;
+}
+
+.toast-icon-ok {
+  color: var(--color-success);
+  flex-shrink: 0;
+}
+
+.toast-fade-enter-active,
+.toast-fade-leave-active {
+  transition: opacity var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+}
+
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .stories {

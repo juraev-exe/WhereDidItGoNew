@@ -122,23 +122,26 @@ export function generateAnalyticsReportCsv(opts: AnalyticsReportOptions): string
   // 3. Category & Subcategory Spend Distribution
   lines.push(row(['--- CATEGORY BREAKDOWN ---']))
   lines.push(row(['Category', 'Subcategory', 'Amount', 'Share (%)', 'Tx Count']))
+  const totalOutflow = summary.expense || 1
   for (const cat of detailedCategories) {
+    const catPercent = Math.round(cat.percent)
     lines.push(
       row([
-        cat.categoryName,
+        cat.name,
         '(All)',
-        (cat.totalAmount / 100).toFixed(2),
-        `${cat.percent}%`,
+        (cat.amount / 100).toFixed(2),
+        `${catPercent}%`,
         cat.txCount,
       ]),
     )
     for (const sub of cat.subcategories) {
+      const subPercent = Math.round((sub.amount / totalOutflow) * 100)
       lines.push(
         row([
-          cat.categoryName,
+          cat.name,
           sub.name,
           (sub.amount / 100).toFixed(2),
-          `${sub.percent}%`,
+          `${subPercent}%`,
           sub.txCount,
         ]),
       )

@@ -15,7 +15,10 @@ import {
   Scale,
   Sliders,
   Wallet,
+  Trash2,
 } from '@lucide/vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import BottomSheet from '@/components/ui/BottomSheet.vue'
 import AppearanceSettings from './components/AppearanceSettings.vue'
 import BackupsSettings from './components/BackupsSettings.vue'
 import FormattingSettings from './components/FormattingSettings.vue'
@@ -23,7 +26,8 @@ import LegalSettings from './components/LegalSettings.vue'
 import NavigationSettings from './components/NavigationSettings.vue'
 import SecurityPrivacySettings from './components/SecurityPrivacySettings.vue'
 import Snackbar from '@/components/ui/Snackbar.vue'
-import { tickFeedback } from '@/services/native/haptics'
+import { tickFeedback, warningFeedback } from '@/services/native/haptics'
+import { resetLocalData } from '@/db'
 import { useAccountsStore } from '@/stores/accounts'
 import { useUiStore } from '@/stores/ui'
 import { usePremiumStore } from '@/stores/premium'
@@ -43,8 +47,41 @@ const ui = useUiStore()
 const activeSubpage = ref<Subpage>('root')
 const message = ref('')
 
+const resetSheetOpen = ref(false)
+const resetA = ref(2)
+const resetB = ref(3)
+const resetAnswer = ref('')
+const resetError = ref('')
+const resetting = ref(false)
+
 function onNotify(msg: string) {
   message.value = msg
+}
+
+function openReset() {
+  void warningFeedback()
+  resetA.value = Math.floor(Math.random() * 8) + 2
+  resetB.value = Math.floor(Math.random() * 8) + 2
+  resetAnswer.value = ''
+  resetError.value = ''
+  resetSheetOpen.value = true
+}
+
+async function executeReset() {
+  const expected = resetA.value + resetB.value
+  if (parseInt(resetAnswer.value, 10) !== expected) {
+    resetError.value = t('settings.resetWrong', 'Incorrect answer. Try again.')
+    return
+  }
+  resetting.value = true
+  try {
+    await resetLocalData()
+    window.location.reload()
+  } catch (e) {
+    resetError.value = e instanceof Error ? e.message : 'Reset failed'
+  } finally {
+    resetting.value = false
+  }
 }
 
 function openSubpage(page: Subpage) {
@@ -281,7 +318,51 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
           </a>
         </div>
       </div>
+
+      <!-- Group 6: Danger Zone -->
+      <div class="group-card surface-glass">
+        <button type="button" class="group-row" @click="openReset">
+          <div class="row-left">
+            <div class="icon-squircle icon-red">
+              <Trash2 :size="19" />
+            </div>
+            <div class="row-text">
+              <span class="row-title danger-text">{{ t('settings.deleteAccount', 'Delete this account') }}</span>
+              <span class="row-sub">{{ t('settings.deleteAccountSub', 'Permanently erase all your local data') }}</span>
+            </div>
+          </div>
+          <ChevronRight :size="18" class="chevron-right" />
+        </button>
+      </div>
     </div>
+
+    <!-- Reset Sheet -->
+    <BottomSheet :open="resetSheetOpen" :title="t('settings.resetTitle', 'Delete Account & Data')" @close="resetSheetOpen = false">
+      <div class="sheet-body">
+        <p class="sheet-desc danger-desc">{{ t('settings.resetDesc', 'Deletes all transactions, accounts and budgets permanently') }}</p>
+        <div class="challenge-box">
+          <label for="reset-challenge">{{ t('settings.resetChallenge', { a: resetA, b: resetB }) }}</label>
+          <input
+            id="reset-challenge"
+            v-model="resetAnswer"
+            type="number"
+            class="challenge-input"
+            placeholder="?"
+            @keydown.enter="executeReset"
+          />
+        </div>
+        <p v-if="resetError" class="error-msg">{{ resetError }}</p>
+        <AppButton
+          block
+          variant="filled"
+          class="danger-action-btn"
+          :disabled="resetting || !resetAnswer"
+          @click="executeReset"
+        >
+          {{ resetting ? t('settings.resetting', 'Deleting…') : t('settings.resetConfirm', 'Delete Everything') }}
+        </AppButton>
+      </div>
+    </BottomSheet>
 
     <Snackbar :open="!!message" :message="message" @update:open="(val: boolean) => { if (!val) message = '' }" />
   </div>
@@ -537,5 +618,54 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
 
 .github-link:hover {
   color: var(--color-on-surface);
+}
+
+.danger-text {
+  color: var(--color-expense);
+}
+
+.sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-2) 0 var(--space-4);
+}
+
+.sheet-desc {
+  font-size: 0.95rem;
+  color: var(--color-on-surface);
+}
+
+.danger-desc {
+  color: var(--color-expense);
+}
+
+.challenge-box {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-weight: 600;
+}
+
+.challenge-input {
+  width: 80px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-outline);
+  background: var(--color-surface-container);
+  color: var(--color-on-surface);
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.error-msg {
+  color: var(--color-expense);
+  font-size: var(--text-caption);
+}
+
+.danger-action-btn {
+  background: var(--color-expense) !important;
+  color: var(--color-on-error) !important;
 }
 </style>

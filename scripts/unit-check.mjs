@@ -20,6 +20,7 @@ import {
   clampDayOfMonth,
 } from '../src/lib/dates.ts'
 import {
+  budgetProgress,
   computeExecutiveKpis,
   computeBudgetRunway,
   detailedSpendByCategoryInRange,
@@ -324,6 +325,42 @@ eq('income category match', matchCategory(pIncome, mockCategories)?.id, 'cat-sal
 
 const pInvalid = parseBankNotification('Hello how are you doing today?')
 eq('invalid sms returns null', pInvalid, null)
+
+console.log('\n— ZBB rollover envelope calculation (Phase 7) —')
+const rolloverBudgets = [
+  { id: 'b-jul', categoryId: 'cat-groceries', month: '2026-07', limitAmount: 50000, rollover: true },
+  { id: 'b-aug', categoryId: 'cat-groceries', month: '2026-08', limitAmount: 30000, rollover: true },
+]
+// 1) Surplus test: spent 40000 in July (budget 50000) -> +10000 surplus rolled over to August
+const surplusTx = [
+  { id: 't-jul', type: 'expense', amount: 40000, date: '2026-07-15', accountId: 'a1', categoryId: 'cat-groceries', note: '' },
+  { id: 't-aug', type: 'expense', amount: 25000, date: '2026-08-10', accountId: 'a1', categoryId: 'cat-groceries', note: '' },
+]
+const progSurplus = budgetProgress(rolloverBudgets, surplusTx, mockCategories, '2026-08')
+eq('surplus rollover amount', progSurplus[0]?.rollover, 10000)
+eq('surplus effective limit', progSurplus[0]?.effectiveLimit, 40000)
+eq('surplus remaining', progSurplus[0]?.remaining, 15000)
+eq('surplus percent', progSurplus[0]?.percent, 62.5)
+
+// 2) Deficit test: spent 60000 in July (budget 50000) -> -10000 deficit rolled over to August
+const deficitTx = [
+  { id: 't-jul-2', type: 'expense', amount: 60000, date: '2026-07-20', accountId: 'a1', categoryId: 'cat-groceries', note: '' },
+  { id: 't-aug-2', type: 'expense', amount: 10000, date: '2026-08-10', accountId: 'a1', categoryId: 'cat-groceries', note: '' },
+]
+const progDeficit = budgetProgress(rolloverBudgets, deficitTx, mockCategories, '2026-08')
+eq('deficit rollover amount', progDeficit[0]?.rollover, -10000)
+eq('deficit effective limit', progDeficit[0]?.effectiveLimit, 20000)
+eq('deficit remaining', progDeficit[0]?.remaining, 10000)
+eq('deficit percent', progDeficit[0]?.percent, 50)
+
+// 3) Non-rollover budget remains unaffected
+const nonRolloverBudgets = [
+  { id: 'b-jul-nr', categoryId: 'cat-groceries', month: '2026-07', limitAmount: 50000, rollover: false },
+  { id: 'b-aug-nr', categoryId: 'cat-groceries', month: '2026-08', limitAmount: 30000, rollover: false },
+]
+const progNr = budgetProgress(nonRolloverBudgets, surplusTx, mockCategories, '2026-08')
+eq('non-rollover rollover is 0', progNr[0]?.rollover, 0)
+eq('non-rollover effective limit is original limit', progNr[0]?.effectiveLimit, 30000)
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

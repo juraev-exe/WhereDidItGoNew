@@ -28,7 +28,12 @@ export const useBudgetsStore = defineStore('budgets', () => {
     return budgets.value.filter((b) => b.month === month)
   }
 
-  async function upsertBudget(categoryId: string, limitAmount: number, month = monthKey()) {
+  async function upsertBudget(
+    categoryId: string,
+    limitAmount: number,
+    month = monthKey(),
+    rollover?: boolean,
+  ) {
     const existing =
       budgets.value.find((b) => b.categoryId === categoryId && b.month === month) ??
       (await db.budgets.where('[categoryId+month]').equals([categoryId, month]).first())
@@ -37,8 +42,9 @@ export const useBudgetsStore = defineStore('budgets', () => {
         await db.budgets.delete(existing.id)
         return null
       }
-      await db.budgets.update(existing.id, { limitAmount })
-      return { ...existing, limitAmount }
+      const nextRollover = rollover !== undefined ? rollover : existing.rollover
+      await db.budgets.update(existing.id, { limitAmount, rollover: nextRollover })
+      return { ...existing, limitAmount, rollover: nextRollover }
     }
     if (limitAmount <= 0) return null
     const budget: Budget = {
@@ -46,6 +52,7 @@ export const useBudgetsStore = defineStore('budgets', () => {
       categoryId,
       month,
       limitAmount,
+      rollover: rollover ?? false,
     }
     await db.budgets.add(budget)
     return budget
@@ -60,7 +67,7 @@ export const useBudgetsStore = defineStore('budgets', () => {
     const source = await db.budgets.where('month').equals(fromMonth).toArray()
     const created: Budget[] = []
     for (const row of source) {
-      const next = await upsertBudget(row.categoryId, row.limitAmount, toMonth)
+      const next = await upsertBudget(row.categoryId, row.limitAmount, toMonth, row.rollover)
       if (next) created.push(next)
     }
     return created

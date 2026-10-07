@@ -228,6 +228,10 @@ export default {
     monthly: 'Ежемесячно',
     copyLastMonth: 'Скопировать лимиты прошлого месяца',
     remainingLabel: 'Остаток',
+    rolloverEnvelope: 'Переходящий конверт (ZBB)',
+    rolloverHint: 'Переносить остаток или дефицит на следующий месяц',
+    rolledOver: 'перенесено',
+    deficit: 'дефицит',
   },
   goals: {
     title: 'Цели',
@@ -682,6 +686,7 @@ export default {
     amountRequired: 'Введите сумму больше нуля',
     nameRequired: 'Введите имя',
     emptyTitle: 'Нет долгов и займов',
+    payoffTitle: 'Стратегии погашения долгов (Snowball и Avalanche)',
   },
   notifications: {
     recurringReminderTitle: '«{name}» ожидается завтра',

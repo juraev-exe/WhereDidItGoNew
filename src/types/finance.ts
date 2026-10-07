@@ -35,6 +35,7 @@ export interface Budget {
   categoryId: string
   month: string
   limitAmount: number
+  rollover?: boolean
 }
 
 /** Savings target that is not a monthly spending limit. */

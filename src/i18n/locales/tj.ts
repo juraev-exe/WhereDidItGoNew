@@ -228,6 +228,10 @@ export default {
     monthly: 'Моҳона',
     copyLastMonth: 'Нусхабардории лимитҳои моҳи гузашта',
     remainingLabel: 'Боқимонда',
+    rolloverEnvelope: 'Лифофаи интиқолшаванда (ZBB)',
+    rolloverHint: 'Интиқоли бақия ё касри маблағ ба моҳи оянда',
+    rolledOver: 'интиқол ёфт',
+    deficit: 'касри маблағ',
   },
   goals: {
     title: 'Ҳадафҳо',
@@ -701,6 +705,7 @@ export default {
     amountRequired: 'Маблағи аз сифр калон ворид кунед',
     nameRequired: 'Ном ворид кунед',
     emptyTitle: 'Қарз ё вом нест',
+    payoffTitle: 'Стратегияҳои пардохти қарзҳо (Snowball ва Avalanche)',
   },
   notifications: {
     recurringReminderTitle: '«{name}» пагоҳ интизор аст',

@@ -228,6 +228,10 @@ export default {
     monthly: 'Monthly',
     copyLastMonth: 'Copy last month’s limits',
     remainingLabel: 'Remaining',
+    rolloverEnvelope: 'Rollover Envelope (ZBB)',
+    rolloverHint: 'Carry leftover surplus or deficit to next month',
+    rolledOver: 'rolled over',
+    deficit: 'deficit',
   },
   goals: {
     title: 'Goals',
@@ -665,6 +669,7 @@ export default {
     amountRequired: 'Enter an amount greater than zero',
     nameRequired: 'Enter a name',
     emptyTitle: 'No debts or loans',
+    payoffTitle: 'Debt Payoff Snowball & Avalanche',
   },
   notifications: {
     recurringReminderTitle: '{name} due tomorrow',

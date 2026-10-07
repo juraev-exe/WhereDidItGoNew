@@ -280,19 +280,27 @@ export interface DaySpend {
   net?: number
 }
 
-export function budgetProgress(
-  budgets: Budget[],
-  transactions: Transaction[],
-  categories: Category[],
-  month = monthKey(),
-): Array<{
+export interface BudgetProgressRow {
   budget: Budget
   category: Category
   spent: number
   remaining: number
   percent: number
-}> {
+  rollover: number
+  effectiveLimit: number
+}
+
+export function budgetProgress(
+  budgets: Budget[],
+  transactions: Transaction[],
+  categories: Category[],
+  month = monthKey(),
+  rolloverEnabled = true,
+): BudgetProgressRow[] {
   const catMap = Object.fromEntries(categories.map((c) => [c.id, c]))
+  const prevMonth = previousMonthKey(month)
+  const prevMonthBudgets = budgets.filter((b) => b.month === prevMonth)
+
   return budgets
     .filter((b) => b.month === month)
     .map((budget) => {
@@ -306,12 +314,40 @@ export function budgetProgress(
         .reduce((s, t) => s + t.amount, 0)
       const category = catMap[budget.categoryId]
       if (!category) return null
+
+      let rollover = 0
+      if (rolloverEnabled && budget.rollover) {
+        const prevBudget = prevMonthBudgets.find((pb) => pb.categoryId === budget.categoryId)
+        if (prevBudget) {
+          const prevSpent = transactions
+            .filter(
+              (t) =>
+                t.type === 'expense' &&
+                t.categoryId === budget.categoryId &&
+                isInMonth(t.date, prevMonth),
+            )
+            .reduce((s, t) => s + t.amount, 0)
+          rollover = prevBudget.limitAmount - prevSpent
+        }
+      }
+
+      const effectiveLimit = Math.max(0, budget.limitAmount + rollover)
+      const remaining = effectiveLimit - spent
+      const percent =
+        effectiveLimit > 0
+          ? Math.min(100, (spent / effectiveLimit) * 100)
+          : budget.limitAmount > 0
+            ? Math.min(100, (spent / budget.limitAmount) * 100)
+            : 0
+
       return {
         budget,
         category,
         spent,
-        remaining: budget.limitAmount - spent,
-        percent: budget.limitAmount > 0 ? Math.min(100, (spent / budget.limitAmount) * 100) : 0,
+        remaining,
+        percent,
+        rollover,
+        effectiveLimit,
       }
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Flame, Trophy, X } from '@lucide/vue'
+import { CalendarClock, Flame, Trophy, X } from '@lucide/vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
 import { formatTxDate, type ActivityHeatmap, type CalendarDay } from '@/services/stats'
 import { weekdayLabels } from '@/lib/dates'
 import { useSettingsStore } from '@/stores/settings'
+import { useRecurringStore } from '@/stores/recurring'
 import { tickFeedback } from '@/services/native/haptics'
 
 const props = defineProps<{
@@ -18,10 +19,33 @@ const scroller = ref<HTMLElement | null>(null)
 const selectedDate = ref<string | null>(null)
 
 const weekdays = computed(() => weekdayLabels(settings.intlLocale, 'short'))
+const recurringStore = useRecurringStore()
+
+onMounted(() => {
+  recurringStore.start()
+})
+
+const upcomingByDate = computed(() => {
+  const map = new Map<string, typeof recurringStore.items>()
+  const futureDays = props.heatmap.days.filter((d) => d.future)
+  for (const day of futureDays) {
+    const dayNum = Number.parseInt(day.date.slice(8, 10), 10)
+    const matches = recurringStore.items.filter((r) => r.dayOfMonth === dayNum)
+    if (matches.length > 0) {
+      map.set(day.date, matches)
+    }
+  }
+  return map
+})
 
 const selected = computed<CalendarDay | null>(() => {
   if (!selectedDate.value) return null
   return props.heatmap.days.find((d) => d.date === selectedDate.value) ?? null
+})
+
+const selectedUpcoming = computed(() => {
+  if (!selectedDate.value) return []
+  return upcomingByDate.value.get(selectedDate.value) ?? []
 })
 
 // GitHub-style Streak and Total Stats calculation
@@ -65,13 +89,19 @@ const stats = computed(() => {
 
 function cellLabel(day: CalendarDay): string {
   const date = formatTxDate(day.date, settings.intlLocale)
+  const up = upcomingByDate.value.get(day.date)
+  if (up && up.length > 0) {
+    const notes = up.map((u) => u.note || 'Recurring').join(', ')
+    return `${date}: Upcoming: ${notes}`
+  }
   if (day.future) return date
   if (day.count === 0) return `${date}: 0 transactions`
   return `${date}: ${day.count} transactions`
 }
 
 function selectDay(day: CalendarDay) {
-  if (day.future) return
+  const hasUpcoming = upcomingByDate.value.has(day.date)
+  if (day.future && !hasUpcoming) return
   void tickFeedback()
   selectedDate.value = selectedDate.value === day.date ? null : day.date
 }
@@ -153,8 +183,15 @@ watch(() => props.heatmap.start, scrollToEnd)
             :key="day.date"
             type="button"
             class="square"
-            :class="[`lvl-${day.level}`, { future: day.future, active: selectedDate === day.date }]"
-            :disabled="day.future"
+            :class="[
+              `lvl-${day.level}`,
+              {
+                future: day.future && !upcomingByDate.has(day.date),
+                'has-upcoming': upcomingByDate.has(day.date),
+                active: selectedDate === day.date,
+              },
+            ]"
+            :disabled="day.future && !upcomingByDate.has(day.date)"
             :aria-label="cellLabel(day)"
             :title="cellLabel(day)"
             :aria-pressed="selectedDate === day.date"
@@ -166,7 +203,22 @@ watch(() => props.heatmap.start, scrollToEnd)
 
     <!-- GitHub Foot Bar -->
     <div class="github-foot">
-      <div v-if="selected" class="selection-pill">
+      <div v-if="selectedUpcoming.length" class="selection-pill upcoming-pill">
+        <CalendarClock :size="14" class="upcoming-icon" />
+        <span class="sel-date">{{ formatTxDate(selectedDate!, settings.intlLocale) }}</span>
+        <span class="sel-dot">·</span>
+        <span class="upcoming-desc">
+          {{ selectedUpcoming.map((u) => `${u.note || 'Subscription'}`).join(', ') }}
+        </span>
+        <span class="sel-dot">·</span>
+        <span class="expense-tag">
+          <MoneyText :amount="selectedUpcoming.reduce((acc, u) => acc + (u.type === 'expense' ? u.amount : -u.amount), 0)" signed="expense" />
+        </span>
+        <button type="button" class="clear-sel-btn" :aria-label="t('common.close', 'Close')" @click="selectedDate = null">
+          <X :size="12" />
+        </button>
+      </div>
+      <div v-else-if="selected" class="selection-pill">
         <span class="sel-date">{{ formatTxDate(selected.date, settings.intlLocale) }}</span>
         <span class="sel-dot">·</span>
         <span class="sel-count">{{ selected.count }} {{ t('insights.txCount', 'Transactions') }}</span>
@@ -395,6 +447,39 @@ watch(() => props.heatmap.start, scrollToEnd)
 .square.future {
   opacity: 0.12;
   cursor: default;
+}
+
+.square.has-upcoming {
+  opacity: 0.9 !important;
+  border: 1.5px dashed var(--color-primary, #60a5fa) !important;
+  background: rgba(96, 165, 250, 0.22) !important;
+  cursor: pointer !important;
+  position: relative;
+}
+
+.square.has-upcoming::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-primary, #60a5fa);
+}
+
+.upcoming-pill {
+  border-color: rgba(96, 165, 250, 0.45) !important;
+  background: rgba(96, 165, 250, 0.12) !important;
+}
+
+.upcoming-icon {
+  color: var(--color-primary, #60a5fa);
+}
+
+.upcoming-desc {
+  font-weight: 600;
+  color: var(--color-on-surface, #fff);
 }
 
 /* ═══════════════════════════════════════════════

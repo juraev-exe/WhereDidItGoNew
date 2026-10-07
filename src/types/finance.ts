@@ -63,6 +63,21 @@ export interface Transaction {
   updatedAt: string
 }
 
+export interface DraftTransaction {
+  id: string
+  source: 'sms' | 'notification' | 'manual'
+  rawSender?: string
+  rawText?: string
+  amount: number
+  type: TransactionType
+  accountId?: string
+  categoryId?: string
+  subcategoryId?: string
+  note: string
+  date: string
+  createdAt: string
+}
+
 /** Monthly bill or salary template that posts a normal transaction on app open. */
 export interface Recurring {
   id: string

@@ -11,6 +11,7 @@ import ProgressBar from '@/components/ui/ProgressBar.vue'
 import HeaderActions from '@/components/ui/HeaderActions.vue'
 import Snackbar from '@/components/ui/Snackbar.vue'
 import TransactionRow from '@/components/ui/TransactionRow.vue'
+import DraftsInbox from './DraftsInbox.vue'
 import { isInMonth, monthKey } from '@/lib/dates'
 import { accountStatsInMonth, buildMonthInsights, spendByCategory, summarizeMonth } from '@/services/stats'
 import { useAccountsStore } from '@/stores/accounts'
@@ -339,6 +340,9 @@ onUnmounted(() => {
         </div>
       </div>
     </section>
+
+    <!-- Frictionless Ingestion: Drafts Inbox -->
+    <DraftsInbox />
 
     <section v-if="tops.length" class="section">
       <div class="section-head">

@@ -29,6 +29,7 @@ import {
   transactionsForCategoryInRange,
 } from '../src/services/stats.ts'
 import { generateAnalyticsReportCsv } from '../src/services/export.ts'
+import { parseBankNotification, matchCategory } from '../src/services/smsParser.ts'
 
 let failures = 0
 
@@ -296,6 +297,33 @@ eq('csv contains Total Outflow row', csvOutput.includes('"Total Outflow","500.00
 eq('csv contains Category breakdown', csvOutput.includes('"Groceries","(All)","300.00","60%","2"'), true)
 eq('csv contains Subcategory row', csvOutput.includes('"Groceries","Produce","200.00","40%","1"'), true)
 eq('csv contains escaped transactions', csvOutput.includes('"Fresh apples"'), true)
+
+console.log('\n— bank SMS and push notification parser (Phase 6) —')
+const pAlif = parseBankNotification('Pokupka: 78.50 TJS v "Paykar Supermarket". Balans: 350.00 TJS', 'Alif Bank')
+eq('alif bank amount', pAlif?.amount, 7850)
+eq('alif bank type', pAlif?.type, 'expense')
+eq('alif bank note', pAlif?.note, 'Paykar Supermarket')
+eq('alif bank matchedKeyword', pAlif?.matchedKeyword, 'groceries')
+
+const pChase = parseBankNotification('Chase: Your debit card was charged $34.20 at WHOLE FOODS MARKET.', 'Chase')
+eq('chase amount', pChase?.amount, 3420)
+eq('chase type', pChase?.type, 'expense')
+eq('chase note', pChase?.note, 'WHOLE FOODS MARKET')
+eq('chase category match', matchCategory(pChase, mockCategories)?.id, 'cat-groceries')
+
+const pTinkoff = parseBankNotification('Pokupka 850 RUB v Yandex Go. Karta *4821.', 'T-Bank')
+eq('tinkoff amount', pTinkoff?.amount, 85000)
+eq('tinkoff type', pTinkoff?.type, 'expense')
+eq('tinkoff note', pTinkoff?.note, 'Yandex Go')
+eq('tinkoff matchedKeyword', pTinkoff?.matchedKeyword, 'transport')
+
+const pIncome = parseBankNotification('Postuplenie: 1000.00 TJS. Perevod ot Anvar.', 'Eskhata')
+eq('income amount', pIncome?.amount, 100000)
+eq('income type', pIncome?.type, 'income')
+eq('income category match', matchCategory(pIncome, mockCategories)?.id, 'cat-salary')
+
+const pInvalid = parseBankNotification('Hello how are you doing today?')
+eq('invalid sms returns null', pInvalid, null)
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

@@ -36,6 +36,7 @@ import {
   decryptBackup,
   parseEncryptedBackupEnvelope,
 } from '../src/services/crypto.ts'
+import { computeWrappedData } from '../src/services/wrapped.ts'
 
 let failures = 0
 
@@ -415,6 +416,20 @@ eq('decrypt with wrong password throws', wrongPasswordFailed, true)
 // Parse envelope
 const parsedEnv = parseEncryptedBackupEnvelope(JSON.stringify(encEnvelope))
 eq('parsed envelope matches', parsedEnv.ciphertext, encEnvelope.ciphertext)
+
+console.log('\n— WhereDidItGo Wrapped calculations (Phase 9) —')
+const wrapped = computeWrappedData('2026-08', mockTx, mockCategories)
+eq('wrapped month label', wrapped.monthLabel, 'August 2026')
+eq('wrapped total inflow', wrapped.totalInflow, 100000)
+eq('wrapped total outflow', wrapped.totalOutflow, 50000)
+eq('wrapped net savings', wrapped.netSavings, 50000)
+eq('wrapped savings rate', wrapped.savingsRate, 50)
+eq('wrapped top category', wrapped.topCategory?.name, 'Groceries')
+eq('wrapped top category amount', wrapped.topCategory?.amount, 30000)
+eq('wrapped top category pct', wrapped.topCategory?.percent, 60)
+eq('wrapped biggest expense amount', wrapped.biggestExpense?.amount, 20000)
+eq('wrapped total transactions', wrapped.totalTransactions, 4)
+eq('wrapped badge title', wrapped.badge.title, 'Savings Titan')
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

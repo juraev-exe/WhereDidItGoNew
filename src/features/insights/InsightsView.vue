@@ -23,8 +23,10 @@ import CashFlowChart from '@/features/insights/CashFlowChart.vue'
 import CategoryDistributionChart from '@/features/insights/CategoryDistributionChart.vue'
 import ExecutiveKpiGrid from '@/features/insights/ExecutiveKpiGrid.vue'
 import InsightHero from '@/features/insights/InsightHero.vue'
-import { monthKey, shortDayLabel } from '@/lib/dates'
+import WrappedModal from '@/features/insights/WrappedModal.vue'
+import { monthKey, previousMonthKey, shortDayLabel } from '@/lib/dates'
 import { exportAnalyticsReport } from '@/services/export'
+import { computeWrappedData } from '@/services/wrapped'
 import {
   activityHeatmap,
   buildInsightCards,
@@ -44,6 +46,7 @@ import { tickFeedback } from '@/services/native/haptics'
 import { useAccountsStore } from '@/stores/accounts'
 import { useBudgetsStore } from '@/stores/budgets'
 import { useCategoriesStore } from '@/stores/categories'
+import { useDebtsStore } from '@/stores/debts'
 import { usePremiumStore } from '@/stores/premium'
 import { useSettingsStore } from '@/stores/settings'
 import { useTransactionsStore } from '@/stores/transactions'
@@ -88,9 +91,34 @@ const transactions = useTransactionsStore()
 const categories = useCategoriesStore()
 const accounts = useAccountsStore()
 const budgets = useBudgetsStore()
+const debts = useDebtsStore()
 const settings = useSettingsStore()
 const premium = usePremiumStore()
 const ui = useUiStore()
+
+const wrappedModalOpen = ref(false)
+
+const targetWrappedMonth = computed(() => {
+  if (period.value === 'last_month') return previousMonthKey(monthKey())
+  return monthKey()
+})
+
+const wrappedData = computed(() => {
+  return computeWrappedData(
+    targetWrappedMonth.value,
+    transactions.transactions,
+    categories.categories,
+    debts.debts,
+    budgets.budgets,
+  )
+})
+
+const currentMonthLabel = computed(() => wrappedData.value.monthLabel)
+
+function openWrappedModal() {
+  void tickFeedback()
+  wrappedModalOpen.value = true
+}
 
 const period = ref<InsightsPeriod>('this_month')
 const isExporting = ref(false)
@@ -449,6 +477,23 @@ function onStory(story: StoryView) {
 
     <template v-else>
       <template v-if="hasActivity">
+        <!-- WhereDidItGo Wrapped Banner -->
+        <section class="wrapped-launch-banner surface-glass" @click="openWrappedModal">
+          <div class="wrapped-launch-left">
+            <div class="wrapped-icon-sparkle">
+              <Sparkles :size="20" class="text-amber-300" />
+            </div>
+            <div>
+              <h3>{{ t('insights.wrappedBannerTitle', { month: currentMonthLabel }) }}</h3>
+              <p>{{ t('insights.wrappedBannerSub') }}</p>
+            </div>
+          </div>
+          <div class="wrapped-launch-btn">
+            <span>{{ t('insights.wrappedWatchBtn') }}</span>
+            <ArrowUpRight :size="16" />
+          </div>
+        </section>
+
         <InsightHero
           :tone="heroTone"
           :range-label="rangeLabel"
@@ -545,6 +590,12 @@ function onStory(story: StoryView) {
 
       <ActivityCalendar :heatmap="heatmap" />
     </template>
+
+    <WrappedModal
+      :open="wrappedModalOpen"
+      :data="wrappedData"
+      @close="wrappedModalOpen = false"
+    />
   </div>
 </template>
 
@@ -787,5 +838,71 @@ button.story:hover .story-icon {
   font-variant-numeric: tabular-nums;
   font-weight: 650;
   color: var(--color-muted);
+}
+
+.wrapped-launch-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.95rem 1.15rem;
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-2);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(168, 85, 247, 0.15));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.12);
+  cursor: pointer;
+  transition: transform var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.wrapped-launch-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.22);
+}
+
+.wrapped-launch-banner:active {
+  transform: scale(0.98);
+}
+
+.wrapped-launch-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.wrapped-icon-sparkle {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(236, 72, 153, 0.3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wrapped-launch-left h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+.wrapped-launch-left p {
+  font-size: 0.76rem;
+  color: var(--color-muted);
+  margin: 0.15rem 0 0;
+}
+
+.wrapped-launch-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-on-surface);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 </style>

@@ -31,6 +31,11 @@ import {
 } from '../src/services/stats.ts'
 import { generateAnalyticsReportCsv } from '../src/services/export.ts'
 import { parseBankNotification, matchCategory } from '../src/services/smsParser.ts'
+import {
+  encryptBackup,
+  decryptBackup,
+  parseEncryptedBackupEnvelope,
+} from '../src/services/crypto.ts'
 
 let failures = 0
 
@@ -361,6 +366,55 @@ const nonRolloverBudgets = [
 const progNr = budgetProgress(nonRolloverBudgets, surplusTx, mockCategories, '2026-08')
 eq('non-rollover rollover is 0', progNr[0]?.rollover, 0)
 eq('non-rollover effective limit is original limit', progNr[0]?.effectiveLimit, 30000)
+
+console.log('\n— AES-256-GCM encrypted backup & PBKDF2 (Phase 8) —')
+const mockBackupToEncrypt = {
+  version: 2,
+  exportedAt: new Date().toISOString(),
+  meta: {
+    onboardingDone: true,
+    currency: 'USD',
+    theme: 'system',
+    locale: 'en',
+    currencyPosition: 'before',
+    heroMetric: 'balance',
+    hideAmounts: false,
+    privacyMode: 'none',
+  },
+  accounts: [{ id: 'a1', name: 'Checking', type: 'checking', balance: 50000 }],
+  categories: mockCategories,
+  budgets: [],
+  transactions: mockTx,
+  goals: [],
+  recurring: [],
+  debts: [],
+}
+
+const encEnvelope = await encryptBackup(mockBackupToEncrypt, 'super-secret-pass-2026')
+eq('encrypted backup format', encEnvelope.format, 'wherediditgo-encrypted-backup')
+eq('encrypted backup algorithm', encEnvelope.algorithm, 'AES-GCM')
+eq('encrypted backup has salt', typeof encEnvelope.salt === 'string' && encEnvelope.salt.length > 10, true)
+eq('encrypted backup has iv', typeof encEnvelope.iv === 'string' && encEnvelope.iv.length > 5, true)
+eq('encrypted backup has ciphertext', typeof encEnvelope.ciphertext === 'string' && encEnvelope.ciphertext.length > 20, true)
+
+// Decrypt with correct password
+const decryptedPayload = await decryptBackup(encEnvelope, 'super-secret-pass-2026')
+eq('decrypted version matches', decryptedPayload.version, 2)
+eq('decrypted account name', decryptedPayload.accounts[0].name, 'Checking')
+eq('decrypted transactions count', decryptedPayload.transactions.length, mockTx.length)
+
+// Decrypt with wrong password throws error
+let wrongPasswordFailed = false
+try {
+  await decryptBackup(encEnvelope, 'wrong-password!')
+} catch {
+  wrongPasswordFailed = true
+}
+eq('decrypt with wrong password throws', wrongPasswordFailed, true)
+
+// Parse envelope
+const parsedEnv = parseEncryptedBackupEnvelope(JSON.stringify(encEnvelope))
+eq('parsed envelope matches', parsedEnv.ciphertext, encEnvelope.ciphertext)
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

@@ -160,6 +160,7 @@ function sanitizeBudget(value: unknown): Budget | null {
     categoryId,
     month: str(r.month),
     limitAmount: Math.round(num(r.limitAmount)),
+    rollover: bool(r.rollover),
   }
 }
 
@@ -318,7 +319,7 @@ export async function replaceFromBackup(payload: BackupPayload): Promise<void> {
   const data = clonePlain(validateBackup(payload))
   await db.transaction(
     'rw',
-    [db.accounts, db.categories, db.budgets, db.transactions, db.goals, db.recurring, db.debts, db.meta],
+    [db.accounts, db.categories, db.budgets, db.transactions, db.goals, db.recurring, db.debts, db.meta, db.drafts],
     async () => {
       await Promise.all([
         db.accounts.clear(),
@@ -329,6 +330,7 @@ export async function replaceFromBackup(payload: BackupPayload): Promise<void> {
         db.recurring.clear(),
         db.debts.clear(),
         db.meta.clear(),
+        db.drafts.clear(),
       ])
       await db.accounts.bulkAdd(data.accounts)
       await db.categories.bulkAdd(data.categories)

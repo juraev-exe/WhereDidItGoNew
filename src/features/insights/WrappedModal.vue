@@ -324,7 +324,7 @@ onUnmounted(() => {
             </div>
             <div v-if="data.debtsPaidTotal > 0" class="milestone-box">
               <strong><MoneyText :amount="data.debtsPaidTotal" /></strong>
-              <small>{{ t('insights.wrappedDebtsRepaid', 'Debts Paid') }}</small>
+              <small>{{ t('insights.wrappedDebtsRepaid', 'Lifetime Debts Paid') }}</small>
             </div>
             <div class="milestone-box">
               <strong><MoneyText :amount="data.dailyAverage" /></strong>

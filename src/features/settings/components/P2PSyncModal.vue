@@ -105,7 +105,8 @@ async function submitAnswerToHost() {
 }
 
 async function submitOfferToClient() {
-  if (!hostOfferInput.value.trim()) return
+  const offer = hostOfferInput.value.trim()
+  if (!offer) return
   resetSessions()
   mode.value = 'client'
   clientSession = new P2PClientSession(
@@ -124,7 +125,7 @@ async function submitOfferToClient() {
   )
 
   try {
-    const answer = await clientSession.acceptOfferAndGenerateAnswer(hostOfferInput.value.trim())
+    const answer = await clientSession.acceptOfferAndGenerateAnswer(offer)
     clientAnswerCode.value = answer
     clientAnswerQrSvg.value = await generateQrSvg(answer)
     void tickFeedback()

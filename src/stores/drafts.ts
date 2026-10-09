@@ -71,18 +71,21 @@ export const useDraftsStore = defineStore('drafts', () => {
 
     const finalAccountId = overrides?.accountId || draft.accountId || accounts.active[0]?.id || ''
 
-    await txStore.addTransaction({
-      type: overrides?.type || draft.type,
-      amount: overrides?.amount ?? draft.amount,
-      accountId: finalAccountId,
-      toAccountId: overrides?.toAccountId,
-      categoryId: overrides?.categoryId ?? draft.categoryId,
-      subcategoryId: overrides?.subcategoryId ?? draft.subcategoryId,
-      note: overrides?.note ?? draft.note,
-      date: overrides?.date ?? draft.date,
+    await db.transaction('rw', [db.drafts, db.transactions, db.accounts], async () => {
+      await txStore.addTransaction({
+        type: overrides?.type || draft.type,
+        amount: overrides?.amount ?? draft.amount,
+        accountId: finalAccountId,
+        toAccountId: overrides?.toAccountId,
+        categoryId: overrides?.categoryId ?? draft.categoryId,
+        subcategoryId: overrides?.subcategoryId ?? draft.subcategoryId,
+        note: overrides?.note ?? draft.note,
+        date: overrides?.date ?? draft.date,
+      })
+
+      await db.drafts.delete(draftId)
     })
 
-    await db.drafts.delete(draftId)
     drafts.value = drafts.value.filter((d) => d.id !== draftId)
     void successFeedback()
   }

@@ -17,8 +17,8 @@ export async function generateQrSvg(
     type: 'svg',
     margin: options?.margin ?? 2,
     color: {
-      dark: options?.color?.dark ?? '#ffffff',
-      light: options?.color?.light ?? '#00000000', // transparent background
+      dark: options?.color?.dark ?? '#111827',
+      light: options?.color?.light ?? '#ffffff',
     },
   })
 }

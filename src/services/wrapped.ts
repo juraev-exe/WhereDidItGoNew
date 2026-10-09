@@ -1,5 +1,5 @@
-import { format, parseISO } from 'date-fns'
-import { isInMonth, monthKey, previousMonthKey } from '@/lib/dates'
+import { format, parseISO, differenceInCalendarDays, startOfDay } from 'date-fns'
+import { isInMonth, monthKey, previousMonthKey, monthRange, parseLocalDay } from '@/lib/dates'
 import type { Budget, Category, Debt, Transaction } from '@/types/finance'
 
 export interface WrappedCategory {
@@ -160,8 +160,18 @@ export function computeWrappedData(
         }
       : null
 
-  // Daily average (assume 30 days)
-  const dailyAverage = Math.round(totalOutflow / 30)
+  // Daily average (actual elapsed days)
+  const start = parseLocalDay(monthRange(targetMonth).start)
+  const end = parseLocalDay(monthRange(targetMonth).end)
+  const today = startOfDay(new Date())
+  const daysInMonth = differenceInCalendarDays(end, start) + 1
+  let elapsedDays = daysInMonth
+  if (today < end && today >= start) {
+    elapsedDays = differenceInCalendarDays(today, start) + 1
+  } else if (today < start) {
+    elapsedDays = 1
+  }
+  const dailyAverage = Math.round(totalOutflow / elapsedDays)
 
   // Debts repayments made
   const debtsPaidTotal = debts.reduce((sum, d) => sum + (d.paidAmount || 0), 0)

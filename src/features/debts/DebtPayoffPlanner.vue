@@ -173,14 +173,14 @@ const simulation = computed(() => {
         </div>
         <div>
           <h3 class="planner-title">
-            {{ t('debts.payoffTitle') || 'Debt Payoff Snowball & Avalanche' }}
+            {{ t('debts.payoffTitle', 'Debt Payoff Snowball & Avalanche') }}
           </h3>
           <p class="planner-subtitle">
             <template v-if="simulation.debtFreeDate">
-              Debt-free by <strong>{{ simulation.debtFreeDate }}</strong> ({{ simulation.monthsCount }} mo)
+              {{ t('debts.debtFreeBy', 'Debt-free by') }} <strong>{{ simulation.debtFreeDate }}</strong> ({{ simulation.monthsCount }} {{ t('common.mo', 'mo') }})
             </template>
             <template v-else>
-              Interactive payoff timeline calculator
+              {{ t('debts.payoffCalcDesc', 'Interactive payoff timeline calculator') }}
             </template>
           </p>
         </div>
@@ -202,7 +202,7 @@ const simulation = computed(() => {
           @click="setStrategy('snowball')"
         >
           <ArrowDownNarrowWide :size="14" />
-          <span>Snowball (Smallest First)</span>
+          <span>{{ t('debts.strategySnowball', 'Snowball (Smallest First)') }}</span>
         </button>
         <button
           type="button"
@@ -211,16 +211,16 @@ const simulation = computed(() => {
           @click="setStrategy('avalanche')"
         >
           <ArrowUpNarrowWide :size="14" />
-          <span>Avalanche (Largest First)</span>
+          <span>{{ t('debts.strategyAvalanche', 'Avalanche (Largest First)') }}</span>
         </button>
       </div>
 
       <!-- Monthly Payment Allocation Slider / Input -->
       <div class="allocation-row">
         <div class="allocation-meta">
-          <span class="alloc-label">Monthly Repayment Budget:</span>
+          <span class="alloc-label">{{ t('debts.monthlyBudgetLabel', 'Monthly Repayment Budget:') }}</span>
           <strong class="alloc-amount">
-            <MoneyText :amount="monthlyPayment" /> / mo
+            <MoneyText :amount="monthlyPayment" /> / {{ t('common.mo', 'mo') }}
           </strong>
         </div>
 
@@ -241,17 +241,17 @@ const simulation = computed(() => {
         </div>
         <div class="banner-info">
           <p class="banner-title">
-            Projected Debt-Free: <span class="highlight-date">{{ simulation.debtFreeDate }}</span>
+            {{ t('debts.projectedDebtFree', 'Projected Debt-Free:') }} <span class="highlight-date">{{ simulation.debtFreeDate }}</span>
           </p>
           <p class="banner-sub">
-            At <MoneyText :amount="monthlyPayment" />/mo, all {{ borrowedDebts.length }} debts will be paid in {{ simulation.monthsCount }} months.
+            {{ t('debts.payoffProjectionStart', 'At') }} <MoneyText :amount="monthlyPayment" />/{{ t('common.mo', 'mo') }}, {{ t('debts.payoffProjectionEnd', 'all {count} debts will be paid in {months} months.', { count: borrowedDebts.length, months: simulation.monthsCount }) }}
           </p>
         </div>
       </div>
 
       <!-- Payoff Sequence Steps -->
       <div class="payoff-sequence">
-        <h4 class="sequence-title">Planned Payoff Sequence:</h4>
+        <h4 class="sequence-title">{{ t('debts.plannedSequence', 'Planned Payoff Sequence:') }}</h4>
         <div class="sequence-list">
           <div
             v-for="(item, idx) in simulation.payoffOrder"
@@ -261,7 +261,7 @@ const simulation = computed(() => {
             <div class="step-num">{{ idx + 1 }}</div>
             <div class="step-details">
               <strong>{{ item.debt.personName }}</strong>
-              <small>{{ item.dateStr }} (Month {{ item.monthSettled }})</small>
+              <small>{{ item.dateStr }} ({{ t('common.month', 'Month') }} {{ item.monthSettled }})</small>
             </div>
             <div class="step-amount">
               <MoneyText :amount="item.originalRemaining" />

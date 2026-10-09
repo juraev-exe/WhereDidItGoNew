@@ -299,7 +299,6 @@ export function budgetProgress(
 ): BudgetProgressRow[] {
   const catMap = Object.fromEntries(categories.map((c) => [c.id, c]))
   const prevMonth = previousMonthKey(month)
-  const prevMonthBudgets = budgets.filter((b) => b.month === prevMonth)
 
   return budgets
     .filter((b) => b.month === month)
@@ -317,17 +316,23 @@ export function budgetProgress(
 
       let rollover = 0
       if (rolloverEnabled && budget.rollover) {
-        const prevBudget = prevMonthBudgets.find((pb) => pb.categoryId === budget.categoryId)
-        if (prevBudget) {
+        let checkMonth = prevMonth
+        while (true) {
+          const pb = budgets.find((b) => b.month === checkMonth && b.categoryId === budget.categoryId)
+          if (!pb) break
+          
           const prevSpent = transactions
             .filter(
               (t) =>
                 t.type === 'expense' &&
                 t.categoryId === budget.categoryId &&
-                isInMonth(t.date, prevMonth),
+                isInMonth(t.date, checkMonth),
             )
             .reduce((s, t) => s + t.amount, 0)
-          rollover = prevBudget.limitAmount - prevSpent
+          
+          rollover += (pb.limitAmount - prevSpent)
+          if (!pb.rollover) break
+          checkMonth = previousMonthKey(checkMonth)
         }
       }
 
@@ -1360,16 +1365,17 @@ export function computeBudgetRunway(
 
   const progress = budgetProgress(budgets, transactions, categories, month)
   const runwayCategories: BudgetRunwayCategory[] = progress.map((row) => {
-    const spentPct = row.budget.limitAmount > 0
-      ? (row.spent / row.budget.limitAmount) * 100
+    const limit = row.effectiveLimit
+    const spentPct = limit > 0
+      ? (row.spent / limit) * 100
       : 0
     const severity = classifySeverity(spentPct, idealPercent)
 
     // Projected exhaustion day: at current daily burn, when does the limit run out?
     let projectedExhaustionDay: number | null = null
-    if (elapsed > 0 && row.spent > 0 && row.budget.limitAmount > 0 && spentPct < 100) {
+    if (elapsed > 0 && row.spent > 0 && limit > 0 && spentPct < 100) {
       const dailyRate = row.spent / elapsed
-      const daysToExhaust = Math.ceil(row.budget.limitAmount / dailyRate)
+      const daysToExhaust = Math.ceil(limit / dailyRate)
       projectedExhaustionDay = daysToExhaust <= totalDays ? daysToExhaust : null
     }
 
@@ -1378,7 +1384,7 @@ export function computeBudgetRunway(
       categoryName: row.category.name,
       categoryColor: row.category.color,
       categoryIcon: row.category.icon,
-      limitAmount: row.budget.limitAmount,
+      limitAmount: limit,
       spentAmount: row.spent,
       remaining: row.remaining,
       spentPercent: Math.round(spentPct),

@@ -1368,7 +1368,7 @@ export function computeBudgetRunway(
     const limit = row.effectiveLimit
     const spentPct = limit > 0
       ? (row.spent / limit) * 100
-      : 0
+      : (row.spent > 0 ? 100 : 0)
     const severity = classifySeverity(spentPct, idealPercent)
 
     // Projected exhaustion day: at current daily burn, when does the limit run out?
@@ -1407,7 +1407,7 @@ export function computeBudgetRunway(
 
   const totalLimit = runwayCategories.reduce((s, c) => s + c.limitAmount, 0)
   const totalSpent = runwayCategories.reduce((s, c) => s + c.spentAmount, 0)
-  const overallSpentPct = totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : 0
+  const overallSpentPct = totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : (totalSpent > 0 ? 100 : 0)
 
   return {
     month,

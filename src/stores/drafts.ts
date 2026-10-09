@@ -71,7 +71,12 @@ export const useDraftsStore = defineStore('drafts', () => {
 
     const finalAccountId = overrides?.accountId || draft.accountId || accounts.active[0]?.id || ''
 
+    let success = false
     await db.transaction('rw', [db.drafts, db.transactions, db.accounts], async () => {
+      // Claim the draft to prevent double-confirmation
+      const dbDraft = await db.drafts.get(draftId)
+      if (!dbDraft) return
+
       await txStore.addTransaction({
         type: overrides?.type || draft.type,
         amount: overrides?.amount ?? draft.amount,
@@ -84,8 +89,10 @@ export const useDraftsStore = defineStore('drafts', () => {
       })
 
       await db.drafts.delete(draftId)
+      success = true
     })
 
+    if (!success) return
     drafts.value = drafts.value.filter((d) => d.id !== draftId)
     void successFeedback()
   }

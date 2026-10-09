@@ -196,7 +196,9 @@ export function parseBankNotification(
 
   // 2. Extract Amount
   // Strip balance from text to prevent false amount matches
-  const textWithoutBalance = cleaned.replace(/(?:balans|баланс|balance|ostatok|остаток)\s*[:.-]?\s*(?:[$€£₽]|TJS|somoni|сомони|руб|RUB)?\s*[0-9]+(?:[\s,][0-9]{3})*(?:[.,][0-9]{1,2})?\s*(?:[$€£₽]|TJS|somoni|сомони|руб|RUB|р\.?)?/i, '')
+  let textForAmount = cleaned.replace(/(?:balans|баланс|balance|ostatok|остаток)\s*[:.-]?\s*(?:[$€£₽]|TJS|somoni|сомони|руб|RUB)?\s*[0-9]+(?:[\s,][0-9]{3})*(?:[.,][0-9]{1,2})?\s*(?:[$€£₽]|TJS|somoni|сомони|руб|RUB|р\.?)?/i, '')
+  // Strip dates (DD.MM.YYYY) and card masks (*1234)
+  textForAmount = textForAmount.replace(/\b\d{2}[./-]\d{2}(?:[./-]\d{2,4})?\b/g, '').replace(/\*+\d{4}\b/g, '')
 
   // Matches expressions like:
   // - "$45.50", "45.50$", "45,50 TJS", "45 TJS", "1 250.00 RUB", "450р", "450 руб"
@@ -211,7 +213,7 @@ export function parseBankNotification(
 
   let rawAmountStr: string | null = null
   for (const rx of amountRegexes) {
-    const match = rx.exec(textWithoutBalance)
+    const match = rx.exec(textForAmount)
     if (match && match[1]) {
       rawAmountStr = match[1]
       break
@@ -220,7 +222,7 @@ export function parseBankNotification(
 
   // Fallback: search for any plausible monetary decimal in text
   if (!rawAmountStr) {
-    const fallbackMatch = /\b([0-9]{1,6}(?:[\s,][0-9]{3})*(?:[.,][0-9]{2}))\b/.exec(textWithoutBalance)
+    const fallbackMatch = /\b([0-9]{1,6}(?:[\s,][0-9]{3})*(?:[.,][0-9]{2}))\b/.exec(textForAmount)
     if (fallbackMatch && fallbackMatch[1]) {
       rawAmountStr = fallbackMatch[1]
     }

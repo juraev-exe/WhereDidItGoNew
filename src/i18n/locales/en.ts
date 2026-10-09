@@ -190,6 +190,11 @@ export default {
     pasteBankDesc: 'Paste raw text copied from your bank push or SMS. WhereDidItGo parses the amount, merchant, and category locally on your device.',
     parseAndDraft: 'Parse & Add to Inbox',
     upcomingBills: 'Upcoming Subscriptions & Bills',
+    pasteErrorEmpty: 'Please paste a bank notification or SMS text',
+    pasteErrorInvalid: 'Could not detect an amount or bank transaction in this text',
+    trySample: 'Try sample:',
+    senderLabel: 'Sender / Bank Name (Optional)',
+    smsBodyLabel: 'Notification / SMS Body',
   },
   activity: {
     title: 'Activity',
@@ -419,6 +424,16 @@ export default {
     wrappedTransactions: 'Entries',
     wrappedShareBtn: 'Share My Wrapped',
     wrappedCopied: 'Summary copied to clipboard!',
+    badgeBudgetGuardianTitle: 'Budget Guardian',
+    badgeBudgetGuardianSub: 'Stayed 100% within limits across all {count} envelopes',
+    badgeSavingsTitanTitle: 'Savings Titan',
+    badgeSavingsTitanSub: 'Incredible {rate}% savings rate achieved this month',
+    badgeFrugalMasterTitle: 'Frugal Master',
+    badgeFrugalMasterSub: 'Maintained a healthy 20%+ savings buffer',
+    badgeDebtCrusherTitle: 'Debt Crusher',
+    badgeDebtCrusherSub: 'Actively paying down loans and liabilities (Lifetime)',
+    badgeConsistencyChampionTitle: 'Consistency Champion',
+    badgeConsistencyChampionSub: 'Logged {count} transactions with meticulous detail',
   },
   settings: {
     title: 'Settings',
@@ -740,6 +755,15 @@ export default {
     nameRequired: 'Enter a name',
     emptyTitle: 'No debts or loans',
     payoffTitle: 'Debt Payoff Snowball & Avalanche',
+    debtFreeBy: 'Debt-free by',
+    payoffCalcDesc: 'Interactive payoff timeline calculator',
+    plannedSequence: 'Planned Payoff Sequence:',
+    strategySnowball: 'Snowball (Smallest First)',
+    strategyAvalanche: 'Avalanche (Largest First)',
+    monthlyBudgetLabel: 'Monthly Repayment Budget:',
+    projectedDebtFree: 'Projected Debt-Free:',
+    payoffProjectionStart: 'At',
+    payoffProjectionEnd: 'all {count} debts will be paid in {months} months.',
   },
   notifications: {
     recurringReminderTitle: '{name} due tomorrow',
@@ -786,4 +810,5 @@ export default {
     reasonInsertFailed: 'could not be saved',
   },
 }
+
 

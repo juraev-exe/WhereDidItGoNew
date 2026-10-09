@@ -190,6 +190,11 @@ export default {
     pasteBankDesc: 'Вставьте текст из SMS или push-уведомления банка. WhereDidItGo распознает сумму, магазин и категорию прямо на устройстве.',
     parseAndDraft: 'Распознать и добавить',
     upcomingBills: 'Предстоящие подписки и счета',
+    pasteErrorEmpty: 'Please paste a bank notification or SMS text',
+    pasteErrorInvalid: 'Could not detect an amount or bank transaction in this text',
+    trySample: 'Try sample:',
+    senderLabel: 'Sender / Bank Name (Optional)',
+    smsBodyLabel: 'Notification / SMS Body',
   },
   activity: {
     title: 'История',
@@ -436,6 +441,16 @@ export default {
     wrappedTransactions: 'Записей',
     wrappedShareBtn: 'Поделиться итогами',
     wrappedCopied: 'Итоги скопированы в буфер!',
+    badgeBudgetGuardianTitle: 'Budget Guardian',
+    badgeBudgetGuardianSub: 'Stayed 100% within limits across all {count} envelopes',
+    badgeSavingsTitanTitle: 'Savings Titan',
+    badgeSavingsTitanSub: 'Incredible {rate}% savings rate achieved this month',
+    badgeFrugalMasterTitle: 'Frugal Master',
+    badgeFrugalMasterSub: 'Maintained a healthy 20%+ savings buffer',
+    badgeDebtCrusherTitle: 'Debt Crusher',
+    badgeDebtCrusherSub: 'Actively paying down loans and liabilities (Lifetime)',
+    badgeConsistencyChampionTitle: 'Consistency Champion',
+    badgeConsistencyChampionSub: 'Logged {count} transactions with meticulous detail',
   },
   settings: {
     title: 'Настройки',
@@ -757,6 +772,15 @@ export default {
     nameRequired: 'Введите имя',
     emptyTitle: 'Нет долгов и займов',
     payoffTitle: 'Стратегии погашения долгов (Snowball и Avalanche)',
+    debtFreeBy: 'Debt-free by',
+    payoffCalcDesc: 'Interactive payoff timeline calculator',
+    plannedSequence: 'Planned Payoff Sequence:',
+    strategySnowball: 'Snowball (Smallest First)',
+    strategyAvalanche: 'Avalanche (Largest First)',
+    monthlyBudgetLabel: 'Monthly Repayment Budget:',
+    projectedDebtFree: 'Projected Debt-Free:',
+    payoffProjectionStart: 'At',
+    payoffProjectionEnd: 'all {count} debts will be paid in {months} months.',
   },
   notifications: {
     recurringReminderTitle: '«{name}» ожидается завтра',
@@ -803,3 +827,5 @@ export default {
     reasonInsertFailed: 'не удалось сохранить',
   },
 }
+
+

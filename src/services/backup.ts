@@ -359,12 +359,20 @@ export async function replaceFromBackup(payload: BackupPayload): Promise<void> {
   )
 }
 
-async function upsertById<T extends { id: string }>(
-  table: { bulkPut: (items: T[]) => Promise<unknown> },
+async function upsertById<T extends { id: string; updatedAt?: string }>(
+  table: { toArray: () => Promise<T[]>; bulkPut: (items: T[]) => Promise<unknown> },
   rows: T[] | undefined,
 ) {
   if (!rows?.length) return
-  await table.bulkPut(rows)
+  const existing = await table.toArray()
+  const map = new Map(existing.map((x) => [x.id, x]))
+  const toPut = rows.filter((r) => {
+    const e = map.get(r.id)
+    if (!e) return true
+    if (r.updatedAt && e.updatedAt && new Date(r.updatedAt) <= new Date(e.updatedAt)) return false
+    return true
+  })
+  if (toPut.length) await table.bulkPut(toPut)
 }
 
 /** Merge backup rows by id. Does not clear existing data or overwrite app settings. */
@@ -374,13 +382,50 @@ export async function mergeFromBackup(payload: BackupPayload): Promise<void> {
     'rw',
     [db.accounts, db.categories, db.budgets, db.transactions, db.goals, db.recurring, db.debts],
     async () => {
-      await upsertById(db.accounts, data.accounts)
+      // First, upsert everything except accounts
       await upsertById(db.categories, data.categories)
       await upsertById(db.budgets, data.budgets)
       await upsertById(db.transactions, data.transactions)
       await upsertById(db.goals, data.goals)
       await upsertById(db.recurring, data.recurring)
       await upsertById(db.debts, data.debts)
+
+      // Now accounts: upsert them but preserve local balances for now
+      if (data.accounts?.length) {
+        const existingAccs = await db.accounts.toArray()
+        const accMap = new Map(existingAccs.map((a) => [a.id, a]))
+        const accsToPut = data.accounts
+          .map((a) => {
+            const e = accMap.get(a.id)
+            if (e && a.updatedAt && e.updatedAt && new Date(a.updatedAt) <= new Date(e.updatedAt)) return null
+            // Retain the local balance when merging in a remote account record (e.g. name change)
+            // Balance will be recomputed below anyway.
+            return { ...a, balance: e ? e.balance : 0 }
+          })
+          .filter((a): a is Account => a !== null)
+        if (accsToPut.length) await db.accounts.bulkPut(accsToPut)
+      }
+
+      // Finally, recalculate all account balances from scratch based on the merged transactions
+      const allTxs = await db.transactions.toArray()
+      const allAccs = await db.accounts.toArray()
+      for (const acc of allAccs) {
+        acc.balance = 0
+      }
+      const newAccMap = new Map(allAccs.map((a) => [a.id, a]))
+      for (const tx of allTxs) {
+        const acc = newAccMap.get(tx.accountId)
+        if (acc) {
+          if (tx.type === 'income') acc.balance += tx.amount
+          else if (tx.type === 'expense') acc.balance -= tx.amount
+          else if (tx.type === 'transfer') acc.balance -= tx.amount
+        }
+        if (tx.type === 'transfer' && tx.toAccountId) {
+          const toAcc = newAccMap.get(tx.toAccountId)
+          if (toAcc) toAcc.balance += tx.amount
+        }
+      }
+      await db.accounts.bulkPut(allAccs)
     },
   )
 }

@@ -190,6 +190,11 @@ export default {
     pasteBankDesc: 'Матни SMS ё огоҳиномаи бонкро гузоред. WhereDidItGo маблағ ва категорияро худкор муайян мекунад.',
     parseAndDraft: 'Муайян ва илова кардан',
     upcomingBills: 'Обунаҳо ва ҳисобҳои оянда',
+    pasteErrorEmpty: 'Please paste a bank notification or SMS text',
+    pasteErrorInvalid: 'Could not detect an amount or bank transaction in this text',
+    trySample: 'Try sample:',
+    senderLabel: 'Sender / Bank Name (Optional)',
+    smsBodyLabel: 'Notification / SMS Body',
   },
   activity: {
     title: 'Амалиётҳо',
@@ -455,6 +460,16 @@ export default {
     wrappedTransactions: 'Амалиёт',
     wrappedShareBtn: 'Мубодилаи натиҷаҳо',
     wrappedCopied: 'Хулоса ба хотираи муваққатӣ нусхабардорӣ шуд!',
+    badgeBudgetGuardianTitle: 'Budget Guardian',
+    badgeBudgetGuardianSub: 'Stayed 100% within limits across all {count} envelopes',
+    badgeSavingsTitanTitle: 'Savings Titan',
+    badgeSavingsTitanSub: 'Incredible {rate}% savings rate achieved this month',
+    badgeFrugalMasterTitle: 'Frugal Master',
+    badgeFrugalMasterSub: 'Maintained a healthy 20%+ savings buffer',
+    badgeDebtCrusherTitle: 'Debt Crusher',
+    badgeDebtCrusherSub: 'Actively paying down loans and liabilities (Lifetime)',
+    badgeConsistencyChampionTitle: 'Consistency Champion',
+    badgeConsistencyChampionSub: 'Logged {count} transactions with meticulous detail',
   },
   settings: {
     title: 'Танзимот',
@@ -776,6 +791,15 @@ export default {
     nameRequired: 'Ном ворид кунед',
     emptyTitle: 'Қарз ё вом нест',
     payoffTitle: 'Стратегияҳои пардохти қарзҳо (Snowball ва Avalanche)',
+    debtFreeBy: 'Debt-free by',
+    payoffCalcDesc: 'Interactive payoff timeline calculator',
+    plannedSequence: 'Planned Payoff Sequence:',
+    strategySnowball: 'Snowball (Smallest First)',
+    strategyAvalanche: 'Avalanche (Largest First)',
+    monthlyBudgetLabel: 'Monthly Repayment Budget:',
+    projectedDebtFree: 'Projected Debt-Free:',
+    payoffProjectionStart: 'At',
+    payoffProjectionEnd: 'all {count} debts will be paid in {months} months.',
   },
   notifications: {
     recurringReminderTitle: '«{name}» пагоҳ интизор аст',
@@ -822,3 +846,5 @@ export default {
     reasonInsertFailed: 'нигоҳ дошта нашуд',
   },
 }
+
+

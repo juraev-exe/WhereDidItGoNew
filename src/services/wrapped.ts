@@ -1,6 +1,7 @@
 import { format, parseISO, differenceInCalendarDays, startOfDay } from 'date-fns'
 import { isInMonth, monthKey, previousMonthKey, monthRange, parseLocalDay } from '@/lib/dates'
 import type { Budget, Category, Debt, Transaction } from '@/types/finance'
+import i18n from '@/i18n'
 
 export interface WrappedCategory {
   id: string
@@ -173,8 +174,10 @@ export function computeWrappedData(
   }
   const dailyAverage = Math.round(totalOutflow / elapsedDays)
 
-  // Debts repayments made
-  const debtsPaidTotal = debts.reduce((sum, d) => sum + (d.paidAmount || 0), 0)
+  // Lifetime borrowed-debts repayments made
+  const lifetimeDebtsPaidTotal = debts
+    .filter(d => d.type === 'borrowed')
+    .reduce((sum, d) => sum + (d.paidAmount || 0), 0)
 
   // Achievement Badge determination
   let badge: WrappedBadge = {
@@ -196,40 +199,40 @@ export function computeWrappedData(
   if (allWithinBudget && savingsRate >= 20) {
     badge = {
       id: 'budget-guardian',
-      title: 'Budget Guardian',
-      subtitle: `Stayed 100% within limits across all ${budgetForMonth.length} envelopes`,
+      title: String(i18n.global.t('insights.badgeBudgetGuardianTitle', 'Budget Guardian')),
+      subtitle: String(i18n.global.t('insights.badgeBudgetGuardianSub', { count: budgetForMonth.length }, `Stayed 100% within limits across all ${budgetForMonth.length} envelopes`)),
       icon: '🛡️',
       gradient: 'linear-gradient(135deg, #10b981, #06b6d4)',
     }
   } else if (savingsRate >= 40 && totalInflow > 0) {
     badge = {
       id: 'savings-titan',
-      title: 'Savings Titan',
-      subtitle: `Incredible ${savingsRate}% savings rate achieved this month`,
+      title: String(i18n.global.t('insights.badgeSavingsTitanTitle', 'Savings Titan')),
+      subtitle: String(i18n.global.t('insights.badgeSavingsTitanSub', { rate: savingsRate }, `Incredible ${savingsRate}% savings rate achieved this month`)),
       icon: '💎',
       gradient: 'linear-gradient(135deg, #10b981, #059669)',
     }
   } else if (savingsRate >= 20 && totalInflow > 0) {
     badge = {
       id: 'frugal-master',
-      title: 'Frugal Master',
-      subtitle: 'Maintained a healthy 20%+ savings buffer',
+      title: String(i18n.global.t('insights.badgeFrugalMasterTitle', 'Frugal Master')),
+      subtitle: String(i18n.global.t('insights.badgeFrugalMasterSub', 'Maintained a healthy 20%+ savings buffer')),
       icon: '🛡️',
       gradient: 'linear-gradient(135deg, #3b82f6, #6366f1)',
     }
-  } else if (debtsPaidTotal > 0 && debts.length > 0) {
+  } else if (lifetimeDebtsPaidTotal > 0 && debts.some(d => d.type === 'borrowed')) {
     badge = {
       id: 'debt-crusher',
-      title: 'Debt Crusher',
-      subtitle: 'Actively paying down loans and liabilities',
+      title: String(i18n.global.t('insights.badgeDebtCrusherTitle', 'Debt Crusher')),
+      subtitle: String(i18n.global.t('insights.badgeDebtCrusherSub', 'Actively paying down loans and liabilities (Lifetime)')),
       icon: '⚡',
       gradient: 'linear-gradient(135deg, #ec4899, #f43f5e)',
     }
   } else if (monthTxs.length >= 20) {
     badge = {
       id: 'consistency-champion',
-      title: 'Consistency Champion',
-      subtitle: `Logged ${monthTxs.length} transactions with meticulous detail`,
+      title: String(i18n.global.t('insights.badgeConsistencyChampionTitle', 'Consistency Champion')),
+      subtitle: String(i18n.global.t('insights.badgeConsistencyChampionSub', { count: monthTxs.length }, `Logged ${monthTxs.length} transactions with meticulous detail`)),
       icon: '🏆',
       gradient: 'linear-gradient(135deg, #f59e0b, #d97706)',
     }
@@ -259,7 +262,7 @@ export function computeWrappedData(
     busiestDayOfWeek,
     dailyAverage,
     totalTransactions: monthTxs.length,
-    debtsPaidTotal,
+    debtsPaidTotal: lifetimeDebtsPaidTotal,
     badge,
   }
 }

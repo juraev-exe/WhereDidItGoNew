@@ -72,13 +72,13 @@ function closePasteModal() {
 async function parseAndAdd() {
   pasteError.value = ''
   if (!rawInput.value.trim()) {
-    pasteError.value = 'Please paste a bank notification or SMS text'
+    pasteError.value = t('home.pasteErrorEmpty', 'Please paste a bank notification or SMS text')
     return
   }
 
   const parsed = parseBankNotification(rawInput.value, senderInput.value || undefined)
   if (!parsed) {
-    pasteError.value = 'Could not detect an amount or bank transaction in this text'
+    pasteError.value = t('home.pasteErrorInvalid', 'Could not detect an amount or bank transaction in this text')
     return
   }
 
@@ -210,18 +210,18 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
           </div>
 
           <p class="modal-desc">
-            {{ t('home.pasteBankDesc') || 'Paste raw text copied from your bank push or SMS. WhereDidItGo parses the amount, merchant, and category locally on your device.' }}
+            {{ t('home.pasteBankDesc', 'Paste raw text copied from your bank push or SMS. WhereDidItGo parses the amount, merchant, and category locally on your device.') }}
           </p>
 
           <div class="sample-pills">
-            <span class="sample-label">Try sample:</span>
+            <span class="sample-label">{{ t('home.trySample', 'Try sample:') }}</span>
             <button type="button" class="sample-btn" @click="loadSample('alif')">Alif Bank (TJS)</button>
             <button type="button" class="sample-btn" @click="loadSample('chase')">Chase ($ USD)</button>
             <button type="button" class="sample-btn" @click="loadSample('tinkoff')">T-Bank (₽ RUB)</button>
           </div>
 
           <div class="input-group">
-            <label>Sender / Bank Name (Optional)</label>
+            <label>{{ t('home.senderLabel', 'Sender / Bank Name (Optional)') }}</label>
             <input
               v-model="senderInput"
               type="text"
@@ -231,7 +231,7 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
           </div>
 
           <div class="input-group">
-            <label>Notification / SMS Body</label>
+            <label>{{ t('home.smsBodyLabel', 'Notification / SMS Body') }}</label>
             <textarea
               v-model="rawInput"
               rows="3"

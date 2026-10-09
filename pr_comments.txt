@@ -1,0 +1,492 @@
+File: src/features/settings/components/P2PSyncModal.vue
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Joining always fails**
+
+`submitOfferToClient()` calls `resetSessions()`, which clears `hostOfferInput`, before passing that input to `acceptOfferAndGenerateAnswer()`. Every attempt to join therefore passes an empty code and fails. Save the pasted code before resetting the session.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/features/settings/components/P2PSyncModal.vue
+Line: 109
+
+Comment:
+**Joining always fails**
+
+`submitOfferToClient()` calls `resetSessions()`, which clears `hostOfferInput`, before passing that input to `acceptOfferAndGenerateAnswer()`. Every attempt to join therefore passes an empty code and fails. Save the pasted code before resetting the session.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/lib/qrcode.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Pairing codes are invisible**
+
+`generateQrSvg()` draws white modules on a transparent background. Both pairing screens place the SVG on a white background, so users cannot see or scan the codes. Use dark modules or pass contrasting colors from the pairing screen.
+
+```suggestion
+      dark: options?.color?.dark ?? '#111827',
+      light: options?.color?.light ?? '#ffffff',
+```
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/lib/qrcode.ts
+Line: 20-21
+
+Comment:
+**Pairing codes are invisible**
+
+`generateQrSvg()` draws white modules on a transparent background. Both pairing screens place the SVG on a white background, so users cannot see or scan the codes. Use dark modules or pass contrasting colors from the pairing screen.
+
+```suggestion
+      dark: options?.color?.dark ?? '#111827',
+      light: options?.color?.light ?? '#ffffff',
+```
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/p2pSync.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Sync overwrites newer edits**
+
+Both peers send their own snapshot and then overwrite matching rows through `mergeFromBackup()`. If one device has a newer transaction edit, it receives the stale copy while the other receives the newer copy. The devices swap versions rather than agree, and syncing again can reverse them. Compare `updatedAt` before applying matching rows on either peer.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/p2pSync.ts
+Line: 154
+
+Comment:
+**Sync overwrites newer edits**
+
+Both peers send their own snapshot and then overwrite matching rows through `mergeFromBackup()`. If one device has a newer transaction edit, it receives the stale copy while the other receives the newer copy. The devices swap versions rather than agree, and syncing again can reverse them. Compare `updatedAt` before applying matching rows on either peer.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/p2pSync.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Synced balances are wrong**
+
+The new sync path merges transactions and stored account balances separately. If two devices start with $100 and record separate expenses of $10 and $20, both expenses remain after syncing. But each device copies the other's balance of $80 or $90 instead of showing $70. Apply the balance effects of merged transaction changes rather than copying one peer's balance.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/p2pSync.ts
+Line: 154
+
+Comment:
+**Synced balances are wrong**
+
+The new sync path merges transactions and stored account balances separately. If two devices start with $100 and record separate expenses of $10 and $20, both expenses remain after syncing. But each device copies the other's balance of $80 or $90 instead of showing $70. Apply the balance effects of merged transaction changes rather than copying one peer's balance.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/stats.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Earlier rollover is lost**
+
+`budgetProgress()` carries the previous month's base limit minus spending, not its remaining amount after earlier rollover. With $100 limits, $60 spent in month one and $80 in month two, month two ends with $60 left. Month three carries only $20, losing the earlier $40. Carry the previous effective remainder across consecutive rollover months.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/stats.ts
+Line: 330
+
+Comment:
+**Earlier rollover is lost**
+
+`budgetProgress()` carries the previous month's base limit minus spending, not its remaining amount after earlier rollover. With $100 limits, $60 spent in month one and $80 in month two, month two ends with $60 left. Month three carries only $20, losing the earlier $40. Carry the previous effective remainder across consecutive rollover months.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/stats.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Budget warnings ignore rollover**
+
+`computeBudgetRunway()` uses the base limit for percentages, warnings and exhaustion dates, but uses the rollover-adjusted remainder. A $100 budget with $50 carried forward and $110 spent appears exhausted despite having $40 left. Use `effectiveLimit` throughout, including the budget page totals and Wrapped budget checks.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/stats.ts
+Line: 1363-1365
+
+Comment:
+**Budget warnings ignore rollover**
+
+`computeBudgetRunway()` uses the base limit for percentages, warnings and exhaustion dates, but uses the rollover-adjusted remainder. A $100 budget with $50 carried forward and $110 spent appears exhausted despite having $40 left. Use `effectiveLimit` throughout, including the budget page totals and Wrapped budget checks.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/types/finance.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Restore loses rollover settings**
+
+The new `Budget.rollover` field is saved but not preserved by `sanitizeBudget()`. JSON restores, encrypted restores and peer merges all use that helper, which drops the flag. Restoring a backup silently disables rollover. Preserve the field in the backup reader and test its round trip.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/types/finance.ts
+Line: 38
+
+Comment:
+**Restore loses rollover settings**
+
+The new `Budget.rollover` field is saved but not preserved by `sanitizeBudget()`. JSON restores, encrypted restores and peer merges all use that helper, which drops the flag. Restoring a backup silently disables rollover. Preserve the field in the backup reader and test its round trip.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/stores/drafts.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Drafts can be recorded twice**
+
+`confirmDraft()` adds a transaction before removing the draft, without guarding against another confirmation. Two quick taps can both find the draft and create separate transactions. A crash between the writes also leaves an already-recorded draft available to confirm again. Claim and remove the draft in the same database transaction as the financial write.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/stores/drafts.ts
+Line: 74
+
+Comment:
+**Drafts can be recorded twice**
+
+`confirmDraft()` adds a transaction before removing the draft, without guarding against another confirmation. Two quick taps can both find the draft and create separate transactions. A crash between the writes also leaves an already-recorded draft available to confirm again. Claim and remove the draft in the same database transaction as the financial write.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/db/index.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Old drafts survive restore**
+
+The new drafts table is not cleared by `replaceFromBackup()`. Restoring a different backup leaves old drafts pointing at the previous accounts and categories. Confirming one can save a transaction against a missing account because `addTransaction()` only checks that the ID is nonempty. Clear or restore drafts together with the rest of the database.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/db/index.ts
+Line: 53-55
+
+Comment:
+**Old drafts survive restore**
+
+The new drafts table is not cleared by `replaceFromBackup()`. Restoring a different backup leaves old drafts pointing at the previous accounts and categories. Confirming one can save a transaction against a missing account because `addTransaction()` only checks that the ID is nonempty. Clear or restore drafts together with the rest of the database.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/smsParser.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Grouped amounts shrink**
+
+Replacing every comma with a period breaks amounts with thousands separators. `Purchase $1,250.00` matches the supported pattern, becomes `1.250.00`, and `parseFloat()` returns `1.25`. The draft records $1.25 instead of $1,250.00. Separate grouping marks from the decimal separator before converting.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/smsParser.ts
+Line: 231-234
+
+Comment:
+**Grouped amounts shrink**
+
+Replacing every comma with a period breaks amounts with thousands separators. `Purchase $1,250.00` matches the supported pattern, becomes `1.250.00`, and `parseFloat()` returns `1.25`. The draft records $1.25 instead of $1,250.00. Separate grouping marks from the decimal separator before converting.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/smsParser.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Balances become expenses**
+
+The parser prefers any currency-before-number match over an earlier purchase amount. For `Pokupka 850 RUB. Balans: RUB 14200`, the first pattern selects the balance and returns 1,420,000 minor units instead of 85,000. Confirming that draft records the balance as an expense. Choose the amount near the purchase or income trigger and exclude balance fields.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/smsParser.ts
+Line: 210-215
+
+Comment:
+**Balances become expenses**
+
+The parser prefers any currency-before-number match over an earlier purchase amount. For `Pokupka 850 RUB. Balans: RUB 14200`, the first pattern selects the balance and returns 1,420,000 minor units instead of 85,000. Confirming that draft records the balance as an expense. Choose the amount near the purchase or income trigger and exclude balance fields.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/wrapped.ts
+Line: 
+<a href="#"><img alt="P2" src="https://greptile-static-assets.s3.amazonaws.com/badges/p2.svg?v=9" align="top"></a> **Daily spending is misstated**
+
+`dailyAverage` always divides spending by 30. A completed February with $280 spent shows $9.33 per day instead of $10. The current month is also offered before it ends. Use the actual elapsed days in the selected budget cycle.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/wrapped.ts
+Line: 164
+
+Comment:
+**Daily spending is misstated**
+
+`dailyAverage` always divides spending by 30. A completed February with $280 spent shows $9.33 per day instead of $10. The current month is also offered before it ends. Use the actual elapsed days in the selected budget cycle.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/wrapped.ts
+Line: 
+<a href="#"><img alt="P2" src="https://greptile-static-assets.s3.amazonaws.com/badges/p2.svg?v=9" align="top"></a> **Old repayments count again**
+
+`debtsPaidTotal` sums lifetime `paidAmount` across all debts, including money lent to others. The monthly story repeats old repayments every month and can award Debt Crusher for money received rather than debt paid down. Count borrowed-debt repayments within `targetMonth`, or clearly label this as a lifetime total.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/wrapped.ts
+Line: 167
+
+Comment:
+**Old repayments count again**
+
+`debtsPaidTotal` sums lifetime `paidAmount` across all debts, including money lent to others. The monthly story repeats old repayments every month and can award Debt Crusher for money received rather than debt paid down. Count borrowed-debt repayments within `targetMonth`, or clearly label this as a lifetime total.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/features/debts/DebtPayoffPlanner.vue
+Line: 
+<a href="#"><img alt="P2" src="https://greptile-static-assets.s3.amazonaws.com/badges/p2.svg?v=9" align="top"></a> **New screens stay English**
+
+The debt planner leaves most labels in English despite translating `debts.payoffTitle` into all three languages. Strategy names, the repayment budget and result sentences bypass `t()`. The SMS form and generated Wrapped badge text have the same gap. Move these strings into the locale files, including sentences with amounts and dates.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/features/debts/DebtPayoffPlanner.vue
+Line: 182
+
+Comment:
+**New screens stay English**
+
+The debt planner leaves most labels in English despite translating `debts.payoffTitle` into all three languages. Strategy names, the repayment budget and result sentences bypass `t()`. The SMS form and generated Wrapped badge text have the same gap. Move these strings into the locale files, including sentences with amounts and dates.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+
+Note: If this suggestion doesn't match your team's coding style, reply to this and let me know. I'll remember it for next time!
+========================================
+File: scripts/audit.mjs
+Line: 
+<a href="#"><img alt="P2" src="https://greptile-static-assets.s3.amazonaws.com/badges/p2.svg?v=9" align="top"></a> **Wrong amounts pass the audit**
+
+The updated audit checks whether the entire row HTML contains `20`, not whether the saved amount is $20.00. Unrelated markup or a wrong amount can satisfy it, so the test no longer protects the `12+8` write path. Read the saved transaction amount or assert the amount element's exact value.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: scripts/audit.mjs
+Line: 210-212
+
+Comment:
+**Wrong amounts pass the audit**
+
+The updated audit checks whether the entire row HTML contains `20`, not whether the saved amount is $20.00. Unrelated markup or a wrong amount can satisfy it, so the test no longer protects the `12+8` write path. Read the saved transaction amount or assert the amount element's exact value.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/smsParser.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Purchase dates become expense amounts**
+
+The new keyword-first pattern reads `Pokupka 12.05.2026 v Market. Summa: 850 RUB` as 12.05 and stops before reaching `850 RUB`. Confirming the draft saves the wrong expense and changes the account balance by the wrong amount. Exclude dates and card numbers before giving this pattern priority.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/smsParser.ts
+Line: 205
+
+Comment:
+**Purchase dates become expense amounts**
+
+The new keyword-first pattern reads `Pokupka 12.05.2026 v Market. Summa: 850 RUB` as 12.05 and stops before reaching `850 RUB`. Confirming the draft saves the wrong expense and changes the account balance by the wrong amount. Exclude dates and card numbers before giving this pattern priority.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/stats.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Empty budgets hide overspending**
+
+Switching to `effectiveLimit` makes a budget with no money left report 0% spent and `on-track`. A $100 limit with a $100 carried deficit has an `effectiveLimit` of zero. Spending $110 now shows no warning, whereas the old calculation marked it over budget. Treat positive spending against a zero limit as over budget, and update the overall percentage too.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/stats.ts
+Line: 1368-1372
+
+Comment:
+**Empty budgets hide overspending**
+
+Switching to `effectiveLimit` makes a budget with no money left report 0% spent and `on-track`. A $100 limit with a $100 carried deficit has an `effectiveLimit` of zero. Spending $110 now shows no warning, whereas the old calculation marked it over budget. Treat positive spending against a zero limit as over budget, and update the overall percentage too.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/backup.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Account timestamp check blocks builds**
+
+`mergeFromBackup()` reads `a.updatedAt` and `e.updatedAt`, but both records are typed as `Account`, which has no `updatedAt` field. These accesses fail TypeScript checks. Since `build` runs `vue-tsc --noEmit` first, web and native builds cannot finish. Remove this check or add and preserve account timestamps throughout account writes and backups.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/backup.ts
+Line: 400
+
+Comment:
+**Account timestamp check blocks builds**
+
+`mergeFromBackup()` reads `a.updatedAt` and `e.updatedAt`, but both records are typed as `Account`, which has no `updatedAt` field. These accesses fail TypeScript checks. Since `build` runs `vue-tsc --noEmit` first, web and native builds cannot finish. Remove this check or add and preserve account timestamps throughout account writes and backups.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/backup.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Credit balances change signs**
+
+`mergeFromBackup()` now subtracts expenses and adds payments for every account type. Credit accounts use the opposite signs because their `balance` stores money owed. A credit account starting at zero with a $20 expense becomes -$20 after merging instead of $20 owed. Transfers into credit accounts are reversed too. Use the same credit-aware signs as `signedFlowDelta()` when applying merged transactions.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/backup.ts
+Line: 419-425
+
+Comment:
+**Credit balances change signs**
+
+`mergeFromBackup()` now subtracts expenses and adds payments for every account type. Credit accounts use the opposite signs because their `balance` stores money owed. A credit account starting at zero with a $20 expense becomes -$20 after merging instead of $20 owed. Transfers into credit accounts are reversed too. Use the same credit-aware signs as `signedFlowDelta()` when applying merged transactions.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================
+File: src/services/smsParser.ts
+Line: 
+<a href="#"><img alt="P1" src="https://greptile-static-assets.s3.amazonaws.com/badges/p1.svg?v=9" align="top"></a> **Bank messages lose their amounts**
+
+The new date-removal pattern also removes valid amounts with two digits on each side of a decimal point. It removes `78.50` from the Alif sample and `34.20` from the Chase sample before amount detection. Those messages now return no draft; a message with another number can select that number instead. Require enough date context to distinguish dates from money before removing matches.
+
+<details><summary>Prompt To Fix With AI</summary>
+
+`````markdown
+This is a comment left during a code review.
+Path: src/services/smsParser.ts
+Line: 201
+
+Comment:
+**Bank messages lose their amounts**
+
+The new date-removal pattern also removes valid amounts with two digits on each side of a decimal point. It removes `78.50` from the Alif sample and `34.20` from the Chase sample before amount detection. Those messages now return no draft; a message with another number can select that number instead. Require enough date context to distinguish dates from money before removing matches.
+
+---
+
+For each issue above, determine whether it is valid and should be fixed. If so, fix it directly.
+`````
+</details>
+========================================

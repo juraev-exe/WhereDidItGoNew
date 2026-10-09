@@ -382,7 +382,52 @@ export async function mergeFromBackup(payload: BackupPayload): Promise<void> {
     'rw',
     [db.accounts, db.categories, db.budgets, db.transactions, db.goals, db.recurring, db.debts],
     async () => {
-      // First, upsert everything except accounts
+      // 1. Calculate manual base for existing local accounts
+      const existingAccs = await db.accounts.toArray()
+      const existingAccMap = new Map(existingAccs.map((a) => [a.id, a]))
+      const existingTxs = await db.transactions.toArray()
+      
+      const localManualBases = new Map<string, number>()
+      for (const a of existingAccs) localManualBases.set(a.id, a.balance)
+      
+      for (const tx of existingTxs) {
+        const acc = existingAccMap.get(tx.accountId)
+        if (acc) {
+          const sign = acc.type === 'credit' ? -1 : 1
+          if (tx.type === 'income') localManualBases.set(acc.id, localManualBases.get(acc.id)! - sign * tx.amount)
+          else if (tx.type === 'expense' || tx.type === 'transfer') localManualBases.set(acc.id, localManualBases.get(acc.id)! + sign * tx.amount)
+        }
+        if (tx.type === 'transfer' && tx.toAccountId) {
+          const toAcc = existingAccMap.get(tx.toAccountId)
+          if (toAcc) {
+            const sign = toAcc.type === 'credit' ? -1 : 1
+            localManualBases.set(toAcc.id, localManualBases.get(toAcc.id)! - sign * tx.amount)
+          }
+        }
+      }
+
+      // 2. Calculate manual base for incoming remote accounts
+      const remoteManualBases = new Map<string, number>()
+      const remoteAccMap = new Map((data.accounts || []).map(a => [a.id, a]))
+      for (const a of data.accounts || []) remoteManualBases.set(a.id, a.balance)
+      
+      for (const tx of data.transactions || []) {
+        const acc = remoteAccMap.get(tx.accountId)
+        if (acc) {
+          const sign = acc.type === 'credit' ? -1 : 1
+          if (tx.type === 'income') remoteManualBases.set(acc.id, remoteManualBases.get(acc.id)! - sign * tx.amount)
+          else if (tx.type === 'expense' || tx.type === 'transfer') remoteManualBases.set(acc.id, remoteManualBases.get(acc.id)! + sign * tx.amount)
+        }
+        if (tx.type === 'transfer' && tx.toAccountId) {
+          const toAcc = remoteAccMap.get(tx.toAccountId)
+          if (toAcc) {
+            const sign = toAcc.type === 'credit' ? -1 : 1
+            remoteManualBases.set(toAcc.id, remoteManualBases.get(toAcc.id)! - sign * tx.amount)
+          }
+        }
+      }
+
+      // 3. Upsert everything except accounts
       await upsertById(db.categories, data.categories)
       await upsertById(db.budgets, data.budgets)
       await upsertById(db.transactions, data.transactions)
@@ -390,36 +435,29 @@ export async function mergeFromBackup(payload: BackupPayload): Promise<void> {
       await upsertById(db.recurring, data.recurring)
       await upsertById(db.debts, data.debts)
 
-      // Now accounts: upsert them but preserve local balances for now
+      // 4. Upsert accounts
       if (data.accounts?.length) {
-        const existingAccs = await db.accounts.toArray()
-        const accMap = new Map(existingAccs.map((a) => [a.id, a]))
-        const accsToPut = data.accounts
-          .map((a) => {
-            const e = accMap.get(a.id)
-            // Account doesn't have updatedAt currently, always apply remote edits (except balance)
-            // Retain the local balance when merging in a remote account record (e.g. name change)
-            // Balance will be recomputed below anyway.
-            return { ...a, balance: e ? e.balance : 0 }
-          })
-          .filter((a): a is Account => a !== null)
-        if (accsToPut.length) await db.accounts.bulkPut(accsToPut)
+        const accsToPut = data.accounts.map((a) => {
+          return { ...a, balance: 0 }
+        })
+        await db.accounts.bulkPut(accsToPut)
       }
 
-      // Finally, recalculate all account balances from scratch based on the merged transactions
+      // 5. Recalculate balances using the correct manual base + merged transactions
       const allTxs = await db.transactions.toArray()
       const allAccs = await db.accounts.toArray()
-      for (const acc of allAccs) {
-        acc.balance = 0
-      }
       const newAccMap = new Map(allAccs.map((a) => [a.id, a]))
+      
+      for (const acc of allAccs) {
+        acc.balance = localManualBases.has(acc.id) ? localManualBases.get(acc.id)! : (remoteManualBases.get(acc.id) || 0)
+      }
+
       for (const tx of allTxs) {
         const acc = newAccMap.get(tx.accountId)
         if (acc) {
           const sign = acc.type === 'credit' ? -1 : 1
           if (tx.type === 'income') acc.balance += sign * tx.amount
-          else if (tx.type === 'expense') acc.balance -= sign * tx.amount
-          else if (tx.type === 'transfer') acc.balance -= sign * tx.amount
+          else if (tx.type === 'expense' || tx.type === 'transfer') acc.balance -= sign * tx.amount
         }
         if (tx.type === 'transfer' && tx.toAccountId) {
           const toAcc = newAccMap.get(tx.toAccountId)

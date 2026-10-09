@@ -190,11 +190,11 @@ export default {
     pasteBankDesc: 'Матни SMS ё огоҳиномаи бонкро гузоред. WhereDidItGo маблағ ва категорияро худкор муайян мекунад.',
     parseAndDraft: 'Муайян ва илова кардан',
     upcomingBills: 'Обунаҳо ва ҳисобҳои оянда',
-    pasteErrorEmpty: 'Please paste a bank notification or SMS text',
-    pasteErrorInvalid: 'Could not detect an amount or bank transaction in this text',
-    trySample: 'Try sample:',
-    senderLabel: 'Sender / Bank Name (Optional)',
-    smsBodyLabel: 'Notification / SMS Body',
+    pasteErrorEmpty: 'Лутфан матни огоҳиномаи бонкӣ ё SMS-ро гузоред',
+    pasteErrorInvalid: 'Маблағ ё амалиёти бонкӣ дар ин матн пайдо нашуд',
+    trySample: 'Намунаро санҷед:',
+    senderLabel: 'Ирсолкунанда / Номи бонк (иловагӣ)',
+    smsBodyLabel: 'Матни огоҳинома / SMS',
   },
   activity: {
     title: 'Амалиётҳо',
@@ -459,7 +459,9 @@ export default {
     wrappedTopCategory: 'Категорияи асосӣ',
     wrappedTransactions: 'Амалиёт',
     wrappedShareBtn: 'Мубодилаи натиҷаҳо',
-    wrappedCopied: 'Хулоса ба хотираи муваққатӣ нусхабардорӣ шуд!',
+    wrappedCopied: 'Хулоса нусхабардорӣ шуд!',
+    badgeMindfulTrackerTitle: 'Пайгири дақиқ',
+    badgeMindfulTrackerSub: 'Назорати пурраи молиявии худро ба даст овард',
     badgeBudgetGuardianTitle: 'Budget Guardian',
     badgeBudgetGuardianSub: 'Stayed 100% within limits across all {count} envelopes',
     badgeSavingsTitanTitle: 'Savings Titan',
@@ -846,6 +848,7 @@ export default {
     reasonInsertFailed: 'нигоҳ дошта нашуд',
   },
 }
+
 
 
 

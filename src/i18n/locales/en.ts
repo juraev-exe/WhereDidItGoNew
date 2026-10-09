@@ -424,6 +424,8 @@ export default {
     wrappedTransactions: 'Entries',
     wrappedShareBtn: 'Share My Wrapped',
     wrappedCopied: 'Summary copied to clipboard!',
+    badgeMindfulTrackerTitle: 'Mindful Tracker',
+    badgeMindfulTrackerSub: 'Taking charge of personal financial awareness',
     badgeBudgetGuardianTitle: 'Budget Guardian',
     badgeBudgetGuardianSub: 'Stayed 100% within limits across all {count} envelopes',
     badgeSavingsTitanTitle: 'Savings Titan',
@@ -810,6 +812,7 @@ export default {
     reasonInsertFailed: 'could not be saved',
   },
 }
+
 
 
 

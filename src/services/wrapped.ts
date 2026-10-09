@@ -183,8 +183,8 @@ export function computeWrappedData(
   // Achievement Badge determination
   let badge: WrappedBadge = {
     id: 'mindful-tracker',
-    title: 'Mindful Tracker',
-    subtitle: 'Taking charge of personal financial awareness',
+    title: String(i18n.global.t('insights.badgeMindfulTrackerTitle', 'Mindful Tracker')),
+    subtitle: String(i18n.global.t('insights.badgeMindfulTrackerSub', 'Taking charge of personal financial awareness')),
     icon: '✨',
     gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
   }

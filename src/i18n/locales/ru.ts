@@ -190,11 +190,11 @@ export default {
     pasteBankDesc: 'Вставьте текст из SMS или push-уведомления банка. WhereDidItGo распознает сумму, магазин и категорию прямо на устройстве.',
     parseAndDraft: 'Распознать и добавить',
     upcomingBills: 'Предстоящие подписки и счета',
-    pasteErrorEmpty: 'Please paste a bank notification or SMS text',
-    pasteErrorInvalid: 'Could not detect an amount or bank transaction in this text',
-    trySample: 'Try sample:',
-    senderLabel: 'Sender / Bank Name (Optional)',
-    smsBodyLabel: 'Notification / SMS Body',
+    pasteErrorEmpty: 'Пожалуйста, вставьте текст банковского уведомления или SMS',
+    pasteErrorInvalid: 'Не удалось распознать сумму или банковскую операцию в этом тексте',
+    trySample: 'Попробовать пример:',
+    senderLabel: 'Отправитель / Название банка (необязательно)',
+    smsBodyLabel: 'Текст уведомления / SMS',
   },
   activity: {
     title: 'История',
@@ -440,7 +440,9 @@ export default {
     wrappedTopCategory: 'Топ категория',
     wrappedTransactions: 'Записей',
     wrappedShareBtn: 'Поделиться итогами',
-    wrappedCopied: 'Итоги скопированы в буфер!',
+    wrappedCopied: 'Сводка скопирована в буфер обмена!',
+    badgeMindfulTrackerTitle: 'Внимательный трекер',
+    badgeMindfulTrackerSub: 'Взял под контроль свою финансовую осведомленность',
     badgeBudgetGuardianTitle: 'Budget Guardian',
     badgeBudgetGuardianSub: 'Stayed 100% within limits across all {count} envelopes',
     badgeSavingsTitanTitle: 'Savings Titan',
@@ -827,6 +829,7 @@ export default {
     reasonInsertFailed: 'не удалось сохранить',
   },
 }
+
 
 
 

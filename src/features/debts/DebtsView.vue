@@ -17,6 +17,7 @@ import { differenceInCalendarDays } from 'date-fns'
 import { parseLocalDay } from '@/lib/dates'
 import HeaderActions from '@/components/ui/HeaderActions.vue'
 import DebtFormModal from './DebtFormModal.vue'
+import DebtPayoffPlanner from './DebtPayoffPlanner.vue'
 import type { Debt } from '@/types/finance'
 
 type Filter = 'active' | 'lent' | 'borrowed' | 'settled'
@@ -213,6 +214,9 @@ async function confirmDelete() {
         </strong>
       </div>
     </div>
+
+    <!-- Debt Snowball / Avalanche Payoff Planner -->
+    <DebtPayoffPlanner :debts="debtsStore.debts" />
 
     <EmptyState
       v-if="!rows.length"

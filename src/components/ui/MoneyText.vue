@@ -20,7 +20,7 @@ const props = withDefaults(
     text: '',
     signed: null,
     size: 'md',
-    animated: false,
+    animated: true,
   },
 )
 

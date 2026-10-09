@@ -1,10 +1,20 @@
 <script setup lang="ts">
 import { ref, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Download, FileSpreadsheet, FileUp, Trash2, Upload } from '@lucide/vue'
+import {
+  ArrowLeft,
+  Download,
+  FileSpreadsheet,
+  FileUp,
+  Lock,
+  Radio,
+  Trash2,
+  Upload,
+} from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import CsvImportSheet from './CsvImportSheet.vue'
+import P2PSyncModal from './P2PSyncModal.vue'
 import {
   exportBackupFile,
   exportTransactionsCsv,
@@ -12,7 +22,13 @@ import {
   parseBackupJson,
   replaceFromBackup,
 } from '@/services/backup'
-import { warningFeedback } from '@/services/native/haptics'
+import {
+  exportEncryptedBackupFile,
+  decryptBackup,
+  parseEncryptedBackupEnvelope,
+  type EncryptedBackupEnvelope,
+} from '@/services/crypto'
+import { errorFeedback, successFeedback, warningFeedback } from '@/services/native/haptics'
 import { resetLocalData } from '@/db'
 import { usePremiumStore } from '@/stores/premium'
 import { useSettingsStore } from '@/stores/settings'
@@ -32,6 +48,20 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const importSheetOpen = ref(false)
 const pendingBackup = shallowRef<BackupPayload | null>(null)
 const csvImportOpen = ref(false)
+
+// Encrypted Export & Import state
+const encryptedExportSheetOpen = ref(false)
+const exportPassphrase = ref('')
+const exportPassphraseConfirm = ref('')
+const exportPassError = ref('')
+
+const encryptedImportSheetOpen = ref(false)
+const importPassphrase = ref('')
+const importPassError = ref('')
+const pendingEncryptedEnvelope = shallowRef<EncryptedBackupEnvelope | null>(null)
+
+// P2P Sync state
+const p2pSyncOpen = ref(false)
 
 const resetSheetOpen = ref(false)
 const resetA = ref(2)
@@ -82,15 +112,83 @@ async function onFileSelected(e: Event) {
   importing.value = true
   try {
     const text = await file.text()
-    const parsed = parseBackupJson(text)
-    pendingBackup.value = parsed
-    importSheetOpen.value = true
+    if (file.name.endsWith('.enc') || text.includes('wherediditgo-encrypted-backup')) {
+      const envelope = parseEncryptedBackupEnvelope(text)
+      pendingEncryptedEnvelope.value = envelope
+      importPassphrase.value = ''
+      importPassError.value = ''
+      encryptedImportSheetOpen.value = true
+    } else {
+      const parsed = parseBackupJson(text)
+      pendingBackup.value = parsed
+      importSheetOpen.value = true
+    }
   } catch (err) {
     emit('notify', err instanceof Error ? err.message : t('settings.importFail', 'Import failed'))
   } finally {
     importing.value = false
     input.value = ''
   }
+}
+
+function openEncryptedExport() {
+  if (!premium.isPremiumUser) {
+    premium.openPaywall(t('premium.limitExport', 'Backup export is a Pro feature.'))
+    return
+  }
+  exportPassphrase.value = ''
+  exportPassphraseConfirm.value = ''
+  exportPassError.value = ''
+  encryptedExportSheetOpen.value = true
+}
+
+async function executeEncryptedExport() {
+  if (exportPassphrase.value.length < 4) {
+    exportPassError.value = t('settings.passphraseTooShort', 'Password must be at least 4 characters')
+    void errorFeedback()
+    return
+  }
+  if (exportPassphrase.value !== exportPassphraseConfirm.value) {
+    exportPassError.value = t('settings.passphraseMismatch', 'Passwords do not match')
+    void errorFeedback()
+    return
+  }
+  try {
+    await exportEncryptedBackupFile(exportPassphrase.value)
+    await settings.markBackupNow()
+    encryptedExportSheetOpen.value = false
+    void successFeedback()
+    emit('notify', t('settings.exportEncryptedOk', 'Encrypted backup ready.'))
+  } catch (e) {
+    exportPassError.value = e instanceof Error ? e.message : 'Encryption failed'
+    void errorFeedback()
+  }
+}
+
+async function executeEncryptedImport() {
+  if (!pendingEncryptedEnvelope.value || !importPassphrase.value) {
+    importPassError.value = t('settings.passphraseRequired', 'Please enter password')
+    return
+  }
+  try {
+    const parsed = await decryptBackup(pendingEncryptedEnvelope.value, importPassphrase.value)
+    pendingBackup.value = parsed
+    encryptedImportSheetOpen.value = false
+    importSheetOpen.value = true
+    void successFeedback()
+  } catch (e) {
+    importPassError.value = e instanceof Error ? e.message : t('settings.decryptFail', 'Failed to decrypt')
+    void errorFeedback()
+  }
+}
+
+function openP2PSync() {
+  p2pSyncOpen.value = true
+}
+
+async function onP2PSynced(count: number) {
+  await settings.load()
+  emit('notify', t('settings.p2pSyncedNotify', { count: count.toString() }))
 }
 
 async function applyReplace() {
@@ -166,7 +264,7 @@ async function executeReset() {
     <input
       ref="fileInput"
       type="file"
-      accept="application/json"
+      accept="application/json,.json,.enc"
       class="sr-only"
       @change="onFileSelected"
     />
@@ -187,15 +285,45 @@ async function executeReset() {
 
       <div class="divider" />
 
-      <!-- Import JSON Backup -->
+      <!-- Export Encrypted Backup -->
+      <button type="button" class="row-btn" @click="openEncryptedExport">
+        <div class="row-left">
+          <div class="icon-circle icon-purple">
+            <Lock :size="18" />
+          </div>
+          <div class="row-label">
+            <span class="title">{{ t('settings.exportEncrypted', 'Export encrypted backup (AES-256)') }}</span>
+            <span class="subtitle">{{ t('settings.exportEncryptedSub', 'Password-protected archive for cloud storage or sharing') }}</span>
+          </div>
+        </div>
+      </button>
+
+      <div class="divider" />
+
+      <!-- P2P Device Sync (WebRTC) -->
+      <button type="button" class="row-btn" @click="openP2PSync">
+        <div class="row-left">
+          <div class="icon-circle icon-cyan">
+            <Radio :size="18" />
+          </div>
+          <div class="row-label">
+            <span class="title">{{ t('settings.p2pSyncBtn', 'P2P Device Sync (WebRTC)') }}</span>
+            <span class="subtitle">{{ t('settings.p2pSyncSub', 'Local network phone-to-desktop DB sync via QR code') }}</span>
+          </div>
+        </div>
+      </button>
+
+      <div class="divider" />
+
+      <!-- Import JSON / Encrypted Backup -->
       <button type="button" class="row-btn" :disabled="importing" @click="triggerImport">
         <div class="row-left">
           <div class="icon-circle icon-teal">
             <Upload :size="18" />
           </div>
           <div class="row-label">
-            <span class="title">{{ t('settings.importBackup', 'Import JSON backup') }}</span>
-            <span class="subtitle">{{ t('settings.importDesc', 'Restore data from an existing backup file') }}</span>
+            <span class="title">{{ t('settings.importBackup', 'Import JSON or Encrypted backup') }}</span>
+            <span class="subtitle">{{ t('settings.importDesc', 'Restore data from an existing .json or .enc file') }}</span>
           </div>
         </div>
       </button>
@@ -290,6 +418,77 @@ async function executeReset() {
         </AppButton>
       </div>
     </BottomSheet>
+
+    <!-- Encrypted Export Password Sheet -->
+    <BottomSheet :open="encryptedExportSheetOpen" :title="t('settings.exportEncryptedTitle', 'Export Encrypted Backup')" @close="encryptedExportSheetOpen = false">
+      <div class="sheet-body">
+        <p class="sheet-desc">{{ t('settings.exportEncryptedDesc', 'Set a password to encrypt this backup with AES-256-GCM. You will need this password to restore your data.') }}</p>
+        <label class="field-box">
+          <span class="field-label">{{ t('settings.encryptionPassword', 'Password (min. 4 characters)') }}</span>
+          <input
+            v-model="exportPassphrase"
+            type="password"
+            class="dialog-input"
+            placeholder="••••••••"
+            autocomplete="new-password"
+          />
+        </label>
+        <label class="field-box">
+          <span class="field-label">{{ t('settings.confirmPassword', 'Confirm password') }}</span>
+          <input
+            v-model="exportPassphraseConfirm"
+            type="password"
+            class="dialog-input"
+            placeholder="••••••••"
+            autocomplete="new-password"
+            @keydown.enter="executeEncryptedExport"
+          />
+        </label>
+        <p v-if="exportPassError" class="error-msg">{{ exportPassError }}</p>
+        <AppButton
+          block
+          variant="filled"
+          :disabled="!exportPassphrase || exportPassphrase.length < 4"
+          @click="executeEncryptedExport"
+        >
+          {{ t('settings.exportEncryptedConfirm', 'Export Encrypted File (.enc)') }}
+        </AppButton>
+      </div>
+    </BottomSheet>
+
+    <!-- Encrypted Import Password Sheet -->
+    <BottomSheet :open="encryptedImportSheetOpen" :title="t('settings.decryptTitle', 'Unlock Encrypted Backup')" @close="encryptedImportSheetOpen = false">
+      <div class="sheet-body">
+        <p class="sheet-desc">{{ t('settings.decryptDesc', 'This backup is encrypted with AES-256. Enter the password used when creating it.') }}</p>
+        <label class="field-box">
+          <span class="field-label">{{ t('settings.encryptionPassword', 'Password') }}</span>
+          <input
+            v-model="importPassphrase"
+            type="password"
+            class="dialog-input"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            @keydown.enter="executeEncryptedImport"
+          />
+        </label>
+        <p v-if="importPassError" class="error-msg">{{ importPassError }}</p>
+        <AppButton
+          block
+          variant="filled"
+          :disabled="!importPassphrase"
+          @click="executeEncryptedImport"
+        >
+          {{ t('settings.decryptConfirm', 'Unlock & Review') }}
+        </AppButton>
+      </div>
+    </BottomSheet>
+
+    <!-- P2P Sync Modal -->
+    <P2PSyncModal
+      :open="p2pSyncOpen"
+      @close="p2pSyncOpen = false"
+      @synced="onP2PSynced"
+    />
 
     <CsvImportSheet
       :open="csvImportOpen"
@@ -417,6 +616,44 @@ h2 {
 .icon-amber {
   background: color-mix(in srgb, #ff9500 15%, transparent);
   color: #ff9500;
+}
+
+.icon-purple {
+  background: color-mix(in srgb, #a855f7 15%, transparent);
+  color: #a855f7;
+}
+
+.icon-cyan {
+  background: color-mix(in srgb, #06b6d4 15%, transparent);
+  color: #06b6d4;
+}
+
+.field-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.dialog-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-outline);
+  background: var(--color-surface-container);
+  color: var(--color-on-surface);
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.dialog-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .row-label {

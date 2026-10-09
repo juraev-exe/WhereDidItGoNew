@@ -1,4 +1,5 @@
-import { Purchases } from '@revenuecat/purchases-capacitor'
+import { Purchases as NativePurchases } from '@revenuecat/purchases-capacitor'
+import { Purchases as WebPurchases, type CustomerInfo } from '@revenuecat/purchases-js'
 import { Preferences } from '@capacitor/preferences'
 import { isNative, platform } from '@/lib/platform'
 
@@ -14,6 +15,7 @@ const PREMIUM_KEY = 'wdg_is_premium'
  */
 const REVENUECAT_API_KEY_ANDROID = ''
 const REVENUECAT_API_KEY_IOS = ''
+const REVENUECAT_API_KEY_STRIPE = '' // Get this public key from RevenueCat (do NOT use your acct_... Stripe ID here)
 
 /** Must match the entitlement identifier configured in the RevenueCat dashboard. */
 const ENTITLEMENT_ID = 'pro'
@@ -37,15 +39,29 @@ function currentApiKey(): string {
 }
 
 function isConfigured(): boolean {
-  return isNative() && currentApiKey().length > 0
+  if (isNative()) return currentApiKey().length > 0
+  return REVENUECAT_API_KEY_STRIPE.length > 0
 }
 
 let configurePromise: Promise<void> | null = null
+let webPurchases: WebPurchases | null = null
 
 /** Configures the SDK at most once, lazily, on first purchase-related call. */
-function ensureConfigured(): Promise<void> {
-  if (!configurePromise) {
-    configurePromise = Purchases.configure({ apiKey: currentApiKey() })
+async function ensureConfigured(): Promise<void> {
+  if (configurePromise) return configurePromise
+
+  if (isNative()) {
+    configurePromise = NativePurchases.configure({ apiKey: currentApiKey() })
+  } else {
+    // Generate a unique anonymous App User ID for the web user based on local storage
+    // Since there are no user accounts, this ensures their purchase stays linked to their browser
+    let webUserId = localStorage.getItem('wdg_web_uid')
+    if (!webUserId) {
+      webUserId = 'web_' + Math.random().toString(36).substring(2, 15)
+      localStorage.setItem('wdg_web_uid', webUserId)
+    }
+    webPurchases = WebPurchases.configure(REVENUECAT_API_KEY_STRIPE, webUserId)
+    configurePromise = Promise.resolve()
   }
   return configurePromise
 }
@@ -59,7 +75,15 @@ export class PremiumManager {
     if (isConfigured()) {
       try {
         await ensureConfigured()
-        const { customerInfo } = await Purchases.getCustomerInfo()
+        
+        let customerInfo: CustomerInfo | any
+        if (isNative()) {
+          const res = await NativePurchases.getCustomerInfo()
+          customerInfo = res.customerInfo
+        } else {
+          customerInfo = await webPurchases!.getCustomerInfo()
+        }
+        
         const active = customerInfo.entitlements.active[ENTITLEMENT_ID]?.isActive ?? false
         this.cachedState = active
         await Preferences.set({ key: PREMIUM_KEY, value: active ? 'true' : 'false' })
@@ -91,14 +115,28 @@ export class PremiumManager {
     }
     try {
       await ensureConfigured()
-      const offerings = await Purchases.getOfferings()
-      const pkg = offerings.current?.availablePackages[0]
-      if (!pkg) {
-        console.error('No RevenueCat offering package available — check the dashboard configuration.')
-        return false
+      
+      let active = false
+      if (isNative()) {
+        const offerings = await NativePurchases.getOfferings()
+        const pkg = offerings.current?.availablePackages[0]
+        if (!pkg) {
+          console.error('No RevenueCat offering package available — check the dashboard configuration.')
+          return false
+        }
+        const { customerInfo } = await NativePurchases.purchasePackage({ aPackage: pkg })
+        active = customerInfo.entitlements.active[ENTITLEMENT_ID]?.isActive ?? false
+      } else {
+        const offerings = await webPurchases!.getOfferings()
+        const pkg = offerings.current?.availablePackages[0]
+        if (!pkg) {
+          console.error('No RevenueCat offering package available — check the dashboard configuration.')
+          return false
+        }
+        const { customerInfo } = await webPurchases!.purchasePackage(pkg)
+        active = customerInfo.entitlements.active[ENTITLEMENT_ID]?.isActive ?? false
       }
-      const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg })
-      const active = customerInfo.entitlements.active[ENTITLEMENT_ID]?.isActive ?? false
+      
       await this.setPremium(active)
       return active
     } catch (e) {
@@ -112,8 +150,17 @@ export class PremiumManager {
     if (!isConfigured()) return this.checkStatus()
     try {
       await ensureConfigured()
-      const { customerInfo } = await Purchases.restorePurchases()
-      const active = customerInfo.entitlements.active[ENTITLEMENT_ID]?.isActive ?? false
+      
+      let active = false
+      if (isNative()) {
+        const { customerInfo } = await NativePurchases.restorePurchases()
+        active = customerInfo.entitlements.active[ENTITLEMENT_ID]?.isActive ?? false
+      } else {
+        // Web Purchases doesn't need a specific restore method; getting customer info syncs it.
+        const customerInfo = await webPurchases!.getCustomerInfo()
+        active = customerInfo.entitlements.active[ENTITLEMENT_ID]?.isActive ?? false
+      }
+      
       await this.setPremium(active)
       return active
     } catch (e) {

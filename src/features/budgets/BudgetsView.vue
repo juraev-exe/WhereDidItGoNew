@@ -77,19 +77,22 @@ const unbudgeted = computed(() => {
   return categories.expense.filter((c) => !set.has(c.id))
 })
 
-const totalLimit = computed(() => rows.value.reduce((s, r) => s + r.budget.limitAmount, 0))
+const totalLimit = computed(() => rows.value.reduce((s, r) => s + r.effectiveLimit, 0))
 const totalSpent = computed(() => rows.value.reduce((s, r) => s + r.spent, 0))
-const totalRemaining = computed(() => totalLimit.value - totalSpent.value)
+const totalRemaining = computed(() => rows.value.reduce((s, r) => s + r.remaining, 0))
 
-function openEdit(categoryId: string, currentLimit = 0) {
+const rolloverEnabled = ref(false)
+
+function openEdit(categoryId: string, currentLimit = 0, currentRollover = false) {
   editCategoryId.value = categoryId
   limitStr.value = currentLimit > 0 ? (currentLimit / 100).toFixed(2) : ''
+  rolloverEnabled.value = currentRollover
   sheetOpen.value = true
 }
 
 async function saveBudget() {
   const amount = parseMoneyToMinor(limitStr.value)
-  await budgets.upsertBudget(editCategoryId.value, amount, month.value)
+  await budgets.upsertBudget(editCategoryId.value, amount, month.value, rolloverEnabled.value)
   sheetOpen.value = false
 }
 
@@ -175,7 +178,7 @@ const editCategory = computed(() => categories.byId(editCategoryId.value))
         :key="row.budget.id"
         type="button"
         class="card surface-glass"
-        @click="openEdit(row.category.id, row.budget.limitAmount)"
+        @click="openEdit(row.category.id, row.budget.limitAmount, row.budget.rollover)"
       >
         <div class="card-top">
           <span class="icon" :style="{ background: `color-mix(in srgb, ${row.category.color} 22%, transparent)` }">
@@ -185,7 +188,10 @@ const editCategory = computed(() => categories.byId(editCategoryId.value))
             <strong>{{ row.category.name }}</strong>
             <span>
               <MoneyText :amount="row.spent" /> {{ t('common.of') }}
-              <MoneyText :amount="row.budget.limitAmount" />
+              <MoneyText :amount="row.effectiveLimit" />
+            </span>
+            <span v-if="row.rollover !== 0" class="rollover-pill" :class="row.rollover > 0 ? 'surplus' : 'deficit'">
+              {{ row.rollover > 0 ? '+' : '−' }}<MoneyText :amount="Math.abs(row.rollover)" /> {{ row.rollover > 0 ? t('budgets.rolledOver') : t('budgets.deficit') }}
             </span>
           </div>
           <span class="remain" :class="{ over: row.remaining < 0 }">
@@ -229,6 +235,16 @@ const editCategory = computed(() => categories.byId(editCategoryId.value))
             placeholder="0.00"
           />
         </label>
+
+        <!-- Rollover Envelopes Toggle -->
+        <label class="rollover-toggle-row">
+          <div class="rollover-toggle-text">
+            <span>{{ t('budgets.rolloverEnvelope') }}</span>
+            <small>{{ t('budgets.rolloverHint') }}</small>
+          </div>
+          <input v-model="rolloverEnabled" type="checkbox" class="toggle-checkbox" />
+        </label>
+
         <p class="hint">{{ t('budgets.removeHint') }}</p>
         <AppButton block size="lg" @click="saveBudget">{{ t('budgets.saveBudget') }}</AppButton>
       </div>
@@ -499,5 +515,62 @@ h1 {
 .hint {
   font-size: var(--text-caption);
   color: var(--color-muted);
+}
+
+.rollover-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
+  width: fit-content;
+}
+
+.rollover-pill.surplus {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.rollover-pill.deficit {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.rollover-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-container, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--color-outline-variant, rgba(255, 255, 255, 0.1));
+  cursor: pointer;
+}
+
+.rollover-toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rollover-toggle-text span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.rollover-toggle-text small {
+  font-size: 11px;
+  color: var(--color-muted);
+}
+
+.toggle-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
 }
 </style>

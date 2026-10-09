@@ -5,6 +5,9 @@ import { useRouter } from 'vue-router'
 import {
   ArrowUpRight,
   CalendarDays,
+  Check,
+  Download,
+  Loader2,
   PieChart,
   PiggyBank,
   Sparkles,
@@ -15,14 +18,19 @@ import {
 import EmptyState from '@/components/ui/EmptyState.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
 import ActivityCalendar from '@/features/insights/ActivityCalendar.vue'
+import BudgetRunwayGauge from '@/features/insights/BudgetRunwayGauge.vue'
 import CashFlowChart from '@/features/insights/CashFlowChart.vue'
 import CategoryDistributionChart from '@/features/insights/CategoryDistributionChart.vue'
 import ExecutiveKpiGrid from '@/features/insights/ExecutiveKpiGrid.vue'
 import InsightHero from '@/features/insights/InsightHero.vue'
-import { monthKey, shortDayLabel } from '@/lib/dates'
+import WrappedModal from '@/features/insights/WrappedModal.vue'
+import { monthKey, previousMonthKey, shortDayLabel } from '@/lib/dates'
+import { exportAnalyticsReport } from '@/services/export'
+import { computeWrappedData } from '@/services/wrapped'
 import {
   activityHeatmap,
   buildInsightCards,
+  computeBudgetRunway,
   computeExecutiveKpis,
   detailedSpendByCategoryInRange,
   formatTxDate,
@@ -35,14 +43,40 @@ import {
   type InsightsPeriod,
 } from '@/services/stats'
 import { tickFeedback } from '@/services/native/haptics'
+import { useAccountsStore } from '@/stores/accounts'
 import { useBudgetsStore } from '@/stores/budgets'
 import { useCategoriesStore } from '@/stores/categories'
+import { useDebtsStore } from '@/stores/debts'
+import { usePremiumStore } from '@/stores/premium'
 import { useSettingsStore } from '@/stores/settings'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useUiStore } from '@/stores/ui'
 
-const PERIODS: InsightsPeriod[] = ['7d', '30d', '90d', 'all']
-const periodLabelKey: Record<InsightsPeriod, 'period7d' | 'period30d' | 'period90d' | 'periodAll'> = {
+const PERIODS: InsightsPeriod[] = [
+  'this_month',
+  'last_month',
+  'qtd',
+  'ytd',
+  '7d',
+  '30d',
+  '90d',
+  'all',
+]
+const periodLabelKey: Record<
+  InsightsPeriod,
+  | 'periodThisMonth'
+  | 'periodLastMonth'
+  | 'periodQtd'
+  | 'periodYtd'
+  | 'period7d'
+  | 'period30d'
+  | 'period90d'
+  | 'periodAll'
+> = {
+  this_month: 'periodThisMonth',
+  last_month: 'periodLastMonth',
+  qtd: 'periodQtd',
+  ytd: 'periodYtd',
   '7d': 'period7d',
   '30d': 'period30d',
   '90d': 'period90d',
@@ -55,11 +89,41 @@ const { t } = useI18n()
 const router = useRouter()
 const transactions = useTransactionsStore()
 const categories = useCategoriesStore()
+const accounts = useAccountsStore()
 const budgets = useBudgetsStore()
+const debts = useDebtsStore()
 const settings = useSettingsStore()
+const premium = usePremiumStore()
 const ui = useUiStore()
 
-const period = ref<InsightsPeriod>('30d')
+const wrappedModalOpen = ref(false)
+
+const targetWrappedMonth = computed(() => {
+  if (period.value === 'last_month') return previousMonthKey(monthKey())
+  return monthKey()
+})
+
+const wrappedData = computed(() => {
+  return computeWrappedData(
+    targetWrappedMonth.value,
+    transactions.transactions,
+    categories.categories,
+    debts.debts,
+    budgets.budgets,
+  )
+})
+
+const currentMonthLabel = computed(() => wrappedData.value.monthLabel)
+
+function openWrappedModal() {
+  void tickFeedback()
+  wrappedModalOpen.value = true
+}
+
+const period = ref<InsightsPeriod>('this_month')
+const isExporting = ref(false)
+const exportFeedback = ref<string | null>(null)
+
 const range = computed(() => rangeForPeriod(period.value))
 const rangeLabel = computed(() => {
   if (period.value === 'all' || !range.value.start) return t('insights.allTime')
@@ -70,6 +134,41 @@ function setPeriod(next: InsightsPeriod) {
   if (period.value === next) return
   period.value = next
   void tickFeedback()
+}
+
+async function handleExportReport() {
+  if (!premium.isPremiumUser) {
+    premium.openPaywall(t('premium.limitExport', 'Analytics export is a Pro feature.'))
+    return
+  }
+  if (isExporting.value) return
+  isExporting.value = true
+  void tickFeedback()
+  try {
+    await exportAnalyticsReport({
+      transactions: transactions.transactions,
+      categories: categories.categories,
+      accounts: accounts.accounts,
+      range: range.value,
+      rangeLabel: rangeLabel.value,
+      period: period.value,
+      kpis: executiveKpis.value,
+      detailedCategories: detailedCategories.value,
+      currency: settings.currency,
+      locale: settings.intlLocale,
+    })
+    exportFeedback.value = t('insights.exportSuccess')
+    setTimeout(() => {
+      exportFeedback.value = null
+    }, 3000)
+  } catch (err: unknown) {
+    exportFeedback.value = t('insights.exportError')
+    setTimeout(() => {
+      exportFeedback.value = null
+    }, 3000)
+  } finally {
+    isExporting.value = false
+  }
 }
 
 function openCategory(categoryId: string) {
@@ -116,6 +215,13 @@ const cards = computed(() =>
   ),
 )
 const heroCard = computed(() => selectHeroCard(cards.value))
+const budgetRunway = computed(() =>
+  computeBudgetRunway(
+    transactions.transactions,
+    budgets.budgets,
+    categories.categories,
+  ),
+)
 const supportCard = computed(
   () => cards.value.find((card) => card.kind === 'categoryDrop' || card.kind === 'categoryRise') ?? null,
 )
@@ -320,7 +426,7 @@ function onStory(story: StoryView) {
         <h1>{{ t('insights.title') }}</h1>
         <HeaderActions />
       </div>
-      <div class="seg" role="radiogroup" :aria-label="t('insights.periodAria')">
+      <div class="seg-scroll" role="radiogroup" :aria-label="t('insights.periodAria')">
         <button
           v-for="p in PERIODS"
           :key="p"
@@ -333,6 +439,28 @@ function onStory(story: StoryView) {
           {{ t(`insights.${periodLabelKey[p]}`) }}
         </button>
       </div>
+
+      <div class="period-action-bar">
+        <span class="range-pill">{{ rangeLabel }}</span>
+        <button
+          type="button"
+          class="export-btn"
+          :disabled="isExporting"
+          :aria-label="t('insights.exportReport')"
+          @click="handleExportReport"
+        >
+          <Loader2 v-if="isExporting" :size="14" class="spin" />
+          <Download v-else :size="14" />
+          <span>{{ isExporting ? t('insights.exportingReport') : t('insights.exportReport') }}</span>
+        </button>
+      </div>
+
+      <transition name="toast-fade">
+        <div v-if="exportFeedback" class="export-toast surface-glass">
+          <Check :size="15" class="toast-icon-ok" />
+          <span>{{ exportFeedback }}</span>
+        </div>
+      </transition>
     </header>
 
     <EmptyState
@@ -349,6 +477,23 @@ function onStory(story: StoryView) {
 
     <template v-else>
       <template v-if="hasActivity">
+        <!-- WhereDidItGo Wrapped Banner -->
+        <section class="wrapped-launch-banner surface-glass" @click="openWrappedModal">
+          <div class="wrapped-launch-left">
+            <div class="wrapped-icon-sparkle">
+              <Sparkles :size="20" class="text-amber-300" />
+            </div>
+            <div>
+              <h3>{{ t('insights.wrappedBannerTitle', { month: currentMonthLabel }) }}</h3>
+              <p>{{ t('insights.wrappedBannerSub') }}</p>
+            </div>
+          </div>
+          <div class="wrapped-launch-btn">
+            <span>{{ t('insights.wrappedWatchBtn') }}</span>
+            <ArrowUpRight :size="16" />
+          </div>
+        </section>
+
         <InsightHero
           :tone="heroTone"
           :range-label="rangeLabel"
@@ -424,6 +569,11 @@ function onStory(story: StoryView) {
           :range="range"
           :other-id="OTHER_ID"
         />
+
+        <BudgetRunwayGauge
+          v-if="budgetRunway.categories.length"
+          :runway="budgetRunway"
+        />
       </template>
 
       <EmptyState
@@ -440,6 +590,12 @@ function onStory(story: StoryView) {
 
       <ActivityCalendar :heatmap="heatmap" />
     </template>
+
+    <WrappedModal
+      :open="wrappedModalOpen"
+      :data="wrappedData"
+      @close="wrappedModalOpen = false"
+    />
   </div>
 </template>
 
@@ -463,23 +619,31 @@ h1 {
   margin-bottom: var(--space-3);
 }
 
-.seg {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+.seg-scroll {
+  display: flex;
+  align-items: center;
   gap: var(--space-1);
   padding: 4px;
   background: var(--color-surface-container);
   border-radius: var(--radius-full);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-.seg button {
-  min-height: 38px;
+.seg-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.seg-scroll button {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--color-muted);
   white-space: nowrap;
-  padding: 0 var(--space-1);
   border: none;
   background: transparent;
   cursor: pointer;
@@ -489,26 +653,108 @@ h1 {
               transform var(--duration-fast) var(--ease-spring-snappy);
 }
 
-.seg button:active {
+.seg-scroll button:active {
   transform: scale(0.95);
 }
 
-.seg button.active {
+.seg-scroll button.active {
   background: var(--color-surface);
   color: var(--color-on-surface);
   box-shadow: var(--shadow-sm), 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.seg button:focus-visible,
+.seg-scroll button:focus-visible,
 button.story:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-@media (max-width: 360px) {
-  .seg button {
-    font-size: 0.75rem;
-  }
+.period-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: 0 var(--space-1);
+}
+
+.range-pill {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-outline-variant);
+  background: color-mix(in srgb, var(--color-surface-container) 80%, transparent);
+  color: var(--color-on-surface);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.export-btn:hover:not(:disabled) {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.export-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.export-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.export-toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--space-2);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid var(--color-outline-variant);
+  box-shadow: var(--shadow-sm);
+  animation: fadeSlideUp var(--duration-fast) var(--ease-emphasized) both;
+}
+
+.toast-icon-ok {
+  color: var(--color-success);
+  flex-shrink: 0;
+}
+
+.toast-fade-enter-active,
+.toast-fade-leave-active {
+  transition: opacity var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+}
+
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .stories {
@@ -592,5 +838,71 @@ button.story:hover .story-icon {
   font-variant-numeric: tabular-nums;
   font-weight: 650;
   color: var(--color-muted);
+}
+
+.wrapped-launch-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.95rem 1.15rem;
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-2);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(168, 85, 247, 0.15));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.12);
+  cursor: pointer;
+  transition: transform var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.wrapped-launch-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.22);
+}
+
+.wrapped-launch-banner:active {
+  transform: scale(0.98);
+}
+
+.wrapped-launch-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.wrapped-icon-sparkle {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(236, 72, 153, 0.3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wrapped-launch-left h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+.wrapped-launch-left p {
+  font-size: 0.76rem;
+  color: var(--color-muted);
+  margin: 0.15rem 0 0;
+}
+
+.wrapped-launch-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-on-surface);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 </style>

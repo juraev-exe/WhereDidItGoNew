@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { Lock, Fingerprint, Delete, ShieldAlert } from '@lucide/vue'
 import { useSettingsStore } from '@/stores/settings'
 import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
+import { tickFeedback, errorFeedback, successFeedback } from '@/services/native/haptics'
 
 const props = defineProps<{
   mode?: 'unlock' | 'setup'
@@ -36,8 +37,10 @@ async function handleComplete() {
       pin.value = ''
       isConfirming.value = true
       errorMessage.value = ''
+      void tickFeedback()
     } else {
       if (pin.value === confirmPin.value) {
+        void successFeedback()
         emit('success', pin.value)
       } else {
         triggerError(t('security.pinMismatch'))
@@ -49,6 +52,7 @@ async function handleComplete() {
   } else {
     const valid = await settings.verifyPin(pin.value)
     if (valid) {
+      void successFeedback()
       emit('success')
     } else {
       triggerError(t('security.incorrectPin'))
@@ -58,6 +62,7 @@ async function handleComplete() {
 }
 
 function triggerError(msg: string) {
+  void errorFeedback()
   errorMessage.value = msg
   isShaking.value = true
   setTimeout(() => {
@@ -67,15 +72,18 @@ function triggerError(msg: string) {
 
 function pressKey(num: string) {
   if (pin.value.length < 4) {
+    void tickFeedback()
     pin.value += num
   }
 }
 
 function backspace() {
+  void tickFeedback()
   pin.value = pin.value.slice(0, -1)
 }
 
 function clear() {
+  void tickFeedback()
   pin.value = ''
 }
 

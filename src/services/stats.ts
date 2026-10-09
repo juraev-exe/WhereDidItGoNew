@@ -4,6 +4,7 @@ import {
   eachMonthOfInterval,
   eachWeekOfInterval,
   endOfWeek,
+  format,
   getDay,
   startOfDay,
   startOfWeek,
@@ -20,11 +21,20 @@ import {
   monthKey,
   monthRange,
   parseLocalDay,
+  previousMonthKey,
   shortDayLabel,
   shortMonthLabel,
 } from '@/lib/dates'
 
-export type InsightsPeriod = '7d' | '30d' | '90d' | 'all'
+export type InsightsPeriod =
+  | 'this_month'
+  | 'last_month'
+  | 'qtd'
+  | 'ytd'
+  | '7d'
+  | '30d'
+  | '90d'
+  | 'all'
 
 export interface StatsRange {
   start: string | null
@@ -34,6 +44,21 @@ export interface StatsRange {
 export function rangeForPeriod(period: InsightsPeriod, now = new Date()): StatsRange {
   const end = dayKey(now)
   if (period === 'all') return { start: null, end }
+  if (period === 'this_month') {
+    return monthRange(monthKey(now))
+  }
+  if (period === 'last_month') {
+    return monthRange(previousMonthKey(monthKey(now)))
+  }
+  if (period === 'qtd') {
+    const qMonth = Math.floor(now.getMonth() / 3) * 3
+    const qStart = format(new Date(now.getFullYear(), qMonth, 1), 'yyyy-MM-dd')
+    return { start: qStart, end }
+  }
+  if (period === 'ytd') {
+    const yStart = format(new Date(now.getFullYear(), 0, 1), 'yyyy-MM-dd')
+    return { start: yStart, end }
+  }
   const span = period === '7d' ? 6 : period === '30d' ? 29 : 89
   return { start: dayKey(subDays(now, span)), end }
 }
@@ -255,19 +280,26 @@ export interface DaySpend {
   net?: number
 }
 
-export function budgetProgress(
-  budgets: Budget[],
-  transactions: Transaction[],
-  categories: Category[],
-  month = monthKey(),
-): Array<{
+export interface BudgetProgressRow {
   budget: Budget
   category: Category
   spent: number
   remaining: number
   percent: number
-}> {
+  rollover: number
+  effectiveLimit: number
+}
+
+export function budgetProgress(
+  budgets: Budget[],
+  transactions: Transaction[],
+  categories: Category[],
+  month = monthKey(),
+  rolloverEnabled = true,
+): BudgetProgressRow[] {
   const catMap = Object.fromEntries(categories.map((c) => [c.id, c]))
+  const prevMonth = previousMonthKey(month)
+
   return budgets
     .filter((b) => b.month === month)
     .map((budget) => {
@@ -281,12 +313,46 @@ export function budgetProgress(
         .reduce((s, t) => s + t.amount, 0)
       const category = catMap[budget.categoryId]
       if (!category) return null
+
+      let rollover = 0
+      if (rolloverEnabled && budget.rollover) {
+        let checkMonth = prevMonth
+        while (true) {
+          const pb = budgets.find((b) => b.month === checkMonth && b.categoryId === budget.categoryId)
+          if (!pb) break
+          
+          const prevSpent = transactions
+            .filter(
+              (t) =>
+                t.type === 'expense' &&
+                t.categoryId === budget.categoryId &&
+                isInMonth(t.date, checkMonth),
+            )
+            .reduce((s, t) => s + t.amount, 0)
+          
+          rollover += (pb.limitAmount - prevSpent)
+          if (!pb.rollover) break
+          checkMonth = previousMonthKey(checkMonth)
+        }
+      }
+
+      const effectiveLimit = Math.max(0, budget.limitAmount + rollover)
+      const remaining = effectiveLimit - spent
+      const percent =
+        effectiveLimit > 0
+          ? Math.min(100, (spent / effectiveLimit) * 100)
+          : budget.limitAmount > 0
+            ? Math.min(100, (spent / budget.limitAmount) * 100)
+            : 0
+
       return {
         budget,
         category,
         spent,
-        remaining: budget.limitAmount - spent,
-        percent: budget.limitAmount > 0 ? Math.min(100, (spent / budget.limitAmount) * 100) : 0,
+        remaining,
+        percent,
+        rollover,
+        effectiveLimit,
       }
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
@@ -1211,4 +1277,146 @@ export function computeExecutiveKpis(
   }
 }
 
+// ─── Phase 3: Budget Runway & Burn-Rate Gauge ─────────────────────────
+
+export type RunwaySeverity = 'on-track' | 'at-risk' | 'over-budget'
+
+export interface BudgetRunwayCategory {
+  categoryId: string
+  categoryName: string
+  categoryColor: string
+  categoryIcon: string
+  limitAmount: number
+  spentAmount: number
+  remaining: number
+  /** 0–100+  (can exceed 100 when overbudget) */
+  spentPercent: number
+  /** Expected spend % based on elapsed cycle days (0–100) */
+  idealPercent: number
+  /** How far ahead/behind the user is:  spentPercent – idealPercent */
+  pacingDelta: number
+  severity: RunwaySeverity
+  /** Estimated day the budget runs out (1-based from cycle start), null if pace ≤ 0 */
+  projectedExhaustionDay: number | null
+}
+
+export interface BudgetRunway {
+  /** Current month key this snapshot applies to */
+  month: string
+  /** Day of cycle elapsed (1-based) */
+  elapsedDays: number
+  /** Total days in the cycle */
+  totalDays: number
+  /** 0–100: elapsed % of the cycle */
+  elapsedPercent: number
+  /** Per-category runway breakdown, sorted worst-first */
+  categories: BudgetRunwayCategory[]
+  /** Overall budget spend / total limit (0–100+) */
+  overallSpentPercent: number
+  /** Overall severity: worst of any category, or 'on-track' if none */
+  overallSeverity: RunwaySeverity
+}
+
+/**
+ * Classify how worried the user should be about a category's pace.
+ *  - over-budget:  already spent more than limit
+ *  - at-risk:      spending pace would exhaust the budget before end of cycle
+ *  - on-track:     spending is at or below ideal linear pace
+ */
+function classifySeverity(spentPct: number, idealPct: number): RunwaySeverity {
+  if (spentPct >= 100) return 'over-budget'
+  // Running more than 15 pp ahead of ideal linear pace → at risk
+  if (idealPct > 0 && spentPct > idealPct + 15) return 'at-risk'
+  // Also at-risk if in first half but already past 60%
+  if (idealPct < 50 && spentPct > 60) return 'at-risk'
+  return 'on-track'
+}
+
+function worstSeverity(cats: BudgetRunwayCategory[]): RunwaySeverity {
+  if (cats.some((c) => c.severity === 'over-budget')) return 'over-budget'
+  if (cats.some((c) => c.severity === 'at-risk')) return 'at-risk'
+  return 'on-track'
+}
+
+export function computeBudgetRunway(
+  transactions: Transaction[],
+  budgets: Budget[],
+  categories: Category[],
+  month = monthKey(),
+  referenceDate = new Date(),
+): BudgetRunway {
+  const range = monthRange(month)
+  const startDate = parseLocalDay(range.start)
+  const endDate = parseLocalDay(range.end)
+  const totalDays = Math.max(1, differenceInCalendarDays(endDate, startDate) + 1)
+  const refDay = startOfDay(referenceDate)
+
+  let elapsed: number
+  if (refDay < startDate) {
+    elapsed = 0
+  } else if (refDay > endDate) {
+    elapsed = totalDays
+  } else {
+    elapsed = differenceInCalendarDays(refDay, startDate) + 1
+  }
+
+  const elapsedPercent = Math.round((elapsed / totalDays) * 100)
+  const idealPercent = elapsedPercent // linear pace
+
+  const progress = budgetProgress(budgets, transactions, categories, month)
+  const runwayCategories: BudgetRunwayCategory[] = progress.map((row) => {
+    const limit = row.effectiveLimit
+    const spentPct = limit > 0
+      ? (row.spent / limit) * 100
+      : (row.spent > 0 ? 100 : 0)
+    const severity = classifySeverity(spentPct, idealPercent)
+
+    // Projected exhaustion day: at current daily burn, when does the limit run out?
+    let projectedExhaustionDay: number | null = null
+    if (elapsed > 0 && row.spent > 0 && limit > 0 && spentPct < 100) {
+      const dailyRate = row.spent / elapsed
+      const daysToExhaust = Math.ceil(limit / dailyRate)
+      projectedExhaustionDay = daysToExhaust <= totalDays ? daysToExhaust : null
+    }
+
+    return {
+      categoryId: row.category.id,
+      categoryName: row.category.name,
+      categoryColor: row.category.color,
+      categoryIcon: row.category.icon,
+      limitAmount: limit,
+      spentAmount: row.spent,
+      remaining: row.remaining,
+      spentPercent: Math.round(spentPct),
+      idealPercent,
+      pacingDelta: Math.round(spentPct - idealPercent),
+      severity,
+      projectedExhaustionDay,
+    }
+  })
+
+  // Sort worst first: over-budget → at-risk → on-track, then by spentPercent desc
+  const severityOrder: Record<RunwaySeverity, number> = {
+    'over-budget': 0,
+    'at-risk': 1,
+    'on-track': 2,
+  }
+  runwayCategories.sort(
+    (a, b) => severityOrder[a.severity] - severityOrder[b.severity] || b.spentPercent - a.spentPercent,
+  )
+
+  const totalLimit = runwayCategories.reduce((s, c) => s + c.limitAmount, 0)
+  const totalSpent = runwayCategories.reduce((s, c) => s + c.spentAmount, 0)
+  const overallSpentPct = totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : (totalSpent > 0 ? 100 : 0)
+
+  return {
+    month,
+    elapsedDays: elapsed,
+    totalDays,
+    elapsedPercent,
+    categories: runwayCategories,
+    overallSpentPercent: overallSpentPct,
+    overallSeverity: worstSeverity(runwayCategories),
+  }
+}
 

@@ -160,6 +160,7 @@ function sanitizeBudget(value: unknown): Budget | null {
     categoryId,
     month: str(r.month),
     limitAmount: Math.round(num(r.limitAmount)),
+    rollover: bool(r.rollover),
   }
 }
 
@@ -318,7 +319,7 @@ export async function replaceFromBackup(payload: BackupPayload): Promise<void> {
   const data = clonePlain(validateBackup(payload))
   await db.transaction(
     'rw',
-    [db.accounts, db.categories, db.budgets, db.transactions, db.goals, db.recurring, db.debts, db.meta],
+    [db.accounts, db.categories, db.budgets, db.transactions, db.goals, db.recurring, db.debts, db.meta, db.drafts],
     async () => {
       await Promise.all([
         db.accounts.clear(),
@@ -329,6 +330,7 @@ export async function replaceFromBackup(payload: BackupPayload): Promise<void> {
         db.recurring.clear(),
         db.debts.clear(),
         db.meta.clear(),
+        db.drafts.clear(),
       ])
       await db.accounts.bulkAdd(data.accounts)
       await db.categories.bulkAdd(data.categories)
@@ -357,12 +359,20 @@ export async function replaceFromBackup(payload: BackupPayload): Promise<void> {
   )
 }
 
-async function upsertById<T extends { id: string }>(
-  table: { bulkPut: (items: T[]) => Promise<unknown> },
+async function upsertById<T extends { id: string; updatedAt?: string }>(
+  table: { toArray: () => Promise<T[]>; bulkPut: (items: T[]) => Promise<unknown> },
   rows: T[] | undefined,
 ) {
   if (!rows?.length) return
-  await table.bulkPut(rows)
+  const existing = await table.toArray()
+  const map = new Map(existing.map((x) => [x.id, x]))
+  const toPut = rows.filter((r) => {
+    const e = map.get(r.id)
+    if (!e) return true
+    if (r.updatedAt && e.updatedAt && new Date(r.updatedAt) <= new Date(e.updatedAt)) return false
+    return true
+  })
+  if (toPut.length) await table.bulkPut(toPut)
 }
 
 /** Merge backup rows by id. Does not clear existing data or overwrite app settings. */
@@ -372,13 +382,92 @@ export async function mergeFromBackup(payload: BackupPayload): Promise<void> {
     'rw',
     [db.accounts, db.categories, db.budgets, db.transactions, db.goals, db.recurring, db.debts],
     async () => {
-      await upsertById(db.accounts, data.accounts)
+      // 1. Calculate manual base for existing local accounts
+      const existingAccs = await db.accounts.toArray()
+      const existingAccMap = new Map(existingAccs.map((a) => [a.id, a]))
+      const existingTxs = await db.transactions.toArray()
+      
+      const localManualBases = new Map<string, number>()
+      for (const a of existingAccs) localManualBases.set(a.id, a.balance)
+      
+      for (const tx of existingTxs) {
+        const acc = existingAccMap.get(tx.accountId)
+        if (acc) {
+          const sign = acc.type === 'credit' ? -1 : 1
+          if (tx.type === 'income') localManualBases.set(acc.id, localManualBases.get(acc.id)! - sign * tx.amount)
+          else if (tx.type === 'expense' || tx.type === 'transfer') localManualBases.set(acc.id, localManualBases.get(acc.id)! + sign * tx.amount)
+        }
+        if (tx.type === 'transfer' && tx.toAccountId) {
+          const toAcc = existingAccMap.get(tx.toAccountId)
+          if (toAcc) {
+            const sign = toAcc.type === 'credit' ? -1 : 1
+            localManualBases.set(toAcc.id, localManualBases.get(toAcc.id)! - sign * tx.amount)
+          }
+        }
+      }
+
+      // 2. Calculate manual base for incoming remote accounts
+      const remoteManualBases = new Map<string, number>()
+      const remoteAccMap = new Map((data.accounts || []).map(a => [a.id, a]))
+      for (const a of data.accounts || []) remoteManualBases.set(a.id, a.balance)
+      
+      for (const tx of data.transactions || []) {
+        const acc = remoteAccMap.get(tx.accountId)
+        if (acc) {
+          const sign = acc.type === 'credit' ? -1 : 1
+          if (tx.type === 'income') remoteManualBases.set(acc.id, remoteManualBases.get(acc.id)! - sign * tx.amount)
+          else if (tx.type === 'expense' || tx.type === 'transfer') remoteManualBases.set(acc.id, remoteManualBases.get(acc.id)! + sign * tx.amount)
+        }
+        if (tx.type === 'transfer' && tx.toAccountId) {
+          const toAcc = remoteAccMap.get(tx.toAccountId)
+          if (toAcc) {
+            const sign = toAcc.type === 'credit' ? -1 : 1
+            remoteManualBases.set(toAcc.id, remoteManualBases.get(toAcc.id)! - sign * tx.amount)
+          }
+        }
+      }
+
+      // 3. Upsert everything except accounts
       await upsertById(db.categories, data.categories)
       await upsertById(db.budgets, data.budgets)
       await upsertById(db.transactions, data.transactions)
       await upsertById(db.goals, data.goals)
       await upsertById(db.recurring, data.recurring)
       await upsertById(db.debts, data.debts)
+
+      // 4. Upsert accounts
+      if (data.accounts?.length) {
+        const accsToPut = data.accounts.map((a) => {
+          return { ...a, balance: 0 }
+        })
+        await db.accounts.bulkPut(accsToPut)
+      }
+
+      // 5. Recalculate balances using the correct manual base + merged transactions
+      const allTxs = await db.transactions.toArray()
+      const allAccs = await db.accounts.toArray()
+      const newAccMap = new Map(allAccs.map((a) => [a.id, a]))
+      
+      for (const acc of allAccs) {
+        acc.balance = localManualBases.has(acc.id) ? localManualBases.get(acc.id)! : (remoteManualBases.get(acc.id) || 0)
+      }
+
+      for (const tx of allTxs) {
+        const acc = newAccMap.get(tx.accountId)
+        if (acc) {
+          const sign = acc.type === 'credit' ? -1 : 1
+          if (tx.type === 'income') acc.balance += sign * tx.amount
+          else if (tx.type === 'expense' || tx.type === 'transfer') acc.balance -= sign * tx.amount
+        }
+        if (tx.type === 'transfer' && tx.toAccountId) {
+          const toAcc = newAccMap.get(tx.toAccountId)
+          if (toAcc) {
+            const sign = toAcc.type === 'credit' ? -1 : 1
+            toAcc.balance += sign * tx.amount
+          }
+        }
+      }
+      await db.accounts.bulkPut(allAccs)
     },
   )
 }

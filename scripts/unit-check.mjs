@@ -20,12 +20,23 @@ import {
   clampDayOfMonth,
 } from '../src/lib/dates.ts'
 import {
+  budgetProgress,
   computeExecutiveKpis,
+  computeBudgetRunway,
   detailedSpendByCategoryInRange,
   isEssentialCategory,
+  rangeForPeriod,
   spendSeries,
   transactionsForCategoryInRange,
 } from '../src/services/stats.ts'
+import { generateAnalyticsReportCsv } from '../src/services/export.ts'
+import { parseBankNotification, matchCategory } from '../src/services/smsParser.ts'
+import {
+  encryptBackup,
+  decryptBackup,
+  parseEncryptedBackupEnvelope,
+} from '../src/services/crypto.ts'
+import { computeWrappedData } from '../src/services/wrapped.ts'
 
 let failures = 0
 
@@ -190,6 +201,235 @@ const expenseDay = seriesDays.find((d) => d.date === '2026-08-05')
 eq('cash flow expense day inflow', expenseDay?.income, 0)
 eq('cash flow expense day outflow', expenseDay?.expense, 20000)
 eq('cash flow expense day net', expenseDay?.net, -20000)
+
+console.log('\n— budget runway & burn-rate gauge (Phase 3) —')
+const mockBudgets = [
+  { id: 'b-groceries', categoryId: 'cat-groceries', month: '2026-08', limitAmount: 50000 },
+  { id: 'b-games', categoryId: 'cat-games', month: '2026-08', limitAmount: 10000 },
+  { id: 'b-bills', categoryId: 'cat-bills', month: '2026-08', limitAmount: 40000 },
+]
+
+const runway = computeBudgetRunway(mockTx, mockBudgets, mockCategories, '2026-08', mockRefDate)
+eq('runway month', runway.month, '2026-08')
+eq('runway elapsed days', runway.elapsedDays, 10)
+eq('runway total days', runway.totalDays, 31)
+eq('runway elapsed percent', runway.elapsedPercent, 32)
+eq('runway overall spent percent', runway.overallSpentPercent, 50)
+eq('runway overall severity is over-budget', runway.overallSeverity, 'over-budget')
+eq('runway category count', runway.categories.length, 3)
+
+// Sort worst first: over-budget (games) -> at-risk (groceries) -> on-track (bills)
+eq('runway top category is games (over-budget)', runway.categories[0].categoryId, 'cat-games')
+eq('games severity', runway.categories[0].severity, 'over-budget')
+eq('games spentPercent', runway.categories[0].spentPercent, 200)
+eq('games pacingDelta', runway.categories[0].pacingDelta, 168)
+eq('games projectedExhaustionDay is null when already over', runway.categories[0].projectedExhaustionDay, null)
+
+eq('runway second category is groceries (at-risk)', runway.categories[1].categoryId, 'cat-groceries')
+eq('groceries severity', runway.categories[1].severity, 'at-risk')
+eq('groceries spentPercent', runway.categories[1].spentPercent, 60)
+eq('groceries pacingDelta', runway.categories[1].pacingDelta, 28)
+eq('groceries projectedExhaustionDay', runway.categories[1].projectedExhaustionDay, 17)
+
+eq('runway third category is bills (on-track)', runway.categories[2].categoryId, 'cat-bills')
+eq('bills severity', runway.categories[2].severity, 'on-track')
+eq('bills spentPercent', runway.categories[2].spentPercent, 0)
+eq('bills pacingDelta', runway.categories[2].pacingDelta, -32)
+
+// Edge cases
+const emptyRunway = computeBudgetRunway(mockTx, [], mockCategories, '2026-08', mockRefDate)
+eq('empty budgets runway categories count', emptyRunway.categories.length, 0)
+eq('empty budgets runway overall spent percent', emptyRunway.overallSpentPercent, 0)
+eq('empty budgets runway overall severity is on-track', emptyRunway.overallSeverity, 'on-track')
+
+const onTrackBudgets = [
+  { id: 'b-groceries', categoryId: 'cat-groceries', month: '2026-08', limitAmount: 200000 },
+]
+const onTrackRunway = computeBudgetRunway(mockTx, onTrackBudgets, mockCategories, '2026-08', mockRefDate)
+eq('on-track single category severity', onTrackRunway.categories[0].severity, 'on-track')
+eq('on-track overall severity is on-track', onTrackRunway.overallSeverity, 'on-track')
+
+console.log('\n— flexible period filtering & reports export (Phase 4) —')
+const pRef = new Date(2026, 7, 10) // 2026-08-10
+
+const rThisMonth = rangeForPeriod('this_month', pRef)
+eq('range this_month start', rThisMonth.start, '2026-08-01')
+eq('range this_month end', rThisMonth.end, '2026-08-31')
+
+const rLastMonth = rangeForPeriod('last_month', pRef)
+eq('range last_month start', rLastMonth.start, '2026-07-01')
+eq('range last_month end', rLastMonth.end, '2026-07-31')
+
+const rQtd = rangeForPeriod('qtd', pRef)
+eq('range qtd start', rQtd.start, '2026-07-01')
+eq('range qtd end', rQtd.end, '2026-08-10')
+
+const rYtd = rangeForPeriod('ytd', pRef)
+eq('range ytd start', rYtd.start, '2026-01-01')
+eq('range ytd end', rYtd.end, '2026-08-10')
+
+const r7d = rangeForPeriod('7d', pRef)
+eq('range 7d start', r7d.start, '2026-08-04')
+eq('range 7d end', r7d.end, '2026-08-10')
+
+const r30d = rangeForPeriod('30d', pRef)
+eq('range 30d start', r30d.start, '2026-07-12')
+eq('range 30d end', r30d.end, '2026-08-10')
+
+const rAll = rangeForPeriod('all', pRef)
+eq('range all start', rAll.start, null)
+eq('range all end', rAll.end, '2026-08-10')
+
+// CSV report generation check
+const mockDetailedCats = detailedSpendByCategoryInRange(mockTx, mockCategories, mockRange)
+const mockAccounts = [{ id: 'a1', name: 'Main Checking' }]
+
+const csvOutput = generateAnalyticsReportCsv({
+  transactions: mockTx,
+  categories: mockCategories,
+  accounts: mockAccounts,
+  range: mockRange,
+  rangeLabel: 'Aug 1 – Aug 30, 2026',
+  period: 'this_month',
+  kpis,
+  detailedCategories: mockDetailedCats,
+  currency: 'USD',
+})
+
+eq('csv starts with UTF-8 BOM', csvOutput.startsWith('\ufeff'), true)
+eq('csv contains title', csvOutput.includes('"WhereDidItGo Financial Analytics Report"'), true)
+eq('csv contains period', csvOutput.includes('"this_month"'), true)
+eq('csv contains Total Inflow row', csvOutput.includes('"Total Inflow","1000.00","USD"'), true)
+eq('csv contains Total Outflow row', csvOutput.includes('"Total Outflow","500.00","USD"'), true)
+eq('csv contains Category breakdown', csvOutput.includes('"Groceries","(All)","300.00","60%","2"'), true)
+eq('csv contains Subcategory row', csvOutput.includes('"Groceries","Produce","200.00","40%","1"'), true)
+eq('csv contains escaped transactions', csvOutput.includes('"Fresh apples"'), true)
+
+console.log('\n— bank SMS and push notification parser (Phase 6) —')
+const pAlif = parseBankNotification('Pokupka: 78.50 TJS v "Paykar Supermarket". Balans: 350.00 TJS', 'Alif Bank')
+eq('alif bank amount', pAlif?.amount, 7850)
+eq('alif bank type', pAlif?.type, 'expense')
+eq('alif bank note', pAlif?.note, 'Paykar Supermarket')
+eq('alif bank matchedKeyword', pAlif?.matchedKeyword, 'groceries')
+
+const pChase = parseBankNotification('Chase: Your debit card was charged $34.20 at WHOLE FOODS MARKET.', 'Chase')
+eq('chase amount', pChase?.amount, 3420)
+eq('chase type', pChase?.type, 'expense')
+eq('chase note', pChase?.note, 'WHOLE FOODS MARKET')
+eq('chase category match', matchCategory(pChase, mockCategories)?.id, 'cat-groceries')
+
+const pTinkoff = parseBankNotification('Pokupka 850 RUB v Yandex Go. Karta *4821.', 'T-Bank')
+eq('tinkoff amount', pTinkoff?.amount, 85000)
+eq('tinkoff type', pTinkoff?.type, 'expense')
+eq('tinkoff note', pTinkoff?.note, 'Yandex Go')
+eq('tinkoff matchedKeyword', pTinkoff?.matchedKeyword, 'transport')
+
+const pIncome = parseBankNotification('Postuplenie: 1000.00 TJS. Perevod ot Anvar.', 'Eskhata')
+eq('income amount', pIncome?.amount, 100000)
+eq('income type', pIncome?.type, 'income')
+eq('income category match', matchCategory(pIncome, mockCategories)?.id, 'cat-salary')
+
+const pInvalid = parseBankNotification('Hello how are you doing today?')
+eq('invalid sms returns null', pInvalid, null)
+
+console.log('\n— ZBB rollover envelope calculation (Phase 7) —')
+const rolloverBudgets = [
+  { id: 'b-jul', categoryId: 'cat-groceries', month: '2026-07', limitAmount: 50000, rollover: true },
+  { id: 'b-aug', categoryId: 'cat-groceries', month: '2026-08', limitAmount: 30000, rollover: true },
+]
+// 1) Surplus test: spent 40000 in July (budget 50000) -> +10000 surplus rolled over to August
+const surplusTx = [
+  { id: 't-jul', type: 'expense', amount: 40000, date: '2026-07-15', accountId: 'a1', categoryId: 'cat-groceries', note: '' },
+  { id: 't-aug', type: 'expense', amount: 25000, date: '2026-08-10', accountId: 'a1', categoryId: 'cat-groceries', note: '' },
+]
+const progSurplus = budgetProgress(rolloverBudgets, surplusTx, mockCategories, '2026-08')
+eq('surplus rollover amount', progSurplus[0]?.rollover, 10000)
+eq('surplus effective limit', progSurplus[0]?.effectiveLimit, 40000)
+eq('surplus remaining', progSurplus[0]?.remaining, 15000)
+eq('surplus percent', progSurplus[0]?.percent, 62.5)
+
+// 2) Deficit test: spent 60000 in July (budget 50000) -> -10000 deficit rolled over to August
+const deficitTx = [
+  { id: 't-jul-2', type: 'expense', amount: 60000, date: '2026-07-20', accountId: 'a1', categoryId: 'cat-groceries', note: '' },
+  { id: 't-aug-2', type: 'expense', amount: 10000, date: '2026-08-10', accountId: 'a1', categoryId: 'cat-groceries', note: '' },
+]
+const progDeficit = budgetProgress(rolloverBudgets, deficitTx, mockCategories, '2026-08')
+eq('deficit rollover amount', progDeficit[0]?.rollover, -10000)
+eq('deficit effective limit', progDeficit[0]?.effectiveLimit, 20000)
+eq('deficit remaining', progDeficit[0]?.remaining, 10000)
+eq('deficit percent', progDeficit[0]?.percent, 50)
+
+// 3) Non-rollover budget remains unaffected
+const nonRolloverBudgets = [
+  { id: 'b-jul-nr', categoryId: 'cat-groceries', month: '2026-07', limitAmount: 50000, rollover: false },
+  { id: 'b-aug-nr', categoryId: 'cat-groceries', month: '2026-08', limitAmount: 30000, rollover: false },
+]
+const progNr = budgetProgress(nonRolloverBudgets, surplusTx, mockCategories, '2026-08')
+eq('non-rollover rollover is 0', progNr[0]?.rollover, 0)
+eq('non-rollover effective limit is original limit', progNr[0]?.effectiveLimit, 30000)
+
+console.log('\n— AES-256-GCM encrypted backup & PBKDF2 (Phase 8) —')
+const mockBackupToEncrypt = {
+  version: 2,
+  exportedAt: new Date().toISOString(),
+  meta: {
+    onboardingDone: true,
+    currency: 'USD',
+    theme: 'system',
+    locale: 'en',
+    currencyPosition: 'before',
+    heroMetric: 'balance',
+    hideAmounts: false,
+    privacyMode: 'none',
+  },
+  accounts: [{ id: 'a1', name: 'Checking', type: 'checking', balance: 50000 }],
+  categories: mockCategories,
+  budgets: [],
+  transactions: mockTx,
+  goals: [],
+  recurring: [],
+  debts: [],
+}
+
+const encEnvelope = await encryptBackup(mockBackupToEncrypt, 'super-secret-pass-2026')
+eq('encrypted backup format', encEnvelope.format, 'wherediditgo-encrypted-backup')
+eq('encrypted backup algorithm', encEnvelope.algorithm, 'AES-GCM')
+eq('encrypted backup has salt', typeof encEnvelope.salt === 'string' && encEnvelope.salt.length > 10, true)
+eq('encrypted backup has iv', typeof encEnvelope.iv === 'string' && encEnvelope.iv.length > 5, true)
+eq('encrypted backup has ciphertext', typeof encEnvelope.ciphertext === 'string' && encEnvelope.ciphertext.length > 20, true)
+
+// Decrypt with correct password
+const decryptedPayload = await decryptBackup(encEnvelope, 'super-secret-pass-2026')
+eq('decrypted version matches', decryptedPayload.version, 2)
+eq('decrypted account name', decryptedPayload.accounts[0].name, 'Checking')
+eq('decrypted transactions count', decryptedPayload.transactions.length, mockTx.length)
+
+// Decrypt with wrong password throws error
+let wrongPasswordFailed = false
+try {
+  await decryptBackup(encEnvelope, 'wrong-password!')
+} catch {
+  wrongPasswordFailed = true
+}
+eq('decrypt with wrong password throws', wrongPasswordFailed, true)
+
+// Parse envelope
+const parsedEnv = parseEncryptedBackupEnvelope(JSON.stringify(encEnvelope))
+eq('parsed envelope matches', parsedEnv.ciphertext, encEnvelope.ciphertext)
+
+console.log('\n— WhereDidItGo Wrapped calculations (Phase 9) —')
+const wrapped = computeWrappedData('2026-08', mockTx, mockCategories)
+eq('wrapped month label', wrapped.monthLabel, 'August 2026')
+eq('wrapped total inflow', wrapped.totalInflow, 100000)
+eq('wrapped total outflow', wrapped.totalOutflow, 50000)
+eq('wrapped net savings', wrapped.netSavings, 50000)
+eq('wrapped savings rate', wrapped.savingsRate, 50)
+eq('wrapped top category', wrapped.topCategory?.name, 'Groceries')
+eq('wrapped top category amount', wrapped.topCategory?.amount, 30000)
+eq('wrapped top category pct', wrapped.topCategory?.percent, 60)
+eq('wrapped biggest expense amount', wrapped.biggestExpense?.amount, 20000)
+eq('wrapped total transactions', wrapped.totalTransactions, 4)
+eq('wrapped badge title', wrapped.badge.title, 'Savings Titan')
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

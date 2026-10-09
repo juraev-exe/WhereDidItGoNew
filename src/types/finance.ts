@@ -35,6 +35,7 @@ export interface Budget {
   categoryId: string
   month: string
   limitAmount: number
+  rollover?: boolean
 }
 
 /** Savings target that is not a monthly spending limit. */
@@ -61,6 +62,21 @@ export interface Transaction {
   date: string
   createdAt: string
   updatedAt: string
+}
+
+export interface DraftTransaction {
+  id: string
+  source: 'sms' | 'notification' | 'manual'
+  rawSender?: string
+  rawText?: string
+  amount: number
+  type: TransactionType
+  accountId?: string
+  categoryId?: string
+  subcategoryId?: string
+  note: string
+  date: string
+  createdAt: string
 }
 
 /** Monthly bill or salary template that posts a normal transaction on app open. */

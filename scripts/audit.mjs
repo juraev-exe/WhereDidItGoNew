@@ -207,10 +207,10 @@ const savedAmount = await page.evaluate(() => {
   const row = [...document.querySelectorAll('.list .row')].find((r) =>
     r.textContent.includes('Audit expense')
   )
-  return row ? row.outerHTML : null
+  return row ? row.querySelector('.amount')?.textContent?.trim() : null
 })
-if (!savedAmount?.includes('20')) {
-  problems.push(`[20-write-path] expected 12+8 to save as 20.00, row reads: ${savedAmount}`)
+if (!savedAmount?.includes('20.00')) {
+  problems.push(`[20-write-path] expected 12+8 to save as 20.00, amount reads: ${savedAmount}`)
 }
 await shot('21-write-saved')
 

@@ -244,7 +244,7 @@ const simulation = computed(() => {
             {{ t('debts.projectedDebtFree', 'Projected Debt-Free:') }} <span class="highlight-date">{{ simulation.debtFreeDate }}</span>
           </p>
           <p class="banner-sub">
-            {{ t('debts.payoffProjectionStart', 'At') }} <MoneyText :amount="monthlyPayment" />/{{ t('common.mo', 'mo') }}, {{ t('debts.payoffProjectionEnd', 'all {count} debts will be paid in {months} months.', { count: borrowedDebts.length, months: simulation.monthsCount }) }}
+            {{ t('debts.payoffProjectionStart', 'At') }} <MoneyText :amount="monthlyPayment" />/{{ t('common.mo', 'mo') }}, {{ t('debts.payoffProjectionEnd', { count: borrowedDebts.length, months: simulation.monthsCount }) }}
           </p>
         </div>
       </div>

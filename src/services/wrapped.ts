@@ -2,6 +2,7 @@ import { format, parseISO, differenceInCalendarDays, startOfDay } from 'date-fns
 import { isInMonth, monthKey, previousMonthKey, monthRange, parseLocalDay } from '@/lib/dates'
 import type { Budget, Category, Debt, Transaction } from '@/types/finance'
 import i18n from '@/i18n'
+import { budgetProgress } from './stats'
 
 export interface WrappedCategory {
   id: string
@@ -188,19 +189,16 @@ export function computeWrappedData(
     gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
   }
 
-  const budgetForMonth = budgets.filter((b) => b.month === targetMonth)
+  const progress = budgetProgress(budgets, transactions, categories, targetMonth)
   const allWithinBudget =
-    budgetForMonth.length > 0 &&
-    budgetForMonth.every((b) => {
-      const spent = spendByCat.get(b.categoryId) || 0
-      return spent <= b.limitAmount
-    })
+    progress.length > 0 &&
+    progress.every((row) => row.spent <= row.effectiveLimit)
 
   if (allWithinBudget && savingsRate >= 20) {
     badge = {
       id: 'budget-guardian',
       title: String(i18n.global.t('insights.badgeBudgetGuardianTitle', 'Budget Guardian')),
-      subtitle: String(i18n.global.t('insights.badgeBudgetGuardianSub', { count: budgetForMonth.length }, `Stayed 100% within limits across all ${budgetForMonth.length} envelopes`)),
+      subtitle: String(i18n.global.t('insights.badgeBudgetGuardianSub', { count: progress.length }, `Stayed 100% within limits across all ${progress.length} envelopes`)),
       icon: '🛡️',
       gradient: 'linear-gradient(135deg, #10b981, #06b6d4)',
     }

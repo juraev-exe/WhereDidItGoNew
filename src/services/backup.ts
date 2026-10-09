@@ -397,7 +397,7 @@ export async function mergeFromBackup(payload: BackupPayload): Promise<void> {
         const accsToPut = data.accounts
           .map((a) => {
             const e = accMap.get(a.id)
-            if (e && a.updatedAt && e.updatedAt && new Date(a.updatedAt) <= new Date(e.updatedAt)) return null
+            // Account doesn't have updatedAt currently, always apply remote edits (except balance)
             // Retain the local balance when merging in a remote account record (e.g. name change)
             // Balance will be recomputed below anyway.
             return { ...a, balance: e ? e.balance : 0 }
@@ -416,13 +416,17 @@ export async function mergeFromBackup(payload: BackupPayload): Promise<void> {
       for (const tx of allTxs) {
         const acc = newAccMap.get(tx.accountId)
         if (acc) {
-          if (tx.type === 'income') acc.balance += tx.amount
-          else if (tx.type === 'expense') acc.balance -= tx.amount
-          else if (tx.type === 'transfer') acc.balance -= tx.amount
+          const sign = acc.type === 'credit' ? -1 : 1
+          if (tx.type === 'income') acc.balance += sign * tx.amount
+          else if (tx.type === 'expense') acc.balance -= sign * tx.amount
+          else if (tx.type === 'transfer') acc.balance -= sign * tx.amount
         }
         if (tx.type === 'transfer' && tx.toAccountId) {
           const toAcc = newAccMap.get(tx.toAccountId)
-          if (toAcc) toAcc.balance += tx.amount
+          if (toAcc) {
+            const sign = toAcc.type === 'credit' ? -1 : 1
+            toAcc.balance += sign * tx.amount
+          }
         }
       }
       await db.accounts.bulkPut(allAccs)

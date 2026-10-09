@@ -415,7 +415,7 @@ export default {
     wrappedTagBadge: 'SUPERPOWER UNLOCKED',
     wrappedBadgeTitle: 'Your Financial Identity',
     wrappedLoggedTxs: 'Logged Txs',
-    wrappedDebtsRepaid: 'Debts Paid',
+    wrappedDebtsRepaid: 'Lifetime Debts Paid',
     wrappedDailyAvg: 'Daily Burn',
     wrappedTagComplete: 'READY TO SHARE',
     wrappedSummaryTitle: 'WhereDidItGo Wrapped',
@@ -810,5 +810,6 @@ export default {
     reasonInsertFailed: 'could not be saved',
   },
 }
+
 
 

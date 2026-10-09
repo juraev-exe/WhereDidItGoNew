@@ -77,9 +77,9 @@ const unbudgeted = computed(() => {
   return categories.expense.filter((c) => !set.has(c.id))
 })
 
-const totalLimit = computed(() => rows.value.reduce((s, r) => s + r.budget.limitAmount, 0))
+const totalLimit = computed(() => rows.value.reduce((s, r) => s + r.effectiveLimit, 0))
 const totalSpent = computed(() => rows.value.reduce((s, r) => s + r.spent, 0))
-const totalRemaining = computed(() => totalLimit.value - totalSpent.value)
+const totalRemaining = computed(() => rows.value.reduce((s, r) => s + r.remaining, 0))
 
 const rolloverEnabled = ref(false)
 

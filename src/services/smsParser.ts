@@ -198,7 +198,7 @@ export function parseBankNotification(
   // Strip balance from text to prevent false amount matches
   let textForAmount = cleaned.replace(/(?:balans|баланс|balance|ostatok|остаток)\s*[:.-]?\s*(?:[$€£₽]|TJS|somoni|сомони|руб|RUB)?\s*[0-9]+(?:[\s,][0-9]{3})*(?:[.,][0-9]{1,2})?\s*(?:[$€£₽]|TJS|somoni|сомони|руб|RUB|р\.?)?/i, '')
   // Strip dates (DD.MM.YYYY) and card masks (*1234)
-  textForAmount = textForAmount.replace(/\b\d{2}[./-]\d{2}(?:[./-]\d{2,4})?\b/g, '').replace(/\*+\d{4}\b/g, '')
+  textForAmount = textForAmount.replace(/\b\d{2}[./-]\d{2}[./-]\d{2,4}\b/g, '').replace(/\*+\d{4}\b/g, '')
 
   // Matches expressions like:
   // - "$45.50", "45.50$", "45,50 TJS", "45 TJS", "1 250.00 RUB", "450р", "450 руб"

@@ -22,6 +22,10 @@ export default {
     add: 'Add',
     done: 'Done',
     offlineNotice: 'Offline — changes saved locally',
+    mo: 'mo',
+    month: 'Month',
+    expand: 'Expand',
+    collapse: 'Collapse',
   },
   premium: {
     title: 'Unlock WhereDidItGo Pro',

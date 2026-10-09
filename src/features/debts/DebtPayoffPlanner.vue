@@ -186,7 +186,7 @@ const simulation = computed(() => {
         </div>
       </div>
 
-      <button type="button" class="icon-toggle-btn" :aria-label="isExpanded ? 'Collapse' : 'Expand'">
+      <button type="button" class="icon-toggle-btn" :aria-label="isExpanded ? t('common.collapse', 'Collapse') : t('common.expand', 'Expand')">
         <ChevronUp v-if="isExpanded" :size="18" />
         <ChevronDown v-else :size="18" />
       </button>

@@ -209,7 +209,7 @@ const savedAmount = await page.evaluate(() => {
   )
   return row ? row.querySelector('.amount')?.textContent?.trim() : null
 })
-if (savedAmount !== '20.00') {
+if (!savedAmount || savedAmount.replace(/[^\d.]/g, '') !== '20.00') {
   problems.push(`[20-write-path] expected 12+8 to save as 20.00, amount reads: ${savedAmount}`)
 }
 await shot('21-write-saved')

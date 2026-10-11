@@ -628,6 +628,8 @@ export default {
     supportContact: 'Поддержка и связь',
     supportContactEmail: 'support@wherediditgo.app',
     openExternal: 'Открыть в браузере',
+    deleteAccount: 'Удалить этот аккаунт',
+    deleteAccountSub: 'Навсегда стереть все ваши локальные данные',
   },
   accounts: {
     title: 'Счета',

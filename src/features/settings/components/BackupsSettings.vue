@@ -396,7 +396,7 @@ async function executeReset() {
       <div class="sheet-body">
         <p class="sheet-desc danger-desc">{{ t('settings.resetDesc') }}</p>
         <div class="challenge-box">
-          <label for="reset-challenge">{{ t('settings.resetChallenge', { a: resetA, b: resetB }) }}</label>
+          <label for="reset-challenge" class="challenge-label">{{ t('settings.resetChallenge', { a: resetA, b: resetB }) }}</label>
           <input
             id="reset-challenge"
             v-model="resetAnswer"
@@ -706,23 +706,94 @@ h2 {
   gap: var(--space-2);
 }
 
+.field-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.dialog-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-outline);
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  font-size: var(--text-body);
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-standard),
+              box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.dialog-input:focus,
+.dialog-input:focus-visible {
+  outline: none !important;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
 .challenge-box {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius-md);
   gap: var(--space-3);
+}
+
+.challenge-label {
+  font-size: var(--text-body);
   font-weight: 600;
+  color: var(--color-on-surface);
+  letter-spacing: var(--tracking-body);
 }
 
 .challenge-input {
-  width: 80px;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-outline);
-  background: var(--color-surface-container);
+  width: 76px;
+  min-height: 42px;
+  height: 42px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-outline);
+  background: var(--color-surface);
   color: var(--color-on-surface);
-  font-size: 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
   font-weight: 700;
   text-align: center;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-standard),
+              box-shadow var(--duration-fast) var(--ease-standard),
+              background var(--duration-fast) var(--ease-standard);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.challenge-input::placeholder {
+  color: var(--color-muted);
+  opacity: 0.6;
+}
+
+.challenge-input:hover {
+  border-color: color-mix(in srgb, var(--color-on-surface) 22%, transparent);
+}
+
+.challenge-input:focus,
+.challenge-input:focus-visible {
+  outline: none !important;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  background: var(--color-surface);
 }
 
 .error-msg {

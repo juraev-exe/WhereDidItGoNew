@@ -611,6 +611,8 @@ export default {
     supportContact: 'Support & Inquiries',
     supportContactEmail: 'support@wherediditgo.app',
     openExternal: 'Open in browser',
+    deleteAccount: 'Delete this account',
+    deleteAccountSub: 'Permanently erase all your local data',
   },
   accounts: {
     title: 'Accounts',

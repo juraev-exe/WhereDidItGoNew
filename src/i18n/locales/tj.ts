@@ -647,6 +647,8 @@ export default {
     supportContact: 'Дастгирӣ ва тамос',
     supportContactEmail: 'support@wherediditgo.app',
     openExternal: 'Дар браузер кушоед',
+    deleteAccount: 'Ҳисобро нест кардан',
+    deleteAccountSub: 'Ҳамаи маълумоти маҳаллии худро ба таври доимӣ тоза кунед',
   },
   accounts: {
     title: 'Ҳисобҳо',

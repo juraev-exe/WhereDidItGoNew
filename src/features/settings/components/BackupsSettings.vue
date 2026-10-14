@@ -241,9 +241,7 @@ async function executeReset() {
   resetting.value = true
   try {
     await resetLocalData()
-    await settings.load()
-    resetSheetOpen.value = false
-    emit('notify', t('settings.resetOk', 'All data reset successfully.'))
+    window.location.reload()
   } catch (e) {
     resetError.value = e instanceof Error ? e.message : 'Reset failed'
   } finally {
@@ -396,9 +394,9 @@ async function executeReset() {
       <div class="sheet-body">
         <p class="sheet-desc danger-desc">{{ t('settings.resetDesc') }}</p>
         <div class="challenge-box">
-          <label for="reset-challenge" class="challenge-label">{{ t('settings.resetChallenge', { a: resetA, b: resetB }) }}</label>
+          <label for="backup-reset-challenge" class="challenge-label">{{ t('settings.resetChallenge', { a: resetA, b: resetB }) }}</label>
           <input
-            id="reset-challenge"
+            id="backup-reset-challenge"
             v-model="resetAnswer"
             type="number"
             class="challenge-input"
@@ -626,34 +624,6 @@ h2 {
 .icon-cyan {
   background: color-mix(in srgb, #06b6d4 15%, transparent);
   color: #06b6d4;
-}
-
-.field-box {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field-label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--color-on-surface);
-}
-
-.dialog-input {
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-outline);
-  background: var(--color-surface-container);
-  color: var(--color-on-surface);
-  font-size: 0.95rem;
-  box-sizing: border-box;
-}
-
-.dialog-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
 }
 
 .row-label {

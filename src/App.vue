@@ -20,6 +20,7 @@ import { useAccountsStore } from '@/stores/accounts'
 import { useBudgetsStore } from '@/stores/budgets'
 import { useGoalsStore } from '@/stores/goals'
 import { useCategoriesStore } from '@/stores/categories'
+import { useDebtsStore } from '@/stores/debts'
 import { useRecurringStore } from '@/stores/recurring'
 import { useSettingsStore } from '@/stores/settings'
 import { useTransactionsStore } from '@/stores/transactions'
@@ -31,6 +32,7 @@ const settings = useSettingsStore()
 const accounts = useAccountsStore()
 const categories = useCategoriesStore()
 const budgets = useBudgetsStore()
+const debts = useDebtsStore()
 const goals = useGoalsStore()
 const recurring = useRecurringStore()
 const transactions = useTransactionsStore()
@@ -107,6 +109,7 @@ onMounted(async () => {
     categories.start()
     budgets.start()
     goals.start()
+    debts.start()
     transactions.start()
     recurring.start()
     await runForegroundJobs()
@@ -182,6 +185,7 @@ onUnmounted(() => {
   categories.stop()
   budgets.stop()
   goals.stop()
+  debts.stop()
   transactions.stop()
   recurring.stop()
 })

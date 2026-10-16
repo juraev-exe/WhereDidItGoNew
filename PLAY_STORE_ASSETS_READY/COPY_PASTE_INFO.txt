@@ -57,7 +57,7 @@ Download WhereDidItGo today and discover where your money actually goes!
 - App Icon: play-store-icon-512x512.png (512x512 PNG, ready)
 - Feature Graphic: feature-graphic-1024x500.png (1024x500 PNG, ready)
 - Screenshots: screenshot-1 to screenshot-6 (ready)
-- App Bundle: app-release.aab (signed v1.1.0 release bundle, ready)
+- App Bundle: app-release.aab (signed v1.1.1 release bundle, versionCode 7, ready)
 
 4. PRIVACY POLICY URL
 ---------------------

@@ -17,6 +17,7 @@ logs/
 .env.*.local
 *.env
 *.env.*
+!.env.example
 
 # Secrets, Keys & Signing Credentials
 *.keystore

@@ -52,7 +52,7 @@
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Home-screen "this month" balance widget (see BalanceWidgetProvider.java) -->
+        <!-- Home-screen 4x2 Balance Overview widget -->
         <receiver
             android:name=".BalanceWidgetProvider"
             android:exported="true">
@@ -63,18 +63,41 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_balance_info" />
         </receiver>
+
+        <!-- Home-screen 1x1 Quick Add widget -->
+        <receiver
+            android:name=".QuickAddWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quick_add_info" />
+        </receiver>
+
+        <!-- Home-screen 2x2 Daily Streak widget -->
+        <receiver
+            android:name=".StreakWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_streak_info" />
+        </receiver>
+        <!-- Google AdMob Application ID (Official test ID for development, replace with real AdMob App ID in release) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
     </application>
 
     <!--
         Permissions audit (cross-referenced against installed Capacitor plugins in package.json):
-        - INTERNET: required by src/services/ai.ts, which calls the Anthropic API directly from
-          the WebView for the optional AI finance-question feature. Not used for any background
-          sync — the app is otherwise fully offline/local-only.
-        - No CAMERA/STORAGE permission is declared: @capacitor/filesystem is only used against
-          Directory.Cache (app-private storage), so it needs no runtime permission declared here.
-        - @capawesome/capacitor-haptics (VIBRATE) and other plugins declare their own permissions
-          in their bundled AndroidManifest.xml, which Gradle's manifest merger adds automatically
-          at build time — they do not need to be duplicated here.
+        - INTERNET: required by src/services/ai.ts and Supabase sync / AdMob ads
+        - AD_ID: required by Google Play for Google Mobile Ads (AdMob)
     -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 </manifest>

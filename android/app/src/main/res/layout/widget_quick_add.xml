@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_quick_add_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_quick_add_bg"
+    android:gravity="center"
+    android:padding="12dp">
+
+    <ImageView
+        android:id="@+id/widget_quick_add_icon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_centerInParent="true"
+        android:src="@drawable/ic_widget_add"
+        android:scaleType="fitCenter"
+        android:contentDescription="@string/widget_quick_add_title" />
+
+</RelativeLayout>

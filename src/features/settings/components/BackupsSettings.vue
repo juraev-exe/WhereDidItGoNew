@@ -3,11 +3,17 @@ import { ref, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   ArrowLeft,
+  CheckCircle,
+  Cloud,
+  CloudDownload,
+  CloudUpload,
   Download,
   FileSpreadsheet,
   FileUp,
   Lock,
+  LogOut,
   Radio,
+  RefreshCw,
   Trash2,
   Upload,
 } from '@lucide/vue'
@@ -15,6 +21,7 @@ import AppButton from '@/components/ui/AppButton.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import CsvImportSheet from './CsvImportSheet.vue'
 import P2PSyncModal from './P2PSyncModal.vue'
+import SupabaseAuthModal from './SupabaseAuthModal.vue'
 import {
   exportBackupFile,
   exportTransactionsCsv,
@@ -28,10 +35,11 @@ import {
   parseEncryptedBackupEnvelope,
   type EncryptedBackupEnvelope,
 } from '@/services/crypto'
-import { errorFeedback, successFeedback, warningFeedback } from '@/services/native/haptics'
+import { errorFeedback, successFeedback, tickFeedback, warningFeedback } from '@/services/native/haptics'
 import { resetLocalData } from '@/db'
 import { usePremiumStore } from '@/stores/premium'
 import { useSettingsStore } from '@/stores/settings'
+import { useSupabaseStore } from '@/stores/supabase'
 import type { BackupPayload } from '@/types/finance'
 
 const emit = defineEmits<{
@@ -42,6 +50,73 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const settings = useSettingsStore()
 const premium = usePremiumStore()
+const supabaseStore = useSupabaseStore()
+
+const authModalOpen = ref(false)
+const cloudRestoreSheetOpen = ref(false)
+const restoringCloud = ref(false)
+
+function onAuthSuccess(msg: string) {
+  emit('notify', msg)
+}
+
+function formatSyncTime(isoStr: string) {
+  try {
+    const d = new Date(isoStr)
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + d.toLocaleDateString()
+  } catch {
+    return isoStr
+  }
+}
+
+async function handleSyncNow() {
+  try {
+    const stats = await supabaseStore.syncNow()
+    void successFeedback()
+    emit('notify', t('supabase.syncSuccess', { pulled: stats.pulled.toString(), pushed: stats.pushed.toString() }))
+  } catch (err: any) {
+    void errorFeedback()
+    emit('notify', err.message || t('supabase.syncFailed', 'Sync failed'))
+  }
+}
+
+async function handleCreateSnapshot() {
+  try {
+    await supabaseStore.createSnapshot()
+    void successFeedback()
+    emit('notify', t('supabase.snapshotCreated', 'Cloud snapshot saved successfully!'))
+  } catch (err: any) {
+    void errorFeedback()
+    emit('notify', err.message || 'Snapshot failed')
+  }
+}
+
+async function handleSignOut() {
+  await supabaseStore.logout()
+  void tickFeedback()
+  emit('notify', t('supabase.signedOut', 'Signed out of Supabase.'))
+}
+
+async function openCloudRestoreSheet() {
+  await supabaseStore.refreshSnapshots()
+  cloudRestoreSheetOpen.value = true
+}
+
+async function handleRestoreSnapshot(snapshotId: string) {
+  restoringCloud.value = true
+  try {
+    await supabaseStore.restoreSnapshot(snapshotId, 'merge')
+    await settings.load()
+    cloudRestoreSheetOpen.value = false
+    void successFeedback()
+    emit('notify', t('supabase.snapshotRestored', 'Data restored from cloud snapshot.'))
+  } catch (err: any) {
+    void errorFeedback()
+    emit('notify', err.message || 'Restore failed')
+  } finally {
+    restoringCloud.value = false
+  }
+}
 
 const importing = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -266,6 +341,130 @@ async function executeReset() {
       class="sr-only"
       @change="onFileSelected"
     />
+
+    <!-- Supabase Cloud Sync & Vault -->
+    <h3 class="section-title">{{ t('supabase.cloudSyncTitle', 'Supabase Cloud Sync & Vault') }}</h3>
+    <div class="grouped-section">
+      <!-- When Not Connected -->
+      <button
+        v-if="!supabaseStore.isAuthenticated"
+        type="button"
+        class="row-btn"
+        @click="authModalOpen = true"
+      >
+        <div class="row-left">
+          <div class="icon-circle icon-emerald">
+            <Cloud :size="18" />
+          </div>
+          <div class="row-label">
+            <span class="title">{{ t('supabase.notConnected', 'Connect Supabase Account') }}</span>
+            <span class="subtitle">{{ t('supabase.notConnectedSub', 'Enable encrypted cross-device sync & automated cloud snapshots') }}</span>
+          </div>
+        </div>
+        <span class="badge-connect">{{ t('supabase.connectBtn', 'Connect') }}</span>
+      </button>
+
+      <!-- When Connected -->
+      <template v-else>
+        <!-- Account Status Row -->
+        <div class="row-btn non-clickable">
+          <div class="row-left">
+            <div class="icon-circle icon-emerald pulse">
+              <CheckCircle :size="18" />
+            </div>
+            <div class="row-label">
+              <span class="title">{{ supabaseStore.userEmail }}</span>
+              <span class="subtitle">
+                {{ supabaseStore.lastSyncedAt ? t('supabase.lastSync', { time: formatSyncTime(supabaseStore.lastSyncedAt) }) : t('supabase.connected', 'Connected and ready to sync') }}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="logout-icon-btn"
+            :title="t('supabase.signOut', 'Sign Out')"
+            @click="handleSignOut"
+          >
+            <LogOut :size="16" />
+          </button>
+        </div>
+
+        <div class="divider" />
+
+        <!-- Sync Now Button -->
+        <button
+          type="button"
+          class="row-btn"
+          :disabled="supabaseStore.isSyncing"
+          @click="handleSyncNow"
+        >
+          <div class="row-left">
+            <div class="icon-circle icon-teal" :class="{ spinning: supabaseStore.isSyncing }">
+              <RefreshCw :size="18" />
+            </div>
+            <div class="row-label">
+              <span class="title">{{ supabaseStore.isSyncing ? t('supabase.syncing', 'Syncing…') : t('supabase.syncNow', 'Sync Now') }}</span>
+              <span class="subtitle">{{ t('supabase.syncNowSub', 'Synchronize transactions and balances with Supabase') }}</span>
+            </div>
+          </div>
+        </button>
+
+        <div class="divider" />
+
+        <!-- Auto Sync Toggle -->
+        <div class="row-btn non-clickable">
+          <div class="row-left">
+            <div class="icon-circle icon-blue">
+              <Cloud :size="18" />
+            </div>
+            <div class="row-label">
+              <span class="title">{{ t('supabase.autoSync', 'Automatic Cloud Sync') }}</span>
+              <span class="subtitle">{{ t('supabase.autoSyncSub', 'Keep databases in sync on launch and changes') }}</span>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input
+              type="checkbox"
+              :checked="supabaseStore.autoSyncEnabled"
+              @change="supabaseStore.setAutoSync(($event.target as HTMLInputElement).checked)"
+            />
+            <span class="toggle-slider" />
+          </label>
+        </div>
+
+        <div class="divider" />
+
+        <!-- Cloud Snapshot Backup -->
+        <button type="button" class="row-btn" @click="handleCreateSnapshot">
+          <div class="row-left">
+            <div class="icon-circle icon-purple">
+              <CloudUpload :size="18" />
+            </div>
+            <div class="row-label">
+              <span class="title">{{ t('supabase.createSnapshot', 'Create Cloud Snapshot') }}</span>
+              <span class="subtitle">{{ t('supabase.createSnapshotSub', 'Save a complete restorable snapshot to cloud') }}</span>
+            </div>
+          </div>
+        </button>
+
+        <div class="divider" />
+
+        <!-- Restore Cloud Snapshot -->
+        <button type="button" class="row-btn" @click="openCloudRestoreSheet">
+          <div class="row-left">
+            <div class="icon-circle icon-amber">
+              <CloudDownload :size="18" />
+            </div>
+            <div class="row-label">
+              <span class="title">{{ t('supabase.restoreSnapshot', 'Restore from Cloud Vault') }}</span>
+              <span class="subtitle">{{ t('supabase.restoreSnapshotSub', 'Restore a previous cloud snapshot') }}</span>
+            </div>
+          </div>
+        </button>
+      </template>
+    </div>
+
+    <h3 class="section-title">{{ t('settings.localBackupsTitle', 'Local & Offline Backups') }}</h3>
 
     <div class="grouped-section">
       <!-- Export JSON Backup -->
@@ -492,6 +691,47 @@ async function executeReset() {
       :open="csvImportOpen"
       @close="csvImportOpen = false"
       @notify="(msg) => emit('notify', msg)"
+    />
+
+    <!-- Cloud Restore Sheet -->
+    <BottomSheet
+      :open="cloudRestoreSheetOpen"
+      :title="t('supabase.restoreModalTitle', 'Restore Cloud Snapshot')"
+      @close="cloudRestoreSheetOpen = false"
+    >
+      <div class="sheet-body">
+        <p class="sheet-desc">{{ t('supabase.restoreSnapshotSub', 'Restore a previous cloud snapshot') }}</p>
+        <div v-if="supabaseStore.snapshots.length === 0" class="empty-snapshots">
+          <p class="empty-text">{{ t('supabase.noSnapshots', 'No cloud snapshots saved yet.') }}</p>
+        </div>
+        <div v-else class="snapshot-list">
+          <div
+            v-for="snap in supabaseStore.snapshots"
+            :key="snap.id"
+            class="snapshot-item"
+          >
+            <div class="snapshot-info">
+              <span class="snapshot-date">{{ formatSyncTime(snap.createdAt) }}</span>
+              <span class="snapshot-meta">{{ snap.accountCount }} {{ t('settings.accounts', 'accounts') }} • {{ snap.transactionCount }} tx</span>
+            </div>
+            <AppButton
+              variant="tonal"
+              size="sm"
+              :disabled="restoringCloud"
+              @click="handleRestoreSnapshot(snap.id)"
+            >
+              {{ restoringCloud ? t('supabase.processing', 'Restoring…') : t('supabase.restoreBtn', 'Restore') }}
+            </AppButton>
+          </div>
+        </div>
+      </div>
+    </BottomSheet>
+
+    <!-- Supabase Auth Modal -->
+    <SupabaseAuthModal
+      :open="authModalOpen"
+      @close="authModalOpen = false"
+      @success="onAuthSuccess"
     />
   </div>
 </template>
@@ -774,5 +1014,158 @@ h2 {
 .danger-action-btn {
   background: var(--color-expense) !important;
   color: var(--color-on-error) !important;
+}
+
+/* Supabase Cloud Sync Styles */
+.badge-connect {
+  padding: 0.25rem 0.625rem;
+  background: color-mix(in srgb, #10b981 15%, transparent);
+  color: #10b981;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, #10b981 30%, transparent);
+}
+
+.non-clickable {
+  cursor: default !important;
+}
+
+.non-clickable:hover {
+  background: transparent !important;
+}
+
+.logout-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  color: #ef4444;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-icon-btn:hover {
+  background: color-mix(in srgb, #ef4444 24%, transparent);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.pulse {
+  position: relative;
+}
+
+.pulse::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  border: 2px solid var(--color-surface, #ffffff);
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--color-outline, #d4d4d8);
+  transition: 0.25s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.25s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--cat, #0d9488);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.snapshot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.snapshot-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.875rem;
+  background: color-mix(in srgb, var(--color-surface) 90%, var(--cat, #0d9488) 10%);
+  border: 1px solid var(--color-outline);
+  border-radius: 12px;
+}
+
+.snapshot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.snapshot-date {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.snapshot-meta {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.empty-snapshots {
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
+.empty-text {
+  font-size: 0.875rem;
+  color: var(--color-muted);
 }
 </style>

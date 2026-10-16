@@ -32,6 +32,7 @@
     "audit:onboarding": "node scripts/onboarding-check.mjs"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^8.2.1",
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.5.0",
@@ -47,6 +48,7 @@
     "@number-flow/vue": "^0.5.2",
     "@revenuecat/purchases-capacitor": "^13.4.2",
     "@revenuecat/purchases-js": "^1.68.0",
+    "@supabase/supabase-js": "^2.118.0",
     "date-fns": "^4.4.0",
     "dexie": "^4.4.4",
     "papaparse": "^5.7.0",

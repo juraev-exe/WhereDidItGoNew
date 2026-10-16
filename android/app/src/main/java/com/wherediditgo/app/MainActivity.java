@@ -11,24 +11,27 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
-        refreshBalanceWidgets();
+        refreshAllWidgets();
     }
 
     /**
-     * Nudges any placed BalanceWidgetProvider instances to redraw immediately, so the widget
-     * reflects fresh data as soon as the user reopens the app rather than waiting for the next
-     * 30-minute updatePeriodMillis cycle. Sending ACTION_APPWIDGET_UPDATE is the standard way to
-     * request an out-of-cycle refresh; onUpdate() re-reads SharedPreferences and redraws.
+     * Nudges any placed widgets to redraw immediately, reflecting fresh balances
+     * and streaks as soon as the user interacts with the app.
      */
-    private void refreshBalanceWidgets() {
+    private void refreshAllWidgets() {
+        refreshProvider(BalanceWidgetProvider.class);
+        refreshProvider(StreakWidgetProvider.class);
+    }
+
+    private void refreshProvider(Class<?> providerClass) {
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(this);
-        ComponentName provider = new ComponentName(this, BalanceWidgetProvider.class);
+        ComponentName provider = new ComponentName(this, providerClass);
         int[] appWidgetIds = appWidgetManager.getAppWidgetIds(provider);
         if (appWidgetIds == null || appWidgetIds.length == 0) {
             return;
         }
 
-        Intent updateIntent = new Intent(this, BalanceWidgetProvider.class);
+        Intent updateIntent = new Intent(this, providerClass);
         updateIntent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
         updateIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
         sendBroadcast(updateIntent);

@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
-import { Check, Crown, RefreshCw, Sparkles, Star, X } from '@lucide/vue'
+import { Check, Crown, PlayCircle, RefreshCw, Sparkles, Star, X } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import { usePremiumStore } from '@/stores/premium'
@@ -51,6 +51,15 @@ async function onRestore() {
       ? t('premium.restoreSuccess', 'Purchases restored.')
       : t('premium.restoreFailed', 'No previous purchase found for this account.'),
   )
+}
+
+async function onWatchAd() {
+  const earned = await premium.watchAdForPro()
+  if (earned) {
+    toast.success(t('premium.adRewardSuccess', '24-hour Pro access activated!'))
+  } else {
+    toast.info(t('premium.adRewardCanceled', 'Watch the full video to unlock Pro pass.'))
+  }
 }
 </script>
 
@@ -160,6 +169,16 @@ async function onRestore() {
           <Sparkles v-if="!premium.loading" :size="20" />
           {{ premium.loading ? t('common.loading') : t('premium.continue', 'Continue') }}
         </AppButton>
+
+        <button
+          type="button"
+          class="rewarded-ad-btn"
+          :disabled="premium.loading"
+          @click="onWatchAd"
+        >
+          <PlayCircle :size="18" class="rewarded-icon" />
+          <span>{{ t('premium.watchAdBtn', 'Watch an ad for 24h free Pro access') }}</span>
+        </button>
 
         <button type="button" class="restore-btn" :disabled="premium.loading" @click="onRestore">
           <RefreshCw :size="14" />
@@ -407,6 +426,42 @@ async function onRestore() {
   font-weight: 700 !important;
   font-size: 1.05rem !important;
   height: 52px !important;
+}
+
+.rewarded-ad-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container-high);
+  color: var(--color-primary);
+  border: 1px solid var(--color-outline-variant);
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rewarded-ad-btn:hover {
+  background: var(--color-surface-container-highest, var(--color-surface-container));
+  border-color: var(--color-primary);
+}
+
+.rewarded-ad-btn:active {
+  transform: scale(0.98);
+}
+
+.rewarded-ad-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rewarded-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 .restore-btn {

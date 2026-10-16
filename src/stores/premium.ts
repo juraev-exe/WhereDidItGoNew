@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { PremiumManager, PRO_PRODUCT, type ProductDetails } from '@/services/native/billing'
+import { hasActiveRewardedPass, showRewardedAd, getRewardedPassHoursRemaining } from '@/services/native/ads'
 import { useAccountsStore } from '@/stores/accounts'
 import { useCategoriesStore } from '@/stores/categories'
 import { useTransactionsStore } from '@/stores/transactions'
@@ -11,13 +12,16 @@ export const MAX_FREE_CATEGORIES = 15
 
 export const usePremiumStore = defineStore('premium', () => {
   const isPremiumUser = ref(false)
+  const isRewardedPassActive = ref(false)
   const paywallOpen = ref(false)
   const paywallReason = ref<string>('')
   const loading = ref(false)
   const productDetails = ref<ProductDetails>(PRO_PRODUCT)
 
   async function load() {
-    isPremiumUser.value = await PremiumManager.checkStatus()
+    const isPurchased = await PremiumManager.checkStatus()
+    isRewardedPassActive.value = hasActiveRewardedPass()
+    isPremiumUser.value = isPurchased || isRewardedPassActive.value
   }
 
   function openPaywall(reason = '') {
@@ -58,6 +62,21 @@ export const usePremiumStore = defineStore('premium', () => {
     }
   }
 
+  async function watchAdForPro(): Promise<boolean> {
+    loading.value = true
+    try {
+      const earned = await showRewardedAd()
+      if (earned) {
+        isRewardedPassActive.value = true
+        isPremiumUser.value = true
+        closePaywall()
+      }
+      return earned
+    } finally {
+      loading.value = false
+    }
+  }
+
   function canAddAccount(): boolean {
     if (isPremiumUser.value) return true
     const accounts = useAccountsStore()
@@ -90,6 +109,9 @@ export const usePremiumStore = defineStore('premium', () => {
     closePaywall,
     buyPro,
     restore,
+    watchAdForPro,
+    isRewardedPassActive,
+    getRewardedPassHoursRemaining,
     canAddAccount,
     canAddCategory,
     canAddTransaction,

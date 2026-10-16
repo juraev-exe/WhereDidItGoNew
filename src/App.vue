@@ -14,7 +14,8 @@ import { monthKey } from '@/lib/dates'
 import { hideSplash } from '@/services/native/chrome'
 import { initDeepLinks } from '@/services/native/deepLinks'
 import { scheduleRecurringReminders } from '@/services/native/notifications'
-import { updateBalanceWidget } from '@/services/native/widget'
+import { updateAppWidgets } from '@/services/native/widget'
+import { initializeAds } from '@/services/native/ads'
 import { summarizeMonth } from '@/services/stats'
 import { useAccountsStore } from '@/stores/accounts'
 import { useBudgetsStore } from '@/stores/budgets'
@@ -24,6 +25,7 @@ import { useDebtsStore } from '@/stores/debts'
 import { useRecurringStore } from '@/stores/recurring'
 import { useSettingsStore } from '@/stores/settings'
 import { useTransactionsStore } from '@/stores/transactions'
+import { useSupabaseStore } from '@/stores/supabase'
 import { useUiStore } from '@/stores/ui'
 import { isNative } from '@/lib/platform'
 
@@ -36,6 +38,7 @@ const debts = useDebtsStore()
 const goals = useGoalsStore()
 const recurring = useRecurringStore()
 const transactions = useTransactionsStore()
+const supabaseStore = useSupabaseStore()
 const ui = useUiStore()
 const router = useRouter()
 
@@ -60,13 +63,34 @@ async function runForegroundJobs() {
   const copied = await budgets.carryForwardIfNeeded()
   if (copied === 'copied') ui.notifyBudgetCopied(monthKey())
   const summary = summarizeMonth(transactions.transactions, budgets.budgets)
-  void updateBalanceWidget({
+  void updateAppWidgets({
+    totalBalance: accounts.totalBalance,
     monthSpend: summary.expense,
     monthIncome: summary.income,
     currencySymbol: settings.currencySymbol,
+    streakCount: transactions.streak.current,
+    streakActiveToday: transactions.streak.activeToday,
   })
   void scheduleRecurringReminders(recurring.items, categories.categories)
+  if (supabaseStore.autoSyncEnabled && supabaseStore.isAuthenticated) {
+    void supabaseStore.syncNow().catch(() => {})
+  }
 }
+
+watch(
+  [() => transactions.transactions.length, () => accounts.totalBalance, () => transactions.streak.current, () => transactions.streak.activeToday],
+  () => {
+    const summary = summarizeMonth(transactions.transactions, budgets.budgets)
+    void updateAppWidgets({
+      totalBalance: accounts.totalBalance,
+      monthSpend: summary.expense,
+      monthIncome: summary.income,
+      currencySymbol: settings.currencySymbol,
+      streakCount: transactions.streak.current,
+      streakActiveToday: transactions.streak.activeToday,
+    })
+  },
+)
 
 const isObscured = ref(false)
 
@@ -112,6 +136,8 @@ onMounted(async () => {
     debts.start()
     transactions.start()
     recurring.start()
+    void supabaseStore.init()
+    void initializeAds()
     await runForegroundJobs()
 
     if (needsOnboardingRedirect()) {

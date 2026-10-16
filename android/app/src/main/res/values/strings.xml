@@ -5,11 +5,19 @@
     <string name="package_name">com.wherediditgo.app</string>
     <string name="custom_url_scheme">com.wherediditgo.app</string>
 
-    <!-- Home-screen balance widget -->
-    <string name="widget_spent_this_month">Spent this month</string>
+    <!-- Home-screen widgets -->
     <string name="widget_placeholder">—</string>
-    <string name="widget_income_line_format">Income: %1$s</string>
-    <string name="widget_description">Shows how much you\'ve spent and earned this month.</string>
+    <string name="widget_overall_balance">Overall balance</string>
+    <string name="widget_expenses_label">↓ Expenses</string>
+    <string name="widget_incomes_label">↑ Incomes</string>
+    <string name="widget_balance_title">Balance</string>
+    <string name="widget_balance_description">Balance, expenses and incomes with a quick add button</string>
+    <string name="widget_quick_add_title">Quick add</string>
+    <string name="widget_quick_add_description">Tap to quickly add a new operation</string>
+    <string name="widget_streak_title">Daily Streak</string>
+    <string name="widget_streak_description">Track your daily transaction logging streak</string>
+    <string name="widget_streak_status_active">✓ Done today • Keep going!</string>
+    <string name="widget_streak_status_pending">⚡ Log today to maintain streak!</string>
 
     <!-- App shortcuts (long-press the home-screen icon) -->
     <string name="shortcut_add_transaction_short">Add transaction</string>

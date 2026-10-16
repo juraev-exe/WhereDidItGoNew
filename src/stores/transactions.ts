@@ -6,6 +6,8 @@ import { db } from '@/db'
 import { createId } from '@/lib/id'
 import { nowISO, todayISO } from '@/lib/dates'
 import { useAccountsStore } from '@/stores/accounts'
+import { usePremiumStore } from '@/stores/premium'
+import { recordTransactionForAdPacing } from '@/services/native/ads'
 import type { Transaction, TransactionType } from '@/types/finance'
 
 export interface TxInput {
@@ -116,6 +118,8 @@ export const useTransactionsStore = defineStore('transactions', () => {
       await db.transactions.add(tx)
       await applyBalanceEffects(tx, 1)
     })
+    const premium = usePremiumStore()
+    recordTransactionForAdPacing(premium.isPremiumUser)
     return tx
   }
 

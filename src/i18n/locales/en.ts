@@ -71,6 +71,9 @@ export default {
     watchAdBtn: 'Watch an ad for 24h free Pro access',
     adRewardSuccess: '24-hour Pro access activated!',
     adRewardCanceled: 'Watch the full video to unlock Pro pass.',
+    proActiveTitle: 'WhereDidItGo Pro Active',
+    manageSubscription: 'Tap to manage subscription & billing',
+    openNativePaywall: 'Open RevenueCat Paywall',
   },
   streak: {
     label: '{count} day streak',

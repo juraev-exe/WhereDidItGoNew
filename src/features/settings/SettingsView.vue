@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Scale,
   Sliders,
+  Sparkles,
   Wallet,
   Trash2,
 } from '@lucide/vue'
@@ -169,6 +170,23 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
         <div class="pro-banner-text">
           <span class="pro-title">{{ t('premium.unlockTitle', 'WhereDidItGo Pro') }}</span>
           <span class="pro-sub">{{ t('premium.unlockSub', 'Unlimited accounts, cloud backups, exports & privacy shield') }}</span>
+        </div>
+        <ChevronRight :size="18" class="chevron-right" />
+      </button>
+
+      <!-- Manage Subscription (Customer Center) if Pro -->
+      <button
+        v-else
+        type="button"
+        class="pro-banner pro-banner--active"
+        @click="premium.openCustomerCenter()"
+      >
+        <div class="pro-badge-icon pro-badge-icon--active">
+          <Sparkles :size="22" />
+        </div>
+        <div class="pro-banner-text">
+          <span class="pro-title">{{ t('premium.proActiveTitle', 'WhereDidItGo Pro Active') }}</span>
+          <span class="pro-sub">{{ t('premium.manageSubscription', 'Tap to manage subscription & billing') }}</span>
         </div>
         <ChevronRight :size="18" class="chevron-right" />
       </button>
@@ -431,6 +449,11 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
 
 .pro-banner:active {
   transform: scale(0.98);
+}
+
+.pro-banner--active {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-success, #10b981) 14%, var(--color-surface)), color-mix(in srgb, var(--color-primary) 14%, var(--color-surface)));
+  border-color: color-mix(in srgb, var(--color-success, #10b981) 30%, transparent);
 }
 
 .pro-badge-icon {

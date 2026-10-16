@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import { Check, Crown, PlayCircle, RefreshCw, Sparkles, Star, X } from '@lucide/vue'
@@ -7,6 +7,8 @@ import AppButton from '@/components/ui/AppButton.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import { usePremiumStore } from '@/stores/premium'
 import { tickFeedback } from '@/services/native/haptics'
+import { PremiumManager, findPackageForPlan, type SubscriptionPlanId } from '@/services/native/billing'
+import { isNative } from '@/lib/platform'
 
 const { t } = useI18n()
 const premium = usePremiumStore()
@@ -18,8 +20,30 @@ const open = computed({
   },
 })
 
-type PlanId = 'lifetime' | 'annual' | 'monthly'
+type PlanId = SubscriptionPlanId
 const selectedPlan = ref<PlanId>('lifetime')
+
+const lifetimePrice = ref('$26.97')
+const annualPrice = ref('$9.29')
+const monthlyPrice = ref('$1.09')
+
+onMounted(async () => {
+  try {
+    const offerings = await PremiumManager.getOfferings()
+    if (offerings?.current) {
+      const lifePkg = findPackageForPlan(offerings.current, 'lifetime')
+      if (lifePkg?.product?.priceString) lifetimePrice.value = lifePkg.product.priceString
+
+      const annualPkg = findPackageForPlan(offerings.current, 'annual')
+      if (annualPkg?.product?.priceString) annualPrice.value = annualPkg.product.priceString
+
+      const monthPkg = findPackageForPlan(offerings.current, 'monthly')
+      if (monthPkg?.product?.priceString) monthlyPrice.value = monthPkg.product.priceString
+    }
+  } catch (e) {
+    // Graceful fallback to default prices
+  }
+})
 
 function selectPlan(plan: PlanId) {
   selectedPlan.value = plan
@@ -38,8 +62,8 @@ const features = computed(() => [
 ])
 
 async function onBuy() {
-  const success = await premium.buyPro()
-  if (!success) {
+  const result = await premium.buyPro(selectedPlan.value)
+  if (!result.success && !result.cancelled) {
     toast.error(t('premium.purchaseFailed', "Purchase didn't go through — try again in a moment."))
   }
 }
@@ -96,7 +120,7 @@ async function onWatchAd() {
           <div class="plan-info">
             <div class="plan-header">
               <span class="plan-name">{{ t('premium.lifetimeTitle', 'Lifetime access') }}</span>
-              <span class="plan-price">$26.97</span>
+              <span class="plan-price">{{ lifetimePrice }}</span>
             </div>
             <span class="plan-sub">{{ t('premium.oneTimePayment', 'One time payment') }}</span>
             <span class="plan-note">{{ t('premium.lifetimeNote', 'All future features are included at no additional cost') }}</span>
@@ -119,7 +143,7 @@ async function onWatchAd() {
                 <span class="plan-name">{{ t('premium.annually', 'Annually') }}</span>
                 <span class="discount-pill">-28%</span>
               </div>
-              <span class="plan-price">$9.29</span>
+              <span class="plan-price">{{ annualPrice }}</span>
             </div>
             <span class="plan-sub-calc">(Per week: $0.18)</span>
           </div>
@@ -138,7 +162,7 @@ async function onWatchAd() {
           <div class="plan-info">
             <div class="plan-header">
               <span class="plan-name">{{ t('premium.monthly', 'Monthly') }}</span>
-              <span class="plan-price">$1.09</span>
+              <span class="plan-price">{{ monthlyPrice }}</span>
             </div>
             <span class="plan-sub-calc">(Per week: $0.28)</span>
           </div>
@@ -178,6 +202,17 @@ async function onWatchAd() {
         >
           <PlayCircle :size="18" class="rewarded-icon" />
           <span>{{ t('premium.watchAdBtn', 'Watch an ad for 24h free Pro access') }}</span>
+        </button>
+
+        <button
+          v-if="isNative()"
+          type="button"
+          class="restore-btn"
+          :disabled="premium.loading"
+          @click="premium.presentNativePaywall()"
+        >
+          <Crown :size="14" />
+          {{ t('premium.openNativePaywall', 'Open RevenueCat Paywall') }}
         </button>
 
         <button type="button" class="restore-btn" :disabled="premium.loading" @click="onRestore">

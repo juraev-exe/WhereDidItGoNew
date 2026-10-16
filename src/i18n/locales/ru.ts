@@ -71,6 +71,9 @@ export default {
     watchAdBtn: 'Посмотреть рекламу для 24ч Pro-доступа',
     adRewardSuccess: '24-часовой доступ Pro активирован!',
     adRewardCanceled: 'Посмотрите видео до конца, чтобы получить Pro-доступ.',
+    proActiveTitle: 'WhereDidItGo Pro активен',
+    manageSubscription: 'Управление подпиской и платежами',
+    openNativePaywall: 'Открыть пейволл RevenueCat',
   },
   streak: {
     label: '{count} дн. серия',

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { PremiumManager, PRO_PRODUCT, type ProductDetails } from '@/services/native/billing'
+import { PremiumManager, PRO_PRODUCT, type ProductDetails, type SubscriptionPlanId } from '@/services/native/billing'
 import { hasActiveRewardedPass, showRewardedAd, getRewardedPassHoursRemaining } from '@/services/native/ads'
 import { useAccountsStore } from '@/stores/accounts'
 import { useCategoriesStore } from '@/stores/categories'
@@ -34,10 +34,24 @@ export const usePremiumStore = defineStore('premium', () => {
     paywallReason.value = ''
   }
 
-  async function buyPro(): Promise<boolean> {
+  async function buyPro(plan: SubscriptionPlanId = 'lifetime'): Promise<{ success: boolean; cancelled: boolean }> {
     loading.value = true
     try {
-      const success = await PremiumManager.purchasePro()
+      const res = await PremiumManager.purchasePlan(plan)
+      if (res.success) {
+        isPremiumUser.value = true
+        closePaywall()
+      }
+      return res
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function presentNativePaywall(): Promise<boolean> {
+    loading.value = true
+    try {
+      const success = await PremiumManager.presentPaywall()
       if (success) {
         isPremiumUser.value = true
         closePaywall()
@@ -46,6 +60,11 @@ export const usePremiumStore = defineStore('premium', () => {
     } finally {
       loading.value = false
     }
+  }
+
+  async function openCustomerCenter(): Promise<void> {
+    await PremiumManager.presentCustomerCenter()
+    await load()
   }
 
   async function restore(): Promise<boolean> {
@@ -108,6 +127,8 @@ export const usePremiumStore = defineStore('premium', () => {
     openPaywall,
     closePaywall,
     buyPro,
+    presentNativePaywall,
+    openCustomerCenter,
     restore,
     watchAdForPro,
     isRewardedPassActive,

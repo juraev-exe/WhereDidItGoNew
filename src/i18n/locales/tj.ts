@@ -71,6 +71,9 @@ export default {
     watchAdBtn: 'Тамошои реклама барои 24 соат дастрасии Pro',
     adRewardSuccess: 'Дастрасии Pro барои 24 соат фаъол шуд!',
     adRewardCanceled: 'Барои гирифтани дастрасии Pro видеоро то охир тамошо кунед.',
+    proActiveTitle: 'WhereDidItGo Pro фаъол аст',
+    manageSubscription: 'Идоракунии обуна ва пардохтҳо',
+    openNativePaywall: 'Кушодани пейволли RevenueCat',
   },
   streak: {
     label: '{count} рӯз пайдарпай',

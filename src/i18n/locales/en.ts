@@ -157,6 +157,8 @@ export default {
     categoriesLede: 'Keep the ones that fit your life and add your own. You can change all of this later.',
     categoriesHint: '{count} categories selected',
     addCategoryPlaceholder: 'Add your own, e.g. Gym',
+    navigationTitle: 'Bottom navigation',
+    navigationLede: 'Choose your preferred bar style and the tabs you want to see.',
   },
   home: {
     accounts: 'Accounts',

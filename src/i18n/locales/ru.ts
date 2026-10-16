@@ -157,6 +157,8 @@ export default {
     categoriesLede: 'Оставьте подходящие категории и добавьте свои. Всё это можно изменить позже.',
     categoriesHint: 'Выбрано категорий: {count}',
     addCategoryPlaceholder: 'Своя категория, напр. Спортзал',
+    navigationTitle: 'Нижняя навигация',
+    navigationLede: 'Выберите стиль панели и нужные вкладки.',
   },
   home: {
     accounts: 'Счета',

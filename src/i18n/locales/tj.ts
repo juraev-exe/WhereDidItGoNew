@@ -157,6 +157,8 @@ export default {
     categoriesLede: 'Категорияҳои мувофиқро нигоҳ доред ва аз худатон илова кунед. Ҳамаашро баъдтар тағйир дода метавонед.',
     categoriesHint: '{count} категория интихоб шуд',
     addCategoryPlaceholder: 'Категорияи худ, мас. Варзишгоҳ',
+    navigationTitle: 'Навигатсияи поёнӣ',
+    navigationLede: 'Услуби панел ва бахшҳои лозимаро интихоб кунед.',
   },
   home: {
     accounts: 'Ҳисобҳо',

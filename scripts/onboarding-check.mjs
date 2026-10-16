@@ -54,7 +54,7 @@ await page.waitForTimeout(1600)
 // ── Step 1: language + currency ──────────────────────────────────────────────
 state.stage = 'step1'
 const bodyText = await page.evaluate(() => document.body.innerText)
-check('flow is four steps', /Step 1 of 4/.test(bodyText), bodyText.slice(0, 80))
+check('flow is five steps', /Step 1 of 5/.test(bodyText), bodyText.slice(0, 80))
 check('language selector is present', /Language/.test(bodyText))
 await shot('onb-1-language')
 
@@ -128,6 +128,13 @@ check('budget step no longer offers dropped categories', !problems.some((p) => p
 await shot('onb-4-budgets')
 
 await page.getByRole('button', { name: /^skip$/i }).first().click()
+await page.waitForTimeout(700)
+
+// ── Step 5: navigation ────────────────────────────────────────────────────────
+state.stage = 'step5'
+check('navigation step offers tab style segmented control', (await page.locator('.segmented').count()) > 0)
+await shot('onb-5-navigation')
+await page.getByRole('button', { name: /^(finish|done|go to home)$/i }).first().click()
 await page.waitForTimeout(1800)
 
 // ── The app itself ───────────────────────────────────────────────────────────

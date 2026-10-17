@@ -37,6 +37,12 @@ import {
   parseEncryptedBackupEnvelope,
 } from '../src/services/crypto.ts'
 import { computeWrappedData } from '../src/services/wrapped.ts'
+import {
+  parseReceiptText,
+  parseRawAmountToMinor,
+  extractReceiptDate,
+  extractMerchantName,
+} from '../src/services/receiptParser.ts'
 
 let failures = 0
 
@@ -430,6 +436,68 @@ eq('wrapped top category pct', wrapped.topCategory?.percent, 60)
 eq('wrapped biggest expense amount', wrapped.biggestExpense?.amount, 20000)
 eq('wrapped total transactions', wrapped.totalTransactions, 4)
 eq('wrapped badge title', wrapped.badge.title, 'Savings Titan')
+
+console.log('\n— Receipt OCR Parser (Phase 10) —')
+// 1. Amount parsing
+eq('receipt amount dollar with comma', parseRawAmountToMinor('$1,250.50'), 125050)
+eq('receipt amount euro with comma decimal', parseRawAmountToMinor('45,50 €'), 4550)
+eq('receipt amount plain float', parseRawAmountToMinor('78.25 TJS'), 7825)
+eq('receipt amount ruble', parseRawAmountToMinor('1 500,00 ₽'), 150000)
+
+// 2. Date extraction
+eq('receipt date iso', extractReceiptDate('Date: 2026-08-15'), '2026-08-15')
+eq('receipt date eur format', extractReceiptDate('Check date: 24.11.2026'), '2026-11-24')
+eq('receipt date us format', extractReceiptDate('10/28/2026 14:30'), '2026-10-28')
+
+// 3. English receipt test
+const sampleEnReceipt = `
+WHOLE FOODS MARKET
+Store #10425
+123 Market St, New York
+Date: 2026-08-15 15:42
+Organic Milk        4.50
+Sourdough Bread     3.25
+SUBTOTAL            7.75
+TAX                 0.65
+TOTAL              $8.40
+Card Ending *4242
+Thank you for shopping!
+`
+const parsedEn = parseReceiptText(sampleEnReceipt, mockCategories)
+eq('en receipt merchant', parsedEn.merchant, 'WHOLE FOODS MARKET')
+eq('en receipt amount', parsedEn.amount, 840)
+eq('en receipt date', parsedEn.date, '2026-08-15')
+eq('en receipt category match', parsedEn.suggestedCategoryId, 'cat-groceries')
+
+// 4. Russian receipt test
+const sampleRuReceipt = `
+ООО АШАН СИТИ
+Кассовый чек № 582
+Дата: 12.08.2026
+Сыр Российский      120.00
+Сок Апельсиновый     85.00
+ИТОГО К ОПЛАТЕ:     205.00 РУБ
+`
+const parsedRu = parseReceiptText(sampleRuReceipt, mockCategories)
+eq('ru receipt merchant', parsedRu.merchant, 'ООО АШАН СИТИ')
+eq('ru receipt amount', parsedRu.amount, 20500)
+eq('ru receipt date', parsedRu.date, '2026-08-12')
+eq('ru receipt category match', parsedRu.suggestedCategoryId, 'cat-groceries')
+
+// 5. Tajik receipt test
+const sampleTjReceipt = `
+ПАЙКАР СУПЕРМАРКЕТ
+Сана: 2026-08-20
+Равған 1л            45.00
+Шакар 1кг            18.00
+ҲАМАГӢ:             63.00 TJS
+Ташаккур барои харид!
+`
+const parsedTj = parseReceiptText(sampleTjReceipt, mockCategories)
+eq('tj receipt merchant', parsedTj.merchant, 'ПАЙКАР СУПЕРМАРКЕТ')
+eq('tj receipt amount', parsedTj.amount, 6300)
+eq('tj receipt date', parsedTj.date, '2026-08-20')
+eq('tj receipt category match', parsedTj.suggestedCategoryId, 'cat-groceries')
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

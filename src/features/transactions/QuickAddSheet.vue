@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Calendar, Plus } from '@lucide/vue'
+import { toast } from 'vue-sonner'
+import { Calendar, Camera, Plus } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import DatePickerModal from '@/components/ui/DatePickerModal.vue'
 import CategoryFormSheet from '@/components/CategoryFormSheet.vue'
 import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
+import ReceiptScannerModal from '@/components/ReceiptScannerModal.vue'
 import { amountHasExpression, formatMoney, parseMoneyToMinor } from '@/lib/money'
 import { monthKey, todayDayOfMonth, todayISO, yesterdayISO } from '@/lib/dates'
 import { confirmFeedback, errorFeedback, successFeedback, tickFeedback, warningFeedback } from '@/services/native/haptics'
@@ -45,6 +47,38 @@ const dayOfMonth = ref(String(todayDayOfMonth()))
 
 const catFormOpen = ref(false)
 const catToEdit = ref<Category | null>(null)
+const receiptScannerOpen = ref(false)
+
+function openReceiptScanner() {
+  receiptScannerOpen.value = true
+  void tickFeedback()
+}
+
+function onReceiptApplied(data: {
+  amount: number
+  merchant: string
+  date: string
+  categoryId?: string
+}) {
+  type.value = 'expense'
+  if (data.amount > 0) {
+    amountStr.value = (data.amount / 100).toFixed(2)
+  }
+  if (data.merchant && data.merchant !== 'Store / Merchant' && data.merchant !== 'Store') {
+    note.value = data.merchant
+  }
+  if (data.date) {
+    date.value = data.date
+  }
+  if (data.categoryId) {
+    categoryId.value = data.categoryId
+  }
+  toast.success(
+    data.merchant && data.merchant !== 'Store'
+      ? `${t('quickAdd.scanReceiptDetected')}: ${data.merchant}`
+      : t('quickAdd.scanReceiptDetected'),
+  )
+}
 
 function openDatePicker() {
   datePickerOpen.value = true
@@ -304,18 +338,31 @@ async function remove() {
     @close="ui.closeAdd()"
   >
     <form class="modal-body" @submit.prevent="save">
-            <!-- Segmented Type Switcher -->
-            <div class="seg" role="tablist" :aria-label="t('quickAdd.typeLabel')">
+            <!-- Segmented Type Switcher & Scan Action -->
+            <div class="type-and-scan-bar">
+              <div class="seg" role="tablist" :aria-label="t('quickAdd.typeLabel')">
+                <button
+                  v-for="txType in (['expense', 'income', 'transfer'] as const)"
+                  :key="txType"
+                  type="button"
+                  role="tab"
+                  :class="{ active: type === txType }"
+                  :aria-selected="type === txType"
+                  @click="type = txType; confirmFeedback()"
+                >
+                  {{ t(`txTypes.${txType}`) }}
+                </button>
+              </div>
+
               <button
-                v-for="txType in (['expense', 'income', 'transfer'] as const)"
-                :key="txType"
+                v-if="!ui.editingTx"
                 type="button"
-                role="tab"
-                :class="{ active: type === txType }"
-                :aria-selected="type === txType"
-                @click="type = txType; confirmFeedback()"
+                class="scan-receipt-pill"
+                :title="t('quickAdd.scanReceipt')"
+                @click="openReceiptScanner"
               >
-                {{ t(`txTypes.${txType}`) }}
+                <Camera class="scan-pill-icon" />
+                <span>{{ t('quickAdd.scanReceipt') }}</span>
               </button>
             </div>
 
@@ -490,6 +537,12 @@ async function remove() {
     @confirm="remove"
     @close="confirmDeleteOpen = false"
   />
+
+  <ReceiptScannerModal
+    :open="receiptScannerOpen"
+    @close="receiptScannerOpen = false"
+    @apply="onReceiptApplied"
+  />
 </template>
 
 <style scoped>
@@ -558,6 +611,38 @@ async function remove() {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.type-and-scan-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.scan-receipt-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.95rem;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, rgba(var(--color-primary-rgb, 14, 165, 233), 0.12), rgba(var(--color-primary-rgb, 14, 165, 233), 0.04));
+  border: 1px solid rgba(var(--color-primary-rgb, 14, 165, 233), 0.35);
+  color: var(--color-primary);
+  font-size: var(--text-label);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--duration-fast), background var(--duration-fast), box-shadow var(--duration-fast);
+  box-shadow: 0 2px 8px rgba(var(--color-primary-rgb, 14, 165, 233), 0.08);
+}
+
+.scan-receipt-pill:active {
+  transform: scale(0.97);
+}
+
+.scan-pill-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .seg {

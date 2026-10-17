@@ -15,11 +15,15 @@ const PREMIUM_KEY = 'wdg_is_premium'
 
 /**
  * RevenueCat project API keys.
- * Default configured with user's RevenueCat test key.
+ * In production release builds, Google Play requires a public production key starting with "goog_".
+ * Test keys (test_...) cause RevenueCat's native Android SDK to force-close the app in release mode.
  */
-const REVENUECAT_API_KEY_ANDROID = 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
-const REVENUECAT_API_KEY_IOS = 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
-const REVENUECAT_API_KEY_STRIPE = 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
+const REVENUECAT_API_KEY_ANDROID =
+  import.meta.env.VITE_REVENUECAT_ANDROID_KEY || 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
+const REVENUECAT_API_KEY_IOS =
+  import.meta.env.VITE_REVENUECAT_IOS_KEY || 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
+const REVENUECAT_API_KEY_STRIPE =
+  import.meta.env.VITE_REVENUECAT_STRIPE_KEY || 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
 
 /** Primary Pro Entitlement Identifier in RevenueCat Dashboard */
 export const ENTITLEMENT_ID = 'wherediditgo_pro'
@@ -50,10 +54,17 @@ function currentApiKey(): string {
   return platform() === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID
 }
 
-function isConfigured(): boolean {
-  if (isNative()) return currentApiKey().length > 0
-  return REVENUECAT_API_KEY_STRIPE.length > 0
+export function isConfigured(): boolean {
+  const key = currentApiKey()
+  if (!key) return false
+  // In a native release build, RevenueCat Android SDK will force-close the app if given a test_ key.
+  if (isNative() && import.meta.env.PROD && key.startsWith('test_')) {
+    return false
+  }
+  return true
 }
+
+export const isBillingConfigured = isConfigured
 
 let configurePromise: Promise<void> | null = null
 let webPurchases: WebPurchases | null = null
@@ -63,24 +74,47 @@ async function ensureConfigured(): Promise<void> {
   if (configurePromise) return configurePromise
 
   if (isNative()) {
-    configurePromise = (async () => {
-      await NativePurchases.setLogLevel({ level: LOG_LEVEL.DEBUG })
-      await NativePurchases.configure({ apiKey: currentApiKey() })
+    const key = currentApiKey()
+    // Guard: Prevent RevenueCat native SDK from force-closing the app with an AlertDialog in release builds when using a test key
+    if (!key || (import.meta.env.PROD && key.startsWith('test_'))) {
+      console.warn(
+        '[RevenueCat] Test API key detected in production build. RevenueCat disabled to prevent app termination. Provide a production Google Play key (goog_...) to enable Play Store billing.',
+      )
+      configurePromise = Promise.resolve()
+      return configurePromise
+    }
 
-      // Real-time listener for customer updates
-      await NativePurchases.addCustomerInfoUpdateListener((customerInfo: NativeCustomerInfo) => {
-        const active = customerInfo.entitlements?.active?.[ENTITLEMENT_ID] !== undefined
-        void PremiumManager.setPremium(active)
-      })
+    configurePromise = (async () => {
+      try {
+        await NativePurchases.setLogLevel({ level: import.meta.env.PROD ? LOG_LEVEL.WARN : LOG_LEVEL.DEBUG })
+        await NativePurchases.configure({ apiKey: key })
+
+        // Real-time listener for customer updates
+        await NativePurchases.addCustomerInfoUpdateListener((customerInfo: NativeCustomerInfo) => {
+          const active = customerInfo.entitlements?.active?.[ENTITLEMENT_ID] !== undefined
+          void PremiumManager.setPremium(active)
+        })
+      } catch (err) {
+        console.error('[RevenueCat] Failed to configure native purchases:', err)
+      }
     })()
   } else {
+    const stripeKey = REVENUECAT_API_KEY_STRIPE
+    if (!stripeKey || (import.meta.env.PROD && stripeKey.startsWith('test_'))) {
+      configurePromise = Promise.resolve()
+      return configurePromise
+    }
     // Web fallback for browser preview / Electron
     let webUserId = localStorage.getItem('wdg_web_uid')
     if (!webUserId) {
       webUserId = 'web_' + Math.random().toString(36).substring(2, 15)
       localStorage.setItem('wdg_web_uid', webUserId)
     }
-    webPurchases = WebPurchases.configure(REVENUECAT_API_KEY_STRIPE, webUserId)
+    try {
+      webPurchases = WebPurchases.configure(stripeKey, webUserId)
+    } catch (err) {
+      console.warn('[RevenueCat] Failed to configure web purchases:', err)
+    }
     configurePromise = Promise.resolve()
   }
   return configurePromise
@@ -197,7 +231,7 @@ export class PremiumManager {
    * Uses paywall configured in the RevenueCat dashboard.
    */
   static async presentPaywall(): Promise<boolean> {
-    if (!isNative()) return false
+    if (!isNative() || !isConfigured()) return false
     try {
       await ensureConfigured()
       const { result } = await RevenueCatUI.presentPaywall()
@@ -213,7 +247,7 @@ export class PremiumManager {
    * Present the native RevenueCat Paywall only if the user does NOT have the pro entitlement.
    */
   static async presentPaywallIfNeeded(): Promise<boolean> {
-    if (!isNative()) return false
+    if (!isNative() || !isConfigured()) return false
     try {
       await ensureConfigured()
       const { result } = await RevenueCatUI.presentPaywallIfNeeded({
@@ -231,7 +265,7 @@ export class PremiumManager {
    * Open the native RevenueCat Customer Center for managing subscriptions.
    */
   static async presentCustomerCenter(): Promise<void> {
-    if (!isNative()) return
+    if (!isNative() || !isConfigured()) return
     try {
       await ensureConfigured()
       await RevenueCatUI.presentCustomerCenter()

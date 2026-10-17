@@ -19,7 +19,7 @@ const PREMIUM_KEY = 'wdg_is_premium'
  * Test keys (test_...) cause RevenueCat's native Android SDK to force-close the app in release mode.
  */
 const REVENUECAT_API_KEY_ANDROID =
-  import.meta.env.VITE_REVENUECAT_ANDROID_KEY || 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
+  import.meta.env.VITE_REVENUECAT_ANDROID_KEY || 'goog_jsxFosZXptnMUILBUeVnPlzePQS'
 const REVENUECAT_API_KEY_IOS =
   import.meta.env.VITE_REVENUECAT_IOS_KEY || 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
 const REVENUECAT_API_KEY_STRIPE =

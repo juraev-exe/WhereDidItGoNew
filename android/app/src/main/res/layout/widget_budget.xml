@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_budget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:padding="16dp">
+
+    <!-- Header Row: Icon + Title + Status + Action buttons -->
+    <LinearLayout
+        android:id="@+id/widget_budget_header_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_widget_budget"
+            android:tint="#38BDF8"
+            android:layout_marginEnd="6dp" />
+
+        <TextView
+            android:id="@+id/widget_budget_title_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_budget_label"
+            android:textColor="#9E9EA6"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/widget_budget_status_badge"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="@string/widget_budget_on_track"
+            android:textColor="#34D399"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:singleLine="true" />
+
+        <ImageButton
+            android:id="@+id/widget_budget_scan_btn"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/widget_button_add_small_bg"
+            android:src="@drawable/ic_widget_camera"
+            android:scaleType="centerInside"
+            android:padding="6dp"
+            android:contentDescription="@string/widget_scan_receipt_title" />
+
+        <ImageButton
+            android:id="@+id/widget_budget_quick_add"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/widget_button_add_small_bg"
+            android:src="@drawable/ic_widget_add"
+            android:scaleType="centerInside"
+            android:padding="6dp"
+            android:contentDescription="@string/widget_quick_add_title" />
+    </LinearLayout>
+
+    <!-- Main Spend & Limit Display -->
+    <LinearLayout
+        android:id="@+id/widget_budget_amount_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/widget_budget_header_row"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:gravity="bottom">
+
+        <TextView
+            android:id="@+id/widget_budget_spent_amount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_placeholder"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/widget_budget_limit_amount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:layout_marginBottom="2dp"
+            android:text=" / $0"
+            android:textColor="#9E9EA6"
+            android:textSize="13sp"
+            android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/widget_budget_percent_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp"
+            android:text="0%"
+            android:textColor="#38BDF8"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:singleLine="true" />
+    </LinearLayout>
+
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/widget_budget_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_below="@id/widget_budget_amount_row"
+        android:layout_marginTop="6dp"
+        android:max="100"
+        android:progress="0"
+        android:progressDrawable="@drawable/widget_progress_bar" />
+
+    <!-- Bottom Row: Remaining Runway & Days Left -->
+    <LinearLayout
+        android:id="@+id/widget_budget_bottom_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Remaining -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_budget_remaining_label"
+                android:textColor="#9E9EA6"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/widget_budget_remaining_amount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="@string/widget_placeholder"
+                android:textColor="#34D399"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+        </LinearLayout>
+
+        <!-- Days Left -->
+        <TextView
+            android:id="@+id/widget_budget_days_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="—"
+            android:textColor="#A1A1AA"
+            android:textSize="11sp"
+            android:singleLine="true" />
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,10 +1,12 @@
 /**
  * Custom-scheme deep links (Android).
  *
- * Handles `wherediditgo://add`, the target of the static "Add transaction" home-screen app
- * shortcut (android/app/src/main/res/xml/shortcuts.xml + the matching intent-filter on
- * .MainActivity in AndroidManifest.xml). Two cases have to be covered:
+ * Handles:
+ *  - `wherediditgo://add`: Quick add transaction sheet
+ *  - `wherediditgo://scan`: Quick receipt camera scanner
+ *  - `wherediditgo://budgets`: Monthly budget progress & runway overview
  *
+ * Two cases have to be covered:
  *  - Warm start: the app is already running (or was merely backgrounded) and the shortcut's
  *    VIEW intent reaches it via onNewIntent — surfaced here as @capacitor/app's `appUrlOpen`
  *    event.
@@ -18,28 +20,54 @@ import { App } from '@capacitor/app'
 import type { PluginListenerHandle } from '@capacitor/core'
 import { isNative } from '@/lib/platform'
 
-const ADD_TRANSACTION_HOST = 'add'
+export type DeepLinkAction = 'add' | 'scan' | 'budgets' | 'unknown'
 
-function isAddTransactionUrl(url: string): boolean {
+export interface DeepLinkHandlers {
+  onAddTransaction?: () => void
+  onScanReceipt?: () => void
+  onOpenBudgets?: () => void
+}
+
+export function parseDeepLink(url: string): DeepLinkAction {
   try {
-    return new URL(url).host === ADD_TRANSACTION_HOST
+    const parsed = new URL(url)
+    const host = parsed.host.toLowerCase()
+    if (host === 'add') return 'add'
+    if (host === 'scan') return 'scan'
+    if (host === 'budgets' || host === 'budget') return 'budgets'
+    return 'unknown'
   } catch {
-    return false
+    return 'unknown'
+  }
+}
+
+function dispatch(action: DeepLinkAction, handlers: DeepLinkHandlers): void {
+  if (action === 'add') {
+    handlers.onAddTransaction?.()
+  } else if (action === 'scan') {
+    handlers.onScanReceipt?.()
+  } else if (action === 'budgets') {
+    handlers.onOpenBudgets?.()
   }
 }
 
 /**
- * Starts listening for the `wherediditgo://add` deep link and invokes `onAddTransaction`
- * whenever it's seen — both for a cold-start launch and for a live `appUrlOpen` event while
- * the app is already running. Returns a cleanup function that removes the live listener.
+ * Starts listening for `wherediditgo://` deep links and invokes the corresponding handler
+ * for cold start launches and live `appUrlOpen` events.
  */
-export async function initDeepLinks(onAddTransaction: () => void): Promise<() => void> {
+export async function initDeepLinks(
+  handlers: DeepLinkHandlers | (() => void),
+): Promise<() => void> {
   if (!isNative()) return () => {}
+
+  const config: DeepLinkHandlers =
+    typeof handlers === 'function' ? { onAddTransaction: handlers } : handlers
 
   try {
     const launch = await App.getLaunchUrl()
-    if (launch?.url && isAddTransactionUrl(launch.url)) {
-      onAddTransaction()
+    if (launch?.url) {
+      const action = parseDeepLink(launch.url)
+      dispatch(action, config)
     }
   } catch {
     // No launch URL available — nothing to do.
@@ -48,9 +76,8 @@ export async function initDeepLinks(onAddTransaction: () => void): Promise<() =>
   let handle: PluginListenerHandle | undefined
   try {
     handle = await App.addListener('appUrlOpen', ({ url }) => {
-      if (isAddTransactionUrl(url)) {
-        onAddTransaction()
-      }
+      const action = parseDeepLink(url)
+      dispatch(action, config)
     })
   } catch {
     // Listener registration failed — live deep links won't be caught, but cold-start still works.

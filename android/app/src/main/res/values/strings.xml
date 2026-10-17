@@ -18,6 +18,16 @@
     <string name="widget_streak_description">Track your daily transaction logging streak</string>
     <string name="widget_streak_status_active">✓ Done today • Keep going!</string>
     <string name="widget_streak_status_pending">⚡ Log today to maintain streak!</string>
+    <string name="widget_scan_receipt_title">Scan receipt</string>
+    <string name="widget_budget_title">Budget Progress</string>
+    <string name="widget_budget_description">Track monthly budget spend and remaining runway</string>
+    <string name="widget_budget_label">Monthly Budget</string>
+    <string name="widget_budget_spent">Spent</string>
+    <string name="widget_budget_limit">Limit</string>
+    <string name="widget_budget_on_track">● On track</string>
+    <string name="widget_budget_at_risk">▲ At risk</string>
+    <string name="widget_budget_over">✕ Over budget</string>
+    <string name="widget_budget_remaining_label">Remaining</string>
 
     <!-- App shortcuts (long-press the home-screen icon) -->
     <string name="shortcut_add_transaction_short">Add transaction</string>

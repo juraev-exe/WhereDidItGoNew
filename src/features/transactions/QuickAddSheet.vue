@@ -205,6 +205,12 @@ watch(
     } else {
       resetForm()
     }
+    if (ui.scanOnOpen) {
+      ui.scanOnOpen = false
+      void nextTick(() => {
+        openReceiptScanner()
+      })
+    }
     void nextTick(() => {
       prefilling = false
     })

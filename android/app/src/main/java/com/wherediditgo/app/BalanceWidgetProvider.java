@@ -69,6 +69,17 @@ public class BalanceWidgetProvider extends AppWidgetProvider {
         );
         views.setOnClickPendingIntent(R.id.widget_quick_add_btn, addPendingIntent);
 
+        // Tap on scan button opens receipt scanner deep link
+        Intent scanIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("wherediditgo://scan"));
+        scanIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent scanPendingIntent = PendingIntent.getActivity(
+            context,
+            appWidgetId + 3000,
+            scanIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        views.setOnClickPendingIntent(R.id.widget_scan_receipt_btn, scanPendingIntent);
+
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 

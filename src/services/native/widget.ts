@@ -3,7 +3,7 @@
  *
  * Writes plain, already-formatted display strings into the SharedPreferences file
  * used by @capacitor/preferences on Android ("CapacitorStorage") so native
- * AppWidgetProviders (BalanceWidgetProvider, QuickAddWidgetProvider, StreakWidgetProvider)
+ * AppWidgetProviders (BalanceWidgetProvider, QuickAddWidgetProvider, StreakWidgetProvider, BudgetWidgetProvider)
  * can read them directly without going through the WebView/Capacitor bridge.
  */
 import { Preferences } from '@capacitor/preferences'
@@ -15,6 +15,12 @@ const KEY_MONTH_INCOME = 'widget_month_income'
 const KEY_CURRENCY_SYMBOL = 'widget_currency_symbol'
 const KEY_STREAK_CURRENT = 'widget_streak_current'
 const KEY_STREAK_ACTIVE_TODAY = 'widget_streak_active_today'
+const KEY_BUDGET_SPENT = 'widget_budget_spent'
+const KEY_BUDGET_LIMIT = 'widget_budget_limit'
+const KEY_BUDGET_PERCENT = 'widget_budget_percent'
+const KEY_BUDGET_STATUS = 'widget_budget_status'
+const KEY_BUDGET_REMAINING = 'widget_budget_remaining'
+const KEY_BUDGET_DAYS_LEFT = 'widget_budget_days_left'
 
 export interface WidgetSyncData {
   /** Overall balance across all active accounts, in minor units (cents). */
@@ -29,6 +35,18 @@ export interface WidgetSyncData {
   streakCount: number
   /** Whether a transaction has already been logged today. */
   streakActiveToday: boolean
+  /** Monthly budget total limit, in minor units (cents). Optional. */
+  budgetLimit?: number
+  /** Monthly budget spent amount, in minor units (cents). Optional. */
+  budgetSpent?: number
+  /** Monthly budget remaining amount, in minor units (cents). Optional. */
+  budgetRemaining?: number
+  /** Spend percentage 0..100. Optional. */
+  budgetPercent?: number
+  /** Budget status: 'on_track' | 'at_risk' | 'over'. Optional. */
+  budgetStatus?: 'on_track' | 'at_risk' | 'over'
+  /** Days left in current billing cycle / month. Optional. */
+  budgetDaysLeft?: number
 }
 
 export interface WidgetBalanceData {
@@ -46,19 +64,52 @@ function formatAmount(minorUnits: number): string {
 }
 
 /**
- * Pushes full balance, expense, income, and streak metrics to Android home-screen widgets.
+ * Pushes full balance, expense, income, streak, and budget metrics to Android home-screen widgets.
  */
 export async function updateAppWidgets(data: WidgetSyncData): Promise<void> {
   if (!isNative()) return
   try {
-    await Promise.all([
+    const promises: Promise<unknown>[] = [
       Preferences.set({ key: KEY_TOTAL_BALANCE, value: formatAmount(data.totalBalance) }),
       Preferences.set({ key: KEY_MONTH_SPEND, value: formatAmount(data.monthSpend) }),
       Preferences.set({ key: KEY_MONTH_INCOME, value: formatAmount(data.monthIncome) }),
       Preferences.set({ key: KEY_CURRENCY_SYMBOL, value: data.currencySymbol }),
       Preferences.set({ key: KEY_STREAK_CURRENT, value: String(Math.max(0, data.streakCount)) }),
       Preferences.set({ key: KEY_STREAK_ACTIVE_TODAY, value: String(Boolean(data.streakActiveToday)) }),
-    ])
+    ]
+
+    if (data.budgetSpent !== undefined) {
+      promises.push(
+        Preferences.set({ key: KEY_BUDGET_SPENT, value: formatAmount(data.budgetSpent) }),
+      )
+    }
+    if (data.budgetLimit !== undefined) {
+      promises.push(
+        Preferences.set({ key: KEY_BUDGET_LIMIT, value: formatAmount(data.budgetLimit) }),
+      )
+    }
+    if (data.budgetPercent !== undefined) {
+      promises.push(
+        Preferences.set({ key: KEY_BUDGET_PERCENT, value: String(Math.round(data.budgetPercent)) }),
+      )
+    }
+    if (data.budgetStatus !== undefined) {
+      promises.push(
+        Preferences.set({ key: KEY_BUDGET_STATUS, value: data.budgetStatus }),
+      )
+    }
+    if (data.budgetRemaining !== undefined) {
+      promises.push(
+        Preferences.set({ key: KEY_BUDGET_REMAINING, value: formatAmount(data.budgetRemaining) }),
+      )
+    }
+    if (data.budgetDaysLeft !== undefined) {
+      promises.push(
+        Preferences.set({ key: KEY_BUDGET_DAYS_LEFT, value: String(data.budgetDaysLeft) }),
+      )
+    }
+
+    await Promise.all(promises)
   } catch {
     // Preferences unavailable — widgets will retain last cached values
   }

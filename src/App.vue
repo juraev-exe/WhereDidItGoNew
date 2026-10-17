@@ -10,7 +10,7 @@ import AppShell from '@/app/layouts/AppShell.vue'
 import PinLockModal from '@/components/PinLockModal.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { db } from '@/db'
-import { monthKey } from '@/lib/dates'
+import { daysInMonthKey, monthKey } from '@/lib/dates'
 import { hideSplash } from '@/services/native/chrome'
 import { initDeepLinks } from '@/services/native/deepLinks'
 import { scheduleRecurringReminders } from '@/services/native/notifications'
@@ -58,19 +58,66 @@ async function checkStreakMilestone(current: number) {
   toast.success(t('streak.milestone', { count: milestone }))
 }
 
-async function runForegroundJobs() {
-  await recurring.postDue()
-  const copied = await budgets.carryForwardIfNeeded()
-  if (copied === 'copied') ui.notifyBudgetCopied(monthKey())
+function computeWidgetData() {
   const summary = summarizeMonth(transactions.transactions, budgets.budgets)
-  void updateAppWidgets({
+  const now = new Date()
+  const totalDays = daysInMonthKey(monthKey(now))
+  const currentDay = now.getDate()
+  const daysLeft = Math.max(0, totalDays - currentDay)
+
+  let budgetLimit = summary.budgetTotal
+  let budgetSpent = summary.budgetSpent
+  let budgetRemaining = Math.max(0, budgetLimit - budgetSpent)
+  let budgetPercent = budgetLimit > 0 ? (budgetSpent / budgetLimit) * 100 : 0
+  let budgetStatus: 'on_track' | 'at_risk' | 'over' = 'on_track'
+
+  if (budgetLimit > 0) {
+    if (budgetSpent > budgetLimit) {
+      budgetStatus = 'over'
+    } else {
+      const paceFraction = currentDay / totalDays
+      const spentFraction = budgetSpent / budgetLimit
+      if (spentFraction >= 0.85 || spentFraction > paceFraction + 0.15) {
+        budgetStatus = 'at_risk'
+      } else {
+        budgetStatus = 'on_track'
+      }
+    }
+  } else {
+    budgetSpent = summary.expense
+    budgetLimit = summary.income > 0 ? summary.income : 0
+    budgetRemaining = Math.max(0, budgetLimit - budgetSpent)
+    budgetPercent = budgetLimit > 0 ? (budgetSpent / budgetLimit) * 100 : 0
+    if (budgetLimit > 0 && budgetSpent > budgetLimit) {
+      budgetStatus = 'over'
+    } else if (budgetLimit > 0 && budgetPercent >= 85) {
+      budgetStatus = 'at_risk'
+    } else {
+      budgetStatus = 'on_track'
+    }
+  }
+
+  return {
     totalBalance: accounts.totalBalance,
     monthSpend: summary.expense,
     monthIncome: summary.income,
     currencySymbol: settings.currencySymbol,
     streakCount: transactions.streak.current,
     streakActiveToday: transactions.streak.activeToday,
-  })
+    budgetSpent,
+    budgetLimit,
+    budgetRemaining,
+    budgetPercent,
+    budgetStatus,
+    budgetDaysLeft: daysLeft,
+  }
+}
+
+async function runForegroundJobs() {
+  await recurring.postDue()
+  const copied = await budgets.carryForwardIfNeeded()
+  if (copied === 'copied') ui.notifyBudgetCopied(monthKey())
+  void updateAppWidgets(computeWidgetData())
   void scheduleRecurringReminders(recurring.items, categories.categories)
   if (supabaseStore.autoSyncEnabled && supabaseStore.isAuthenticated) {
     void supabaseStore.syncNow().catch(() => {})
@@ -78,17 +125,15 @@ async function runForegroundJobs() {
 }
 
 watch(
-  [() => transactions.transactions.length, () => accounts.totalBalance, () => transactions.streak.current, () => transactions.streak.activeToday],
+  [
+    () => transactions.transactions.length,
+    () => accounts.totalBalance,
+    () => transactions.streak.current,
+    () => transactions.streak.activeToday,
+    () => budgets.budgets.length,
+  ],
   () => {
-    const summary = summarizeMonth(transactions.transactions, budgets.budgets)
-    void updateAppWidgets({
-      totalBalance: accounts.totalBalance,
-      monthSpend: summary.expense,
-      monthIncome: summary.income,
-      currencySymbol: settings.currencySymbol,
-      streakCount: transactions.streak.current,
-      streakActiveToday: transactions.streak.activeToday,
-    })
+    void updateAppWidgets(computeWidgetData())
   },
 )
 
@@ -157,7 +202,13 @@ onMounted(async () => {
   }
 
   if (isNative()) {
-    removeDeepLinks = await initDeepLinks(() => ui.openAdd())
+    removeDeepLinks = await initDeepLinks({
+      onAddTransaction: () => ui.openAdd(),
+      onScanReceipt: () => ui.openScan(),
+      onOpenBudgets: () => {
+        void router.push('/budgets')
+      },
+    })
     appStateHandle = await App.addListener('appStateChange', ({ isActive }) => {
       if (isActive) {
         isObscured.value = false

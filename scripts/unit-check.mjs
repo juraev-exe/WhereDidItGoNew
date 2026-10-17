@@ -43,6 +43,7 @@ import {
   extractReceiptDate,
   extractMerchantName,
 } from '../src/services/receiptParser.ts'
+import { parseDeepLink } from '../src/services/native/deepLinks.ts'
 
 let failures = 0
 
@@ -498,6 +499,15 @@ eq('tj receipt merchant', parsedTj.merchant, 'ПАЙКАР СУПЕРМАРКЕ�
 eq('tj receipt amount', parsedTj.amount, 6300)
 eq('tj receipt date', parsedTj.date, '2026-08-20')
 eq('tj receipt category match', parsedTj.suggestedCategoryId, 'cat-groceries')
+
+console.log('\n— Deep Links & Widget Actions (Phase 11) —')
+eq('deep link add', parseDeepLink('wherediditgo://add'), 'add')
+eq('deep link scan', parseDeepLink('wherediditgo://scan'), 'scan')
+eq('deep link budgets plural', parseDeepLink('wherediditgo://budgets'), 'budgets')
+eq('deep link budget singular', parseDeepLink('wherediditgo://budget'), 'budgets')
+eq('deep link unknown action', parseDeepLink('wherediditgo://unknown'), 'unknown')
+eq('deep link http scheme ignored', parseDeepLink('https://example.com/add'), 'unknown')
+eq('deep link invalid url', parseDeepLink('not-a-valid-url'), 'unknown')
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

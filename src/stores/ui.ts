@@ -25,14 +25,22 @@ export const useUiStore = defineStore('ui', () => {
     activeModalCount.value = Math.max(0, activeModalCount.value - 1)
   }
 
+  const scanOnOpen = ref(false)
+
   function openAdd(tx?: Transaction | null) {
     editingTx.value = tx ?? null
     addSheetOpen.value = true
   }
 
+  function openScan() {
+    scanOnOpen.value = true
+    openAdd()
+  }
+
   function closeAdd() {
     addSheetOpen.value = false
     editingTx.value = null
+    scanOnOpen.value = false
   }
 
   function openCategories(cat?: Category | null, defaultKind: CategoryKind = 'expense') {
@@ -72,7 +80,9 @@ export const useUiStore = defineStore('ui', () => {
     registerModalOpen,
     registerModalClose,
     openAdd,
+    openScan,
     closeAdd,
+    scanOnOpen,
     openCategories,
     closeCategories,
     setSettingsSubpage,

@@ -26,6 +26,9 @@ export const useGoalsStore = defineStore('goals', () => {
       next: (rows) => {
         goals.value = rows.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
       },
+      error: (err) => {
+        console.error('Failed to subscribe to goals liveQuery:', err)
+      },
     })
   }
 

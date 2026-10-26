@@ -22,6 +22,9 @@ export const useDebtsStore = defineStore('debts', () => {
         debts.value = sortRows(rows)
         ready.value = true
       },
+      error: (err) => {
+        console.error('Failed to subscribe to debts liveQuery:', err)
+      },
     })
   }
 

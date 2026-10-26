@@ -2,7 +2,7 @@ import { supabase, isSupabaseConfigured, getCurrentUser } from './supabase'
 import { buildBackup, mergeFromBackup, replaceFromBackup } from './backup'
 import { db } from '@/db'
 import type { BackupPayload, Account, Category, Budget, Goal, Transaction, Recurring, Debt } from '@/types/finance'
-import type { Database, SyncStats } from '@/types/supabase'
+import type { Database, SyncStats, Json } from '@/types/supabase'
 
 export interface CloudBackupItem {
   id: string
@@ -114,7 +114,71 @@ export async function restoreCloudSnapshot(snapshotId?: string, mode: 'merge' | 
 }
 
 /**
- * Two-way granular sync between local Dexie and Supabase tables
+ * Recalculate account balances after merging transactions during sync.
+ * Preserves the manual starting base (initial balance) of each account while
+ * ensuring all combined transactions are applied exactly once without double-counting.
+ */
+async function syncAccountBalances(
+  localManualBases: Map<string, number>,
+  remoteAccounts: Database['public']['Tables']['accounts']['Row'][],
+  remoteTransactions: Database['public']['Tables']['transactions']['Row'][],
+): Promise<void> {
+  const remoteManualBases = new Map<string, number>()
+  const remoteAccMap = new Map(remoteAccounts.map((a) => [a.id, a]))
+  for (const a of remoteAccounts) remoteManualBases.set(a.id, a.balance)
+
+  for (const tx of remoteTransactions) {
+    const acc = remoteAccMap.get(tx.account_id)
+    if (acc) {
+      const sign = acc.type === 'credit' ? -1 : 1
+      const cur = remoteManualBases.get(acc.id) ?? 0
+      if (tx.type === 'income') remoteManualBases.set(acc.id, cur - sign * tx.amount)
+      else if (tx.type === 'expense' || tx.type === 'transfer') remoteManualBases.set(acc.id, cur + sign * tx.amount)
+    }
+    if (tx.type === 'transfer' && tx.to_account_id) {
+      const toAcc = remoteAccMap.get(tx.to_account_id)
+      if (toAcc) {
+        const sign = toAcc.type === 'credit' ? -1 : 1
+        const cur = remoteManualBases.get(toAcc.id) ?? 0
+        remoteManualBases.set(toAcc.id, cur - sign * tx.amount)
+      }
+    }
+  }
+
+  const allAccs = await db.accounts.toArray()
+  for (const acc of allAccs) {
+    acc.balance = localManualBases.get(acc.id) ?? remoteManualBases.get(acc.id) ?? 0
+  }
+
+  const allTxs = await db.transactions.toArray()
+  const newAccMap = new Map(allAccs.map((a) => [a.id, a]))
+
+  for (const tx of allTxs) {
+    const acc = newAccMap.get(tx.accountId)
+    if (acc) {
+      const sign = acc.type === 'credit' ? -1 : 1
+      if (tx.type === 'income') acc.balance += sign * tx.amount
+      else if (tx.type === 'expense' || tx.type === 'transfer') acc.balance -= sign * tx.amount
+    }
+    if (tx.type === 'transfer' && tx.toAccountId) {
+      const toAcc = newAccMap.get(tx.toAccountId)
+      if (toAcc) {
+        const sign = toAcc.type === 'credit' ? -1 : 1
+        toAcc.balance += sign * tx.amount
+      }
+    }
+  }
+
+  await db.accounts.bulkPut(allAccs)
+}
+
+/**
+ * Two-way granular sync between local Dexie and Supabase tables.
+ *
+ * NOTE ON DELETIONS:
+ * This performs an additive union merge (upsert). Deleting a record locally does not
+ * automatically delete it in Supabase, and vice versa. Full bidirectional deletion sync
+ * requires adding a `deleted_at: string | null` tombstone column or a local tombstone ledger.
  */
 export async function syncTwoWay(): Promise<SyncStats> {
   if (!isSupabaseConfigured) {
@@ -141,6 +205,30 @@ export async function syncTwoWay(): Promise<SyncStats> {
       db.debts.toArray(),
     ])
 
+  // Track initial manual bases for local accounts to avoid balance corruption when remote txs arrive
+  const localManualBases = new Map<string, number>()
+  const localAccMap = new Map(localAccounts.map((a) => [a.id, a]))
+  for (const a of localAccounts) localManualBases.set(a.id, a.balance)
+  for (const tx of localTxs) {
+    const acc = localAccMap.get(tx.accountId)
+    if (acc) {
+      const sign = acc.type === 'credit' ? -1 : 1
+      const cur = localManualBases.get(acc.id) ?? 0
+      if (tx.type === 'income') localManualBases.set(acc.id, cur - sign * tx.amount)
+      else if (tx.type === 'expense' || tx.type === 'transfer') localManualBases.set(acc.id, cur + sign * tx.amount)
+    }
+    if (tx.type === 'transfer' && tx.toAccountId) {
+      const toAcc = localAccMap.get(tx.toAccountId)
+      if (toAcc) {
+        const sign = toAcc.type === 'credit' ? -1 : 1
+        const cur = localManualBases.get(toAcc.id) ?? 0
+        localManualBases.set(toAcc.id, cur - sign * tx.amount)
+      }
+    }
+  }
+
+  let accountsNeedRecalculation = false
+
   // 2. Fetch Remote Data for User
   const [remoteAccs, remoteCats, remoteBudgets, remoteGoals, remoteTxs, remoteRecs, remoteDebts] =
     await Promise.all([
@@ -155,7 +243,7 @@ export async function syncTwoWay(): Promise<SyncStats> {
 
   // Process Accounts
   if (localAccounts.length > 0) {
-    const accRows = localAccounts.map((a) => ({
+    const accRows: Database['public']['Tables']['accounts']['Insert'][] = localAccounts.map((a) => ({
       id: a.id,
       user_id: user.id,
       name: a.name,
@@ -167,14 +255,14 @@ export async function syncTwoWay(): Promise<SyncStats> {
       created_at: a.createdAt || now,
       updated_at: now,
     }))
-    const { error } = await supabase.from('accounts').upsert(accRows as any, { onConflict: 'id' })
+    const { error } = await supabase.from('accounts').upsert(accRows, { onConflict: 'id' })
     if (!error) pushed += accRows.length
   }
 
-  if (remoteAccs.data && (remoteAccs.data as any[]).length > 0) {
+  if (remoteAccs.data && remoteAccs.data.length > 0) {
     const localMap = new Map(localAccounts.map((a) => [a.id, a]))
     const incoming: Account[] = []
-    for (const r of (remoteAccs.data as any[])) {
+    for (const r of remoteAccs.data) {
       if (!localMap.has(r.id)) {
         incoming.push({
           id: r.id,
@@ -191,12 +279,13 @@ export async function syncTwoWay(): Promise<SyncStats> {
     if (incoming.length > 0) {
       await db.accounts.bulkPut(incoming)
       pulled += incoming.length
+      accountsNeedRecalculation = true
     }
   }
 
   // Process Categories
   if (localCategories.length > 0) {
-    const catRows = localCategories.map((c) => ({
+    const catRows: Database['public']['Tables']['categories']['Insert'][] = localCategories.map((c) => ({
       id: c.id,
       user_id: user.id,
       name: c.name,
@@ -204,18 +293,18 @@ export async function syncTwoWay(): Promise<SyncStats> {
       icon: c.icon,
       color: c.color,
       sort_order: c.sortOrder,
-      subcategories: (c.subcategories || []) as any,
+      subcategories: (c.subcategories || []) as unknown as Json,
       created_at: now,
       updated_at: now,
     }))
-    const { error } = await supabase.from('categories').upsert(catRows as any, { onConflict: 'id' })
+    const { error } = await supabase.from('categories').upsert(catRows, { onConflict: 'id' })
     if (!error) pushed += catRows.length
   }
 
-  if (remoteCats.data && (remoteCats.data as any[]).length > 0) {
+  if (remoteCats.data && remoteCats.data.length > 0) {
     const localMap = new Map(localCategories.map((c) => [c.id, c]))
     const incoming: Category[] = []
-    for (const r of (remoteCats.data as any[])) {
+    for (const r of remoteCats.data) {
       if (!localMap.has(r.id)) {
         incoming.push({
           id: r.id,
@@ -224,7 +313,7 @@ export async function syncTwoWay(): Promise<SyncStats> {
           icon: r.icon,
           color: r.color,
           sortOrder: r.sort_order,
-          subcategories: Array.isArray(r.subcategories) ? (r.subcategories as any) : [],
+          subcategories: Array.isArray(r.subcategories) ? (r.subcategories as Category['subcategories']) : [],
         })
       }
     }
@@ -236,7 +325,7 @@ export async function syncTwoWay(): Promise<SyncStats> {
 
   // Process Transactions
   if (localTxs.length > 0) {
-    const txRows = localTxs.map((t) => ({
+    const txRows: Database['public']['Tables']['transactions']['Insert'][] = localTxs.map((t) => ({
       id: t.id,
       user_id: user.id,
       type: t.type,
@@ -250,14 +339,14 @@ export async function syncTwoWay(): Promise<SyncStats> {
       created_at: t.createdAt || now,
       updated_at: t.updatedAt || now,
     }))
-    const { error } = await supabase.from('transactions').upsert(txRows as any, { onConflict: 'id' })
+    const { error } = await supabase.from('transactions').upsert(txRows, { onConflict: 'id' })
     if (!error) pushed += txRows.length
   }
 
-  if (remoteTxs.data && (remoteTxs.data as any[]).length > 0) {
+  if (remoteTxs.data && remoteTxs.data.length > 0) {
     const localMap = new Map(localTxs.map((t) => [t.id, t]))
     const incoming: Transaction[] = []
-    for (const r of (remoteTxs.data as any[])) {
+    for (const r of remoteTxs.data) {
       const local = localMap.get(r.id)
       if (!local || new Date(r.updated_at) > new Date(local.updatedAt)) {
         incoming.push({
@@ -278,12 +367,18 @@ export async function syncTwoWay(): Promise<SyncStats> {
     if (incoming.length > 0) {
       await db.transactions.bulkPut(incoming)
       pulled += incoming.length
+      accountsNeedRecalculation = true
     }
+  }
+
+  // Recalculate account balances if any transactions or accounts were pulled
+  if (accountsNeedRecalculation) {
+    await syncAccountBalances(localManualBases, remoteAccs.data || [], remoteTxs.data || [])
   }
 
   // Process Budgets
   if (localBudgets.length > 0) {
-    const budgetRows = localBudgets.map((b) => ({
+    const budgetRows: Database['public']['Tables']['budgets']['Insert'][] = localBudgets.map((b) => ({
       id: b.id,
       user_id: user.id,
       category_id: b.categoryId,
@@ -293,14 +388,14 @@ export async function syncTwoWay(): Promise<SyncStats> {
       created_at: now,
       updated_at: now,
     }))
-    const { error } = await supabase.from('budgets').upsert(budgetRows as any, { onConflict: 'id' })
+    const { error } = await supabase.from('budgets').upsert(budgetRows, { onConflict: 'id' })
     if (!error) pushed += budgetRows.length
   }
 
-  if (remoteBudgets.data && (remoteBudgets.data as any[]).length > 0) {
+  if (remoteBudgets.data && remoteBudgets.data.length > 0) {
     const localMap = new Map(localBudgets.map((b) => [b.id, b]))
     const incoming: Budget[] = []
-    for (const r of (remoteBudgets.data as any[])) {
+    for (const r of remoteBudgets.data) {
       if (!localMap.has(r.id)) {
         incoming.push({
           id: r.id,
@@ -319,7 +414,7 @@ export async function syncTwoWay(): Promise<SyncStats> {
 
   // Process Goals
   if (localGoals.length > 0) {
-    const goalRows = localGoals.map((g) => ({
+    const goalRows: Database['public']['Tables']['goals']['Insert'][] = localGoals.map((g) => ({
       id: g.id,
       user_id: user.id,
       name: g.name,
@@ -331,14 +426,14 @@ export async function syncTwoWay(): Promise<SyncStats> {
       created_at: g.createdAt || now,
       updated_at: now,
     }))
-    const { error } = await supabase.from('goals').upsert(goalRows as any, { onConflict: 'id' })
+    const { error } = await supabase.from('goals').upsert(goalRows, { onConflict: 'id' })
     if (!error) pushed += goalRows.length
   }
 
-  if (remoteGoals.data && (remoteGoals.data as any[]).length > 0) {
+  if (remoteGoals.data && remoteGoals.data.length > 0) {
     const localMap = new Map(localGoals.map((g) => [g.id, g]))
     const incoming: Goal[] = []
-    for (const r of (remoteGoals.data as any[])) {
+    for (const r of remoteGoals.data) {
       if (!localMap.has(r.id)) {
         incoming.push({
           id: r.id,
@@ -360,7 +455,7 @@ export async function syncTwoWay(): Promise<SyncStats> {
 
   // Process Debts
   if (localDebts.length > 0) {
-    const debtRows = localDebts.map((d) => ({
+    const debtRows: Database['public']['Tables']['debts']['Insert'][] = localDebts.map((d) => ({
       id: d.id,
       user_id: user.id,
       type: d.type,
@@ -373,14 +468,14 @@ export async function syncTwoWay(): Promise<SyncStats> {
       created_at: d.createdAt || now,
       updated_at: d.updatedAt || now,
     }))
-    const { error } = await supabase.from('debts').upsert(debtRows as any, { onConflict: 'id' })
+    const { error } = await supabase.from('debts').upsert(debtRows, { onConflict: 'id' })
     if (!error) pushed += debtRows.length
   }
 
-  if (remoteDebts.data && (remoteDebts.data as any[]).length > 0) {
+  if (remoteDebts.data && remoteDebts.data.length > 0) {
     const localMap = new Map(localDebts.map((d) => [d.id, d]))
     const incoming: Debt[] = []
-    for (const r of (remoteDebts.data as any[])) {
+    for (const r of remoteDebts.data) {
       const local = localMap.get(r.id)
       if (!local || new Date(r.updated_at) > new Date(local.updatedAt)) {
         incoming.push({
@@ -405,7 +500,7 @@ export async function syncTwoWay(): Promise<SyncStats> {
 
   // Process Recurring
   if (localRecurring.length > 0) {
-    const recRows = localRecurring.map((rec) => ({
+    const recRows: Database['public']['Tables']['recurring']['Insert'][] = localRecurring.map((rec) => ({
       id: rec.id,
       user_id: user.id,
       type: rec.type,
@@ -418,14 +513,14 @@ export async function syncTwoWay(): Promise<SyncStats> {
       created_at: rec.createdAt || now,
       updated_at: now,
     }))
-    const { error } = await supabase.from('recurring').upsert(recRows as any, { onConflict: 'id' })
+    const { error } = await supabase.from('recurring').upsert(recRows, { onConflict: 'id' })
     if (!error) pushed += recRows.length
   }
 
-  if (remoteRecs.data && (remoteRecs.data as any[]).length > 0) {
+  if (remoteRecs.data && remoteRecs.data.length > 0) {
     const localMap = new Map(localRecurring.map((r) => [r.id, r]))
     const incoming: Recurring[] = []
-    for (const r of (remoteRecs.data as any[])) {
+    for (const r of remoteRecs.data) {
       if (!localMap.has(r.id)) {
         incoming.push({
           id: r.id,

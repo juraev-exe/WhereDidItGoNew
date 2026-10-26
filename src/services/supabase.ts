@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient, type Session, type User, type AuthChangeEvent } from '@supabase/supabase-js'
+import type { Database } from '@/types/supabase'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
@@ -10,9 +11,11 @@ export const isSupabaseConfigured = Boolean(
   !supabaseAnonKey.includes('your-anon-key')
 )
 
-export const supabase: SupabaseClient<any, 'public', any> = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-anon-key',
+// When Supabase is not configured, we create a client with an invalid local URL
+// so no credentials are ever sent to an unknown external domain.
+export const supabase: SupabaseClient<Database> = createClient<Database>(
+  supabaseUrl || 'http://localhost:0',
+  supabaseAnonKey || 'not-configured',
   {
     auth: {
       persistSession: true,

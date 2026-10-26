@@ -15,6 +15,9 @@ export const useCategoriesStore = defineStore('categories', () => {
       next: (rows) => {
         categories.value = rows
       },
+      error: (err) => {
+        console.error('Failed to subscribe to categories liveQuery:', err)
+      },
     })
   }
 

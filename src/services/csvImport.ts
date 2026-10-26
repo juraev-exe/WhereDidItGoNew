@@ -100,7 +100,9 @@ function toIsoIfValid(year: number, month: number, day: number): string | null {
  * ISO, `yyyy/MM/dd`, dot-separated day-first (common in RU/EU exports), then
  * slash/dash-separated where day-vs-month is inferred from which value is >12.
  */
-export function parseCsvDateToIso(raw: string): string | null {
+export type CsvDateFormatHint = 'auto' | 'dmy' | 'mdy'
+
+export function parseCsvDateToIso(raw: string, formatHint: CsvDateFormatHint = 'auto'): string | null {
   const trimmed = raw.trim()
   if (!trimmed) return null
 
@@ -117,8 +119,22 @@ export function parseCsvDateToIso(raw: string): string | null {
   if (slash) {
     const a = Number(slash[1])
     const b = Number(slash[2])
-    const month = a > 12 ? b : a
-    const day = a > 12 ? a : b
+    let month: number
+    let day: number
+    if (a > 12) {
+      day = a
+      month = b
+    } else if (b > 12) {
+      month = a
+      day = b
+    } else if (formatHint === 'dmy') {
+      day = a
+      month = b
+    } else {
+      // Ambiguous (both <= 12): Default to US MM/DD/YYYY format unless hint is dmy
+      month = a
+      day = b
+    }
     return toIsoIfValid(Number(slash[3]), month, day)
   }
 
@@ -126,8 +142,22 @@ export function parseCsvDateToIso(raw: string): string | null {
   if (dash) {
     const a = Number(dash[1])
     const b = Number(dash[2])
-    const month = a > 12 ? b : a
-    const day = a > 12 ? a : b
+    let month: number
+    let day: number
+    if (a > 12) {
+      day = a
+      month = b
+    } else if (b > 12) {
+      month = a
+      day = b
+    } else if (formatHint === 'dmy') {
+      day = a
+      month = b
+    } else {
+      // Ambiguous (both <= 12): Default to US MM-DD-YYYY format unless hint is dmy
+      month = a
+      day = b
+    }
     return toIsoIfValid(Number(dash[3]), month, day)
   }
 

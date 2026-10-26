@@ -16,6 +16,9 @@ export const useBudgetsStore = defineStore('budgets', () => {
       next: (rows) => {
         budgets.value = rows
       },
+      error: (err) => {
+        console.error('Failed to subscribe to budgets liveQuery:', err)
+      },
     })
   }
 

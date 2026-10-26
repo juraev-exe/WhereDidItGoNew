@@ -27,6 +27,9 @@ export const useRecurringStore = defineStore('recurring', () => {
       next: (rows) => {
         items.value = rows.sort((a, b) => a.dayOfMonth - b.dayOfMonth || a.createdAt.localeCompare(b.createdAt))
       },
+      error: (err) => {
+        console.error('Failed to subscribe to recurring liveQuery:', err)
+      },
     })
   }
 

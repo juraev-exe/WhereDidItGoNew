@@ -394,14 +394,16 @@ export async function mergeFromBackup(payload: BackupPayload): Promise<void> {
         const acc = existingAccMap.get(tx.accountId)
         if (acc) {
           const sign = acc.type === 'credit' ? -1 : 1
-          if (tx.type === 'income') localManualBases.set(acc.id, localManualBases.get(acc.id)! - sign * tx.amount)
-          else if (tx.type === 'expense' || tx.type === 'transfer') localManualBases.set(acc.id, localManualBases.get(acc.id)! + sign * tx.amount)
+          const cur = localManualBases.get(acc.id) ?? 0
+          if (tx.type === 'income') localManualBases.set(acc.id, cur - sign * tx.amount)
+          else if (tx.type === 'expense' || tx.type === 'transfer') localManualBases.set(acc.id, cur + sign * tx.amount)
         }
         if (tx.type === 'transfer' && tx.toAccountId) {
           const toAcc = existingAccMap.get(tx.toAccountId)
           if (toAcc) {
             const sign = toAcc.type === 'credit' ? -1 : 1
-            localManualBases.set(toAcc.id, localManualBases.get(toAcc.id)! - sign * tx.amount)
+            const cur = localManualBases.get(toAcc.id) ?? 0
+            localManualBases.set(toAcc.id, cur - sign * tx.amount)
           }
         }
       }
@@ -415,14 +417,16 @@ export async function mergeFromBackup(payload: BackupPayload): Promise<void> {
         const acc = remoteAccMap.get(tx.accountId)
         if (acc) {
           const sign = acc.type === 'credit' ? -1 : 1
-          if (tx.type === 'income') remoteManualBases.set(acc.id, remoteManualBases.get(acc.id)! - sign * tx.amount)
-          else if (tx.type === 'expense' || tx.type === 'transfer') remoteManualBases.set(acc.id, remoteManualBases.get(acc.id)! + sign * tx.amount)
+          const cur = remoteManualBases.get(acc.id) ?? 0
+          if (tx.type === 'income') remoteManualBases.set(acc.id, cur - sign * tx.amount)
+          else if (tx.type === 'expense' || tx.type === 'transfer') remoteManualBases.set(acc.id, cur + sign * tx.amount)
         }
         if (tx.type === 'transfer' && tx.toAccountId) {
           const toAcc = remoteAccMap.get(tx.toAccountId)
           if (toAcc) {
             const sign = toAcc.type === 'credit' ? -1 : 1
-            remoteManualBases.set(toAcc.id, remoteManualBases.get(toAcc.id)! - sign * tx.amount)
+            const cur = remoteManualBases.get(toAcc.id) ?? 0
+            remoteManualBases.set(toAcc.id, cur - sign * tx.amount)
           }
         }
       }
@@ -449,7 +453,7 @@ export async function mergeFromBackup(payload: BackupPayload): Promise<void> {
       const newAccMap = new Map(allAccs.map((a) => [a.id, a]))
       
       for (const acc of allAccs) {
-        acc.balance = localManualBases.has(acc.id) ? localManualBases.get(acc.id)! : (remoteManualBases.get(acc.id) || 0)
+        acc.balance = localManualBases.get(acc.id) ?? remoteManualBases.get(acc.id) ?? 0
       }
 
       for (const tx of allTxs) {

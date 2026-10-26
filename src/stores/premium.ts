@@ -5,6 +5,7 @@ import { hasActiveRewardedPass, showRewardedAd, getRewardedPassHoursRemaining } 
 import { useAccountsStore } from '@/stores/accounts'
 import { useCategoriesStore } from '@/stores/categories'
 import { useTransactionsStore } from '@/stores/transactions'
+import { monthKey, isInMonth } from '@/lib/dates'
 
 export const MAX_FREE_ACCOUNTS = 2
 export const MAX_FREE_MONTHLY_TXS = 100
@@ -111,9 +112,8 @@ export const usePremiumStore = defineStore('premium', () => {
   function canAddTransaction(): boolean {
     if (isPremiumUser.value) return true
     const txStore = useTransactionsStore()
-    const now = new Date()
-    const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    const countThisMonth = txStore.transactions.filter((t) => t.date.startsWith(currentMonthPrefix)).length
+    const currentKey = monthKey()
+    const countThisMonth = txStore.transactions.filter((t) => isInMonth(t.date, currentKey)).length
     return countThisMonth < MAX_FREE_MONTHLY_TXS
   }
 

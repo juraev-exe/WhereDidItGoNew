@@ -33,6 +33,68 @@ const RTC_CONFIG: RTCConfiguration = {
   ],
 }
 
+/** Max safe payload size per WebRTC DataChannel message (48 KB, well below the 64 KB limit). */
+const CHUNK_SIZE = 48 * 1024
+
+interface P2PChunkHeader {
+  __p2p_chunk__: true
+  id: string
+  index: number
+  total: number
+  chunk: string
+}
+
+function sendChunked(channel: RTCDataChannel, rawData: string): void {
+  if (rawData.length <= CHUNK_SIZE) {
+    channel.send(rawData)
+    return
+  }
+  const id = Math.random().toString(36).slice(2, 10)
+  const total = Math.ceil(rawData.length / CHUNK_SIZE)
+  for (let i = 0; i < total; i++) {
+    const chunkStr = rawData.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)
+    const msg: P2PChunkHeader = {
+      __p2p_chunk__: true,
+      id,
+      index: i,
+      total,
+      chunk: chunkStr,
+    }
+    channel.send(JSON.stringify(msg))
+  }
+}
+
+class ChunkReceiver {
+  private buffers = new Map<string, { chunks: string[]; total: number; received: number }>()
+
+  handleMessage(raw: string): string | null {
+    try {
+      const parsed = JSON.parse(raw)
+      if (parsed && typeof parsed === 'object' && parsed.__p2p_chunk__ === true) {
+        const { id, index, total, chunk } = parsed as P2PChunkHeader
+        let entry = this.buffers.get(id)
+        if (!entry) {
+          entry = { chunks: new Array(total), total, received: 0 }
+          this.buffers.set(id, entry)
+        }
+        if (!entry.chunks[index]) {
+          entry.chunks[index] = chunk
+          entry.received++
+        }
+        if (entry.received === entry.total) {
+          const full = entry.chunks.join('')
+          this.buffers.delete(id)
+          return full
+        }
+        return null // Awaiting remaining chunks
+      }
+    } catch {
+      // Not a JSON chunk header, return as raw string
+    }
+    return raw
+  }
+}
+
 /**
  * Compact base64 representation of SDP session description.
  */
@@ -91,6 +153,7 @@ function waitForIceGathering(pc: RTCPeerConnection): Promise<void> {
 export class P2PHostSession {
   private pc: RTCPeerConnection
   private dc: RTCDataChannel | null = null
+  private chunkReceiver = new ChunkReceiver()
   private onStatus: (status: P2PSyncStatus, details?: string) => void
   private onComplete: (stats: { syncedItems: number }) => void
 
@@ -141,7 +204,7 @@ export class P2PHostSession {
             categoriesCount: backup.categories.length,
           },
         }
-        channel.send(JSON.stringify(msg))
+        sendChunked(channel, JSON.stringify(msg))
       } catch (err) {
         this.onStatus('error', err instanceof Error ? err.message : 'Sync failed')
       }
@@ -149,10 +212,12 @@ export class P2PHostSession {
 
     channel.onmessage = async (evt) => {
       try {
-        const data = JSON.parse(evt.data as string) as P2PSyncMessage
+        const fullPayload = this.chunkReceiver.handleMessage(evt.data as string)
+        if (!fullPayload) return
+        const data = JSON.parse(fullPayload) as P2PSyncMessage
         if (data.type === 'snapshot' && data.payload) {
           await mergeFromBackup(data.payload)
-          channel.send(JSON.stringify({ type: 'ack' }))
+          sendChunked(channel, JSON.stringify({ type: 'ack' }))
           this.onStatus('complete')
           this.onComplete({
             syncedItems: (data.stats?.txCount ?? data.payload.transactions.length) + (data.stats?.categoriesCount ?? 0),
@@ -180,6 +245,7 @@ export class P2PHostSession {
 export class P2PClientSession {
   private pc: RTCPeerConnection
   private dc: RTCDataChannel | null = null
+  private chunkReceiver = new ChunkReceiver()
   private onStatus: (status: P2PSyncStatus, details?: string) => void
   private onComplete: (stats: { syncedItems: number }) => void
 
@@ -227,7 +293,7 @@ export class P2PClientSession {
             categoriesCount: backup.categories.length,
           },
         }
-        channel.send(JSON.stringify(msg))
+        sendChunked(channel, JSON.stringify(msg))
       } catch (err) {
         this.onStatus('error', err instanceof Error ? err.message : 'Upload failed')
       }
@@ -235,10 +301,12 @@ export class P2PClientSession {
 
     channel.onmessage = async (evt) => {
       try {
-        const data = JSON.parse(evt.data as string) as P2PSyncMessage
+        const fullPayload = this.chunkReceiver.handleMessage(evt.data as string)
+        if (!fullPayload) return
+        const data = JSON.parse(fullPayload) as P2PSyncMessage
         if (data.type === 'snapshot' && data.payload) {
           await mergeFromBackup(data.payload)
-          channel.send(JSON.stringify({ type: 'ack' }))
+          sendChunked(channel, JSON.stringify({ type: 'ack' }))
           this.onStatus('complete')
           this.onComplete({
             syncedItems: (data.stats?.txCount ?? data.payload.transactions.length) + (data.stats?.categoriesCount ?? 0),

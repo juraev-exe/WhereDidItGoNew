@@ -35,6 +35,9 @@ export const useTransactionsStore = defineStore('transactions', () => {
           return b.date.localeCompare(a.date)
         })
       },
+      error: (err) => {
+        console.error('Failed to subscribe to transactions liveQuery:', err)
+      },
     })
   }
 

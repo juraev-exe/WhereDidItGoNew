@@ -16,6 +16,9 @@ export const useAccountsStore = defineStore('accounts', () => {
       next: (rows) => {
         accounts.value = rows.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
       },
+      error: (err) => {
+        console.error('Failed to subscribe to accounts liveQuery:', err)
+      },
     })
   }
 

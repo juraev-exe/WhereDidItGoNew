@@ -275,12 +275,65 @@ export function parseBankNotification(
     amount: minorAmount,
     type,
     note,
-    date: todayISO(),
+    date: extractSmsDate(cleaned),
     rawText: cleaned,
     rawSender: sender,
     confidence,
     matchedKeyword,
   }
+}
+
+/**
+ * Attempts to extract transaction date from bank notification text, falling back to todayISO().
+ */
+function extractSmsDate(text: string): string {
+  // 1. ISO format: YYYY-MM-DD
+  const isoMatch = /\b(\d{4})-(\d{1,2})-(\d{1,2})\b/.exec(text)
+  if (isoMatch) {
+    const y = Number(isoMatch[1])
+    const m = Number(isoMatch[2])
+    const d = Number(isoMatch[3])
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    }
+  }
+
+  // 2. DD.MM.YYYY or DD.MM.YY
+  const dotMatch = /\b(\d{1,2})\.(\d{1,2})\.(\d{2,4})\b/.exec(text)
+  if (dotMatch) {
+    const d = Number(dotMatch[1])
+    const m = Number(dotMatch[2])
+    let y = Number(dotMatch[3])
+    if (y < 100) y += 2000
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    }
+  }
+
+  // 3. DD/MM/YYYY or DD/MM/YY
+  const slashMatch = /\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/.exec(text)
+  if (slashMatch) {
+    const d = Number(slashMatch[1])
+    const m = Number(slashMatch[2])
+    let y = Number(slashMatch[3])
+    if (y < 100) y += 2000
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    }
+  }
+
+  // 4. DD.MM followed by optional time (e.g., "15.04 12:30" or "15.04 v 12:30")
+  const shortDotMatch = /\b(\d{1,2})\.(\d{1,2})(?:\s+(?:[vвat]\s*)?\d{1,2}:\d{2})?\b/.exec(text)
+  if (shortDotMatch) {
+    const d = Number(shortDotMatch[1])
+    const m = Number(shortDotMatch[2])
+    const currentYear = new Date().getFullYear()
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return `${currentYear}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    }
+  }
+
+  return todayISO()
 }
 
 /**
@@ -348,6 +401,6 @@ export function matchCategory(
   const nameMatch = kindCategories.find((c) => noteLower.includes(c.name.toLowerCase()))
   if (nameMatch) return nameMatch
 
-  // 3. Fallback: first category of matching kind
-  return kindCategories[0]
+  // 3. No confident match — return undefined so caller can prompt user or leave unassigned
+  return undefined
 }

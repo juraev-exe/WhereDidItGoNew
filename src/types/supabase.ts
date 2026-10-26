@@ -222,6 +222,8 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['cloud_backups']['Insert']>
       }
     }
+    Views: Record<string, never>
+    Functions: Record<string, never>
   }
 }
 

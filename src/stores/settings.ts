@@ -13,9 +13,18 @@ import { getCurrencySymbol } from '@/lib/money'
 import { applyStatusBar } from '@/services/native/chrome'
 import type { AppFont, ColorScheme, CurrencyPosition, HeroMetric, NavLabelStyle, PrivacyMode, ThemeMode } from '@/types/finance'
 
-function resolveTheme(mode: ThemeMode): 'light' | 'dark' | 'oled' {
-  return mode
+const VALID_COLOR_SCHEMES: ColorScheme[] = [
+  'teal', 'blue', 'purple', 'rose', 'amber', 'obsidian',
+  'luxury-navy', 'violet-peach', 'navy-cyan',
+]
+
+function isColorScheme(value: string | undefined | null): value is ColorScheme {
+  return VALID_COLOR_SCHEMES.includes(value as ColorScheme)
 }
+
+const PIN_PBKDF2_ITERATIONS = 100_000
+
+
 
 function isCurrencyPosition(value: string | undefined | null): value is CurrencyPosition {
   return value === 'before' || value === 'after'
@@ -55,6 +64,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const lastBackupAt = ref('')
   const pinEnabled = ref(false)
   const pinHash = ref('')
+  const pinSalt = ref('')
   const biometricEnabled = ref(false)
   const isUnlocked = ref(true)
   const showActivityTab = ref(true)
@@ -70,11 +80,38 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const intlLocale = computed(() => toIntlLocale(locale.value))
 
-  async function hashPin(pin: string): Promise<string> {
+  /** Legacy single-pass SHA-256 hash (for backward-compatible verification only). */
+  async function legacyHashPin(pin: string): Promise<string> {
     const msgUint8 = new TextEncoder().encode('wdg_pin_' + pin)
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8)
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  /** PBKDF2-SHA256 hash with random salt — resistant to brute-force. */
+  async function hashPinPbkdf2(pin: string, salt: Uint8Array): Promise<string> {
+    const enc = new TextEncoder()
+    const baseKey = await crypto.subtle.importKey(
+      'raw', enc.encode(pin), 'PBKDF2', false, ['deriveBits'],
+    )
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt: salt as unknown as BufferSource, iterations: PIN_PBKDF2_ITERATIONS, hash: 'SHA-256' },
+      baseKey, 256,
+    )
+    const hashArray = Array.from(new Uint8Array(bits))
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  function bytesToHex(bytes: Uint8Array): string {
+    return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  function hexToBytes(hex: string): Uint8Array {
+    const bytes = new Uint8Array(hex.length / 2)
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16)
+    }
+    return bytes
   }
 
   async function load() {
@@ -108,6 +145,7 @@ export const useSettingsStore = defineStore('settings', () => {
     lastBackupAt.value = map.lastBackupAt ?? ''
     pinEnabled.value = map.pinEnabled === 'true'
     pinHash.value = map.pinHash ?? ''
+    pinSalt.value = map.pinSalt ?? ''
     biometricEnabled.value = map.biometricEnabled === 'true'
     showActivityTab.value = map.showActivityTab !== 'false'
     showCategoriesTab.value = map.showCategoriesTab !== 'false'
@@ -125,11 +163,13 @@ export const useSettingsStore = defineStore('settings', () => {
     } else {
       isUnlocked.value = true
     }
-    colorScheme.value = (map.colorScheme as ColorScheme) || 'teal'
+    colorScheme.value = isColorScheme(map.colorScheme) ? map.colorScheme : 'teal'
     fontFamily.value = (map.fontFamily as AppFont) || 'system'
     locale.value = localeCode
     setI18nLocale(locale.value)
     applyTheme(theme.value)
+    // Auto-migrate legacy single-pass PIN hash to PBKDF2 on next unlock
+    // (done in verifyPin)
     applyColorScheme(colorScheme.value)
     applyFontFamily(fontFamily.value)
     ready.value = true
@@ -161,33 +201,54 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   async function setPin(pinCode: string) {
-    const hash = await hashPin(pinCode)
+    const salt = crypto.getRandomValues(new Uint8Array(16))
+    const saltHex = bytesToHex(salt)
+    const hash = await hashPinPbkdf2(pinCode, salt)
     pinEnabled.value = true
     pinHash.value = hash
+    pinSalt.value = saltHex
     isUnlocked.value = true
     await db.meta.bulkPut([
       { key: 'pinEnabled', value: 'true' },
       { key: 'pinHash', value: hash },
+      { key: 'pinSalt', value: saltHex },
     ])
   }
 
   async function removePin() {
     pinEnabled.value = false
     pinHash.value = ''
+    pinSalt.value = ''
     biometricEnabled.value = false
     isUnlocked.value = true
     await db.meta.bulkPut([
       { key: 'pinEnabled', value: 'false' },
       { key: 'pinHash', value: '' },
+      { key: 'pinSalt', value: '' },
       { key: 'biometricEnabled', value: 'false' },
     ])
   }
 
   async function verifyPin(pinCode: string): Promise<boolean> {
     if (!pinHash.value) return true
-    const hash = await hashPin(pinCode)
-    if (hash === pinHash.value) {
+
+    // Try PBKDF2 verification first (new format with salt)
+    if (pinSalt.value) {
+      const salt = hexToBytes(pinSalt.value)
+      const hash = await hashPinPbkdf2(pinCode, salt)
+      if (hash === pinHash.value) {
+        isUnlocked.value = true
+        return true
+      }
+      return false
+    }
+
+    // Fall back to legacy SHA-256 verification and auto-migrate
+    const legacyHash = await legacyHashPin(pinCode)
+    if (legacyHash === pinHash.value) {
       isUnlocked.value = true
+      // Auto-migrate to PBKDF2 on successful legacy verification
+      await setPin(pinCode)
       return true
     }
     return false
@@ -210,9 +271,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
   function applyTheme(mode: ThemeMode) {
     theme.value = mode
-    resolvedTheme.value = resolveTheme(mode)
-    document.documentElement.setAttribute('data-theme', resolvedTheme.value)
-    void applyStatusBar(resolvedTheme.value)
+    resolvedTheme.value = mode
+    document.documentElement.setAttribute('data-theme', mode)
+    void applyStatusBar(mode)
   }
 
   async function setTheme(mode: ThemeMode) {
@@ -341,6 +402,7 @@ export const useSettingsStore = defineStore('settings', () => {
             categoryId: b.categoryId,
             month,
             limitAmount: b.limitAmount,
+            rollover: false,
           })),
       )
     }

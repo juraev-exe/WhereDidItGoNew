@@ -378,9 +378,19 @@ export function matchCategory(
   const kindCategories = categories.filter((c) => c.kind === parsed.type)
   if (kindCategories.length === 0) return undefined
 
-  // 1. Direct keyword match
-  if (parsed.matchedKeyword) {
-    const kw = parsed.matchedKeyword.toLowerCase()
+  // 1. Resolve keyword: use parsed.matchedKeyword, or scan note + rawText
+  let kw = parsed.matchedKeyword?.toLowerCase()
+  if (!kw) {
+    const textToScan = `${parsed.note} ${parsed.rawText || ''}`.toLowerCase()
+    for (const [catKey, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+      if (keywords.some((w) => textToScan.includes(w))) {
+        kw = catKey
+        break
+      }
+    }
+  }
+
+  if (kw) {
     const found = kindCategories.find((c) => {
       const name = c.name.toLowerCase()
       const icon = c.icon.toLowerCase()
@@ -397,10 +407,17 @@ export function matchCategory(
   }
 
   // 2. Note substring match in category names
-  const noteLower = parsed.note.toLowerCase()
-  const nameMatch = kindCategories.find((c) => noteLower.includes(c.name.toLowerCase()))
-  if (nameMatch) return nameMatch
+  if (parsed.note) {
+    const noteLower = parsed.note.toLowerCase()
+    const nameMatch = kindCategories.find((c) => noteLower.includes(c.name.toLowerCase()))
+    if (nameMatch) return nameMatch
+  }
 
-  // 3. No confident match — return undefined so caller can prompt user or leave unassigned
+  // 3. If there is only one category of this kind (e.g., single Income category "Salary"), match it
+  if (kindCategories.length === 1) {
+    return kindCategories[0]
+  }
+
+  // 4. Multiple categories of this kind and no clear keyword match — return undefined to avoid greedy misclassification
   return undefined
 }

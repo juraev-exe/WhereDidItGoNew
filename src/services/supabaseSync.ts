@@ -313,7 +313,7 @@ export async function syncTwoWay(): Promise<SyncStats> {
           icon: r.icon,
           color: r.color,
           sortOrder: r.sort_order,
-          subcategories: Array.isArray(r.subcategories) ? (r.subcategories as Category['subcategories']) : [],
+          subcategories: Array.isArray(r.subcategories) ? (r.subcategories as unknown as Category['subcategories']) : [],
         })
       }
     }

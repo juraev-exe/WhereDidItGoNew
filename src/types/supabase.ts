@@ -35,6 +35,7 @@ export interface Database {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['accounts']['Insert']>
+        Relationships: []
       }
       categories: {
         Row: {
@@ -62,6 +63,7 @@ export interface Database {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['categories']['Insert']>
+        Relationships: []
       }
       budgets: {
         Row: {
@@ -85,6 +87,7 @@ export interface Database {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['budgets']['Insert']>
+        Relationships: []
       }
       goals: {
         Row: {
@@ -112,6 +115,7 @@ export interface Database {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['goals']['Insert']>
+        Relationships: []
       }
       transactions: {
         Row: {
@@ -143,6 +147,7 @@ export interface Database {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['transactions']['Insert']>
+        Relationships: []
       }
       recurring: {
         Row: {
@@ -172,6 +177,7 @@ export interface Database {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['recurring']['Insert']>
+        Relationships: []
       }
       debts: {
         Row: {
@@ -201,6 +207,7 @@ export interface Database {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['debts']['Insert']>
+        Relationships: []
       }
       cloud_backups: {
         Row: {
@@ -220,6 +227,7 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['cloud_backups']['Insert']>
+        Relationships: []
       }
     }
     Views: Record<string, never>

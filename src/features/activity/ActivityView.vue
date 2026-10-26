@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ListPlus, Search, SearchX } from '@lucide/vue'
+import { ListPlus, Search, SearchX, X } from '@lucide/vue'
+import ActivityHeatmap, { type ActivityDay } from '@/components/ui/ActivityHeatmap.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
@@ -68,9 +69,39 @@ const categoryOptions = computed(() => [
   ...categories.categories.map((c) => ({ value: c.id, label: c.name })),
 ])
 
+const selectedHeatmapDate = ref<string | null>(null)
+
+const heatmapDays = computed<ActivityDay[]>(() => {
+  const map = new Map<string, { count: number; amount: number }>()
+  for (const tx of transactions.transactions) {
+    const d = tx.date.slice(0, 10)
+    const cur = map.get(d) ?? { count: 0, amount: 0 }
+    cur.count += 1
+    if (tx.type === 'expense' || tx.type === 'income') {
+      cur.amount += tx.amount
+    }
+    map.set(d, cur)
+  }
+  return [...map.entries()].map(([date, val]) => ({
+    date,
+    count: val.count,
+    amount: val.amount,
+  }))
+})
+
+function onHeatmapSelectDate(date: string) {
+  if (selectedHeatmapDate.value === date) {
+    selectedHeatmapDate.value = null
+  } else {
+    selectedHeatmapDate.value = date
+  }
+  void tickFeedback()
+}
+
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
   return transactions.transactions.filter((tx) => {
+    if (selectedHeatmapDate.value && tx.date.slice(0, 10) !== selectedHeatmapDate.value) return false
     if (month.value && !isInMonth(tx.date, month.value)) return false
     if (typeFilter.value !== 'all' && tx.type !== typeFilter.value) return false
     if (categoryFilter.value !== 'all' && tx.categoryId !== categoryFilter.value) return false
@@ -96,13 +127,18 @@ const filteredTotals = computed(() => {
 })
 
 const hasNarrowedFilters = computed(
-  () => typeFilter.value !== 'all' || categoryFilter.value !== 'all' || query.value.trim() !== '',
+  () =>
+    typeFilter.value !== 'all' ||
+    categoryFilter.value !== 'all' ||
+    query.value.trim() !== '' ||
+    selectedHeatmapDate.value !== null,
 )
 
 function clearFilters() {
   typeFilter.value = 'all'
   categoryFilter.value = 'all'
   query.value = ''
+  selectedHeatmapDate.value = null
   void tickFeedback()
 }
 
@@ -169,6 +205,23 @@ function onSnackOpen(open: boolean) {
         <HeaderActions />
       </div>
     </header>
+
+    <!-- Contribution Activity Heatmap -->
+    <ActivityHeatmap
+      :days="heatmapDays"
+      :selected-date="selectedHeatmapDate"
+      :period="t('activity.inPastYear')"
+      @select-date="onHeatmapSelectDate"
+    />
+
+    <!-- Selected Day Filter Banner -->
+    <div v-if="selectedHeatmapDate" class="selected-day-banner">
+      <span class="selected-day-text">{{ t('activity.selectedDay', { date: selectedHeatmapDate }) }}</span>
+      <button type="button" class="clear-day-btn" :aria-label="t('common.clear')" @click="selectedHeatmapDate = null">
+        <X :size="14" />
+        <span>{{ t('common.clear') }}</span>
+      </button>
+    </div>
 
     <div class="filters">
       <label class="search">
@@ -439,5 +492,41 @@ h1 {
   letter-spacing: 0.05em;
   color: var(--color-muted);
   padding: var(--space-2) var(--space-2) var(--space-1);
+}
+
+.selected-day-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  border-radius: var(--radius-md);
+  animation: fadeSlideUp var(--duration-fast) var(--ease-standard) both;
+}
+
+.selected-day-text {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.clear-day-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  font-size: var(--text-caption);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast);
+}
+
+.clear-day-btn:hover {
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 </style>

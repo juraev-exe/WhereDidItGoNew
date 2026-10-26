@@ -26,6 +26,8 @@ export default {
     month: 'Month',
     expand: 'Expand',
     collapse: 'Collapse',
+    less: 'Less',
+    more: 'More',
   },
   premium: {
     title: 'Unlock WhereDidItGo Pro',
@@ -228,6 +230,8 @@ export default {
     filteredTotal: 'Total in view',
     emptyMonthTitle: 'Nothing logged this month',
     emptyMonthDesc: 'Add an expense or income and it will show up here.',
+    inPastYear: 'in the past year',
+    selectedDay: 'Showing transactions for {date}',
   },
   budgets: {
     title: 'Budgets',

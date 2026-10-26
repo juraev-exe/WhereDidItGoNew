@@ -26,6 +26,8 @@ export default {
     month: 'Моҳ',
     expand: 'Кушодан',
     collapse: 'Пӯшидан',
+    less: 'Камтар',
+    more: 'Зиёдтар',
   },
   premium: {
     title: 'WhereDidItGo Pro',
@@ -228,6 +230,8 @@ export default {
     filteredTotal: 'Ҷамъи филтршуда',
     emptyMonthTitle: 'Дар ин моҳ чизе нест',
     emptyMonthDesc: 'Хароҷот ё даромад илова кунед — дар ин ҷо пайдо мешавад.',
+    inPastYear: 'дар соли охир',
+    selectedDay: 'Амалиётҳо барои {date}',
   },
   budgets: {
     title: 'Буҷаҳо',

@@ -26,6 +26,8 @@ export default {
     month: 'Месяц',
     expand: 'Развернуть',
     collapse: 'Свернуть',
+    less: 'Меньше',
+    more: 'Больше',
   },
   premium: {
     title: 'WhereDidItGo Pro',
@@ -228,6 +230,8 @@ export default {
     filteredTotal: 'Итого по фильтру',
     emptyMonthTitle: 'В этом месяце пусто',
     emptyMonthDesc: 'Добавьте расход или доход — он появится здесь.',
+    inPastYear: 'за последний год',
+    selectedDay: 'Транзакции за {date}',
   },
   budgets: {
     title: 'Бюджеты',

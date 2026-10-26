@@ -884,6 +884,21 @@ export default {
     btnSendMagic: 'Send Magic Link',
     processing: 'Processing…',
   },
+  dataCleaning: {
+    sectionTitle: 'Data Diagnostics & Autocleaning',
+    diagnosticsTitle: 'Data Quality & Autocleaning',
+    diagnosticsSub: 'Audit orphaned records, balance drift, and auto-clean issues',
+    modalTitle: 'Data Diagnostics',
+    score: 'Health Score',
+    scoreSub: 'Based on integrity checks across accounts, transactions, and budgets',
+    scanning: 'Scanning database...',
+    noIssues: 'All database records are clean, normalized, and valid.',
+    cleanNow: 'Auto-Clean All Issues',
+    cleaning: 'Cleaning database...',
+    cleanedSuccess: 'Autocleaned {count} items successfully!',
+    anomaliesFound: '{count} issues detected',
+    cleanedReport: 'Cleaned details:',
+  },
 }
 
 

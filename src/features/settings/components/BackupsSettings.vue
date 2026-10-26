@@ -14,6 +14,7 @@ import {
   LogOut,
   Radio,
   RefreshCw,
+  Sparkles,
   Trash2,
   Upload,
 } from '@lucide/vue'
@@ -22,6 +23,12 @@ import BottomSheet from '@/components/ui/BottomSheet.vue'
 import CsvImportSheet from './CsvImportSheet.vue'
 import P2PSyncModal from './P2PSyncModal.vue'
 import SupabaseAuthModal from './SupabaseAuthModal.vue'
+import {
+  profileDataQuality,
+  cleanAndSanitizeData,
+  type DataQualityProfile,
+  type DataCleanResult,
+} from '@/services/dataCleaning'
 import {
   exportBackupFile,
   exportTransactionsCsv,
@@ -137,6 +144,13 @@ const pendingEncryptedEnvelope = shallowRef<EncryptedBackupEnvelope | null>(null
 
 // P2P Sync state
 const p2pSyncOpen = ref(false)
+
+// Data Diagnostics & Autocleaning state
+const dataCleanerOpen = ref(false)
+const scanningData = ref(false)
+const cleaningData = ref(false)
+const dataProfile = shallowRef<DataQualityProfile | null>(null)
+const cleanResult = shallowRef<DataCleanResult | null>(null)
 
 const resetSheetOpen = ref(false)
 const resetA = ref(2)
@@ -295,6 +309,36 @@ async function applyMerge() {
     emit('notify', err instanceof Error ? err.message : t('settings.importFail', 'Import failed'))
   } finally {
     importing.value = false
+  }
+}
+
+async function openDataCleaner() {
+  dataCleanerOpen.value = true
+  cleanResult.value = null
+  scanningData.value = true
+  try {
+    dataProfile.value = await profileDataQuality()
+  } catch (err: any) {
+    emit('notify', err?.message || 'Diagnostic failed')
+  } finally {
+    scanningData.value = false
+  }
+}
+
+async function handleCleanNow() {
+  cleaningData.value = true
+  try {
+    const res = await cleanAndSanitizeData()
+    cleanResult.value = res
+    dataProfile.value = res.profileAfter
+    await settings.load()
+    void successFeedback()
+    emit('notify', t('dataCleaning.cleanedSuccess', { count: res.fixesApplied.toString() }))
+  } catch (err: any) {
+    void errorFeedback()
+    emit('notify', err?.message || 'Cleaning failed')
+  } finally {
+    cleaningData.value = false
   }
 }
 
@@ -556,6 +600,22 @@ async function executeReset() {
       </button>
     </div>
 
+    <!-- Data Quality & Autocleaning -->
+    <h3 class="section-title">{{ t('dataCleaning.sectionTitle', 'Data Diagnostics & Autocleaning') }}</h3>
+    <div class="grouped-section">
+      <button type="button" class="row-btn" @click="openDataCleaner">
+        <div class="row-left">
+          <div class="icon-circle icon-indigo">
+            <Sparkles :size="18" />
+          </div>
+          <div class="row-label">
+            <span class="title">{{ t('dataCleaning.diagnosticsTitle', 'Data Quality & Autocleaning') }}</span>
+            <span class="subtitle">{{ t('dataCleaning.diagnosticsSub', 'Audit orphaned records, balance drift, and auto-clean issues') }}</span>
+          </div>
+        </div>
+      </button>
+    </div>
+
     <h3 class="section-title danger-title">{{ t('settings.dangerZone', 'Danger Zone') }}</h3>
 
     <div class="grouped-section danger-section">
@@ -733,6 +793,88 @@ async function executeReset() {
       @close="authModalOpen = false"
       @success="onAuthSuccess"
     />
+
+    <!-- Data Quality & Autocleaning Sheet -->
+    <BottomSheet
+      :open="dataCleanerOpen"
+      :title="t('dataCleaning.modalTitle', 'Data Diagnostics')"
+      @close="dataCleanerOpen = false"
+    >
+      <div class="sheet-body">
+        <div v-if="scanningData" class="empty-snapshots">
+          <p class="empty-text">{{ t('dataCleaning.scanning', 'Scanning database...') }}</p>
+        </div>
+        <template v-else-if="dataProfile">
+          <!-- Health Score Header -->
+          <div class="health-header">
+            <div
+              class="health-score-badge"
+              :class="{
+                'score-high': dataProfile.healthScore >= 90,
+                'score-med': dataProfile.healthScore >= 70 && dataProfile.healthScore < 90,
+                'score-low': dataProfile.healthScore < 70,
+              }"
+            >
+              <span class="score-number">{{ dataProfile.healthScore }}%</span>
+              <span class="score-label">{{ t('dataCleaning.score', 'Health Score') }}</span>
+            </div>
+            <p class="health-sub">{{ t('dataCleaning.scoreSub', 'Based on integrity checks across accounts, transactions, and budgets') }}</p>
+          </div>
+
+          <!-- Clean Success Box if cleaned -->
+          <div v-if="cleanResult" class="cleaned-box">
+            <div class="cleaned-header">
+              <CheckCircle :size="16" />
+              <span>{{ t('dataCleaning.cleanedSuccess', { count: cleanResult.fixesApplied.toString() }) }}</span>
+            </div>
+            <ul v-if="cleanResult.details.length" class="cleaned-list">
+              <li v-for="(detail, idx) in cleanResult.details" :key="idx">{{ detail }}</li>
+            </ul>
+          </div>
+
+          <!-- Anomalies List or All Clear -->
+          <div v-if="dataProfile.anomalies.length === 0" class="empty-snapshots">
+            <CheckCircle :size="32" class="all-clean-icon" />
+            <p class="all-clean-text">{{ t('dataCleaning.noIssues', 'All database records are clean, normalized, and valid.') }}</p>
+          </div>
+          <div v-else class="anomalies-container">
+            <div class="anomalies-header">
+              <span class="anomalies-count">
+                {{ t('dataCleaning.anomaliesFound', { count: dataProfile.anomalies.length.toString() }) }}
+              </span>
+            </div>
+            <div class="anomalies-list">
+              <div
+                v-for="(anom, idx) in dataProfile.anomalies"
+                :key="idx"
+                class="anomaly-row"
+                :class="'severity-' + anom.severity"
+              >
+                <div class="anomaly-badge" :class="'badge-' + anom.severity">
+                  {{ anom.severity }}
+                </div>
+                <div class="anomaly-info">
+                  <span class="anomaly-msg">{{ anom.message }}</span>
+                  <span class="anomaly-entity">{{ anom.entity }} • {{ anom.type }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Auto Clean Button -->
+          <div v-if="dataProfile.anomalies.length > 0" class="sheet-actions">
+            <AppButton
+              block
+              variant="filled"
+              :disabled="cleaningData"
+              @click="handleCleanNow"
+            >
+              {{ cleaningData ? t('dataCleaning.cleaning', 'Cleaning database...') : t('dataCleaning.cleanNow', 'Auto-Clean All Issues') }}
+            </AppButton>
+          </div>
+        </template>
+      </div>
+    </BottomSheet>
   </div>
 </template>
 
@@ -864,6 +1006,11 @@ h2 {
 .icon-cyan {
   background: color-mix(in srgb, #06b6d4 15%, transparent);
   color: #06b6d4;
+}
+
+.icon-indigo {
+  background: color-mix(in srgb, #6366f1 15%, transparent);
+  color: #6366f1;
 }
 
 .row-label {
@@ -1167,5 +1314,205 @@ h2 {
 .empty-text {
   font-size: 0.875rem;
   color: var(--color-muted);
+}
+
+/* Data Diagnostics & Cleaning Styles */
+.health-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.5rem 0 1rem;
+}
+
+.health-score-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 3px solid;
+  margin-bottom: 0.5rem;
+}
+
+.score-high {
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.score-med {
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.score-low {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.score-number {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+.health-sub {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  max-width: 280px;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.cleaned-box {
+  background: color-mix(in srgb, #10b981 10%, transparent);
+  border: 1px solid color-mix(in srgb, #10b981 30%, transparent);
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cleaned-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.cleaned-list {
+  margin: 0 0 0 1.25rem;
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--color-on-surface);
+  line-height: 1.4;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.all-clean-icon {
+  color: #10b981;
+  margin: 0 auto 0.5rem;
+}
+
+.all-clean-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-on-surface);
+}
+
+.anomalies-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.anomalies-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.anomalies-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.anomalies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.anomaly-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.625rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-outline);
+}
+
+.severity-high {
+  background: color-mix(in srgb, #ef4444 6%, transparent);
+  border-color: color-mix(in srgb, #ef4444 30%, transparent);
+}
+
+.severity-medium {
+  background: color-mix(in srgb, #f59e0b 6%, transparent);
+  border-color: color-mix(in srgb, #f59e0b 30%, transparent);
+}
+
+.severity-low {
+  background: color-mix(in srgb, var(--color-outline) 8%, transparent);
+}
+
+.anomaly-badge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.badge-high {
+  background: color-mix(in srgb, #ef4444 18%, transparent);
+  color: #ef4444;
+}
+
+.badge-medium {
+  background: color-mix(in srgb, #f59e0b 18%, transparent);
+  color: #f59e0b;
+}
+
+.badge-low {
+  background: color-mix(in srgb, var(--color-muted) 18%, transparent);
+  color: var(--color-muted);
+}
+
+.anomaly-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.anomaly-msg {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-on-surface);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.anomaly-entity {
+  font-size: 0.7rem;
+  color: var(--color-muted);
+  text-transform: capitalize;
 }
 </style>

@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { todayISO } from '@/lib/dates'
-import type { Account, Budget, Category, Debt, Goal, Recurring, Transaction } from '@/types/finance'
+import type { Account, Budget, Category, Debt, Recurring, Transaction } from '@/types/finance'
 
 export interface DataAnomaly {
   entity: 'transactions' | 'accounts' | 'categories' | 'budgets' | 'goals' | 'recurring' | 'debts'

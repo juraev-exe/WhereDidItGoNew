@@ -589,5 +589,12 @@ eq('budget progress entertainment spent is 4000', bp.find((b) => b.category.id =
 const txsForGroc = transactionsForCategoryInRange([splitTx], 'cat_groceries', { start: '2026-10-01', end: '2026-10-31' })
 eq('transactions for category finds split tx', txsForGroc.length, 1)
 
+// QuickAdd split composition logic
+const splitsInput = [
+  { id: '1', amount: 2500, categoryId: 'c1' },
+  { id: '2', amount: 7500, categoryId: 'c2' },
+]
+eq('quick add splits form matches', validateSplits(splitsInput, 10000).valid, true)
+
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

@@ -2,7 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
-import { Calendar, Camera, Plus } from '@lucide/vue'
+import { Calendar, Camera, Plus, Split, Trash2 } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
@@ -12,6 +12,8 @@ import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 import ReceiptScannerModal from '@/components/ReceiptScannerModal.vue'
 import { amountHasExpression, formatMoney, parseMoneyToMinor } from '@/lib/money'
 import { monthKey, todayDayOfMonth, todayISO, yesterdayISO } from '@/lib/dates'
+import { createId } from '@/lib/id'
+import { validateSplits } from '@/services/splits'
 import { confirmFeedback, errorFeedback, successFeedback, tickFeedback, warningFeedback } from '@/services/native/haptics'
 import { useAccountsStore } from '@/stores/accounts'
 import { useCategoriesStore } from '@/stores/categories'
@@ -20,7 +22,15 @@ import { useRecurringStore } from '@/stores/recurring'
 import { useSettingsStore } from '@/stores/settings'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useUiStore } from '@/stores/ui'
-import type { Category, TransactionType } from '@/types/finance'
+import type { Category, TransactionSplit, TransactionType } from '@/types/finance'
+
+interface SplitRow {
+  id: string
+  amountStr: string
+  categoryId: string
+  subcategoryId?: string
+  note?: string
+}
 
 const { t } = useI18n()
 const ui = useUiStore()
@@ -44,6 +54,9 @@ const saving = ref(false)
 const error = ref('')
 const repeatMonthly = ref(false)
 const dayOfMonth = ref(String(todayDayOfMonth()))
+
+const isSplit = ref(false)
+const splitRows = ref<SplitRow[]>([])
 
 const catFormOpen = ref(false)
 const catToEdit = ref<Category | null>(null)
@@ -151,6 +164,92 @@ const dateText = computed(() => {
   return date.value
 })
 
+const allocatedSplitsTotal = computed(() => {
+  return splitRows.value.reduce((sum, row) => {
+    return sum + parseMoneyToMinor(row.amountStr)
+  }, 0)
+})
+
+const splitRemainder = computed(() => {
+  return parsedAmount.value - allocatedSplitsTotal.value
+})
+
+function formatSplitMoney(cents: number) {
+  return formatMoney(
+    cents,
+    settings.currency,
+    settings.intlLocale,
+    settings.currencyPosition,
+    settings.hideCents,
+  )
+}
+
+function getSubcategoriesForCategory(catId: string) {
+  const cat = categories.byId(catId)
+  return cat?.subcategories ?? []
+}
+
+function toggleSplitMode() {
+  if (type.value === 'transfer') return
+  isSplit.value = !isSplit.value
+  void tickFeedback()
+  if (isSplit.value && splitRows.value.length === 0) {
+    const total = parsedAmount.value
+    const catList = type.value === 'income' ? categories.income : categories.expense
+    const kind = type.value === 'income' ? 'income' : 'expense'
+    const firstCat = categoryId.value || pickCategory(kind)
+    const secondCat = catList.find((c) => c.id !== firstCat)?.id || firstCat
+
+    const half = Math.floor(total / 2)
+    const remainder = total - half
+
+    splitRows.value = [
+      {
+        id: createId('split'),
+        amountStr: total > 0 ? (half / 100).toFixed(2) : '',
+        categoryId: firstCat,
+        subcategoryId: subcategoryId.value || undefined,
+      },
+      {
+        id: createId('split'),
+        amountStr: total > 0 ? (remainder / 100).toFixed(2) : '',
+        categoryId: secondCat,
+      },
+    ]
+  }
+}
+
+function addSplitRow() {
+  const defaultCat = pickCategory(type.value === 'income' ? 'income' : 'expense')
+  const rem = Math.max(0, splitRemainder.value)
+  splitRows.value.push({
+    id: createId('split'),
+    amountStr: rem > 0 ? (rem / 100).toFixed(2) : '',
+    categoryId: defaultCat,
+  })
+  void tickFeedback()
+}
+
+function removeSplitRow(index: number) {
+  splitRows.value.splice(index, 1)
+  void tickFeedback()
+  if (splitRows.value.length === 0) {
+    isSplit.value = false
+  }
+}
+
+function fillRemaining(index: number) {
+  const row = splitRows.value[index]
+  if (!row) return
+  const current = parseMoneyToMinor(row.amountStr)
+  const rem = splitRemainder.value
+  const nextAmount = current + rem
+  if (nextAmount > 0) {
+    row.amountStr = (nextAmount / 100).toFixed(2)
+    void tickFeedback()
+  }
+}
+
 function pickActiveAccount(preferred: string, fallbackIndex = 0) {
   const list = accounts.active
   if (preferred && list.some((a) => a.id === preferred)) return preferred
@@ -181,6 +280,8 @@ function resetForm() {
   saving.value = false
   repeatMonthly.value = false
   dayOfMonth.value = String(todayDayOfMonth())
+  isSplit.value = false
+  splitRows.value = []
 }
 
 let prefilling = false
@@ -202,6 +303,19 @@ watch(
       error.value = ''
       saving.value = false
       repeatMonthly.value = false
+      if (tx.splits && tx.splits.length > 0) {
+        isSplit.value = true
+        splitRows.value = tx.splits.map((s) => ({
+          id: s.id,
+          amountStr: (s.amount / 100).toFixed(2),
+          categoryId: s.categoryId,
+          subcategoryId: s.subcategoryId,
+          note: s.note,
+        }))
+      } else {
+        isSplit.value = false
+        splitRows.value = []
+      }
     } else {
       resetForm()
     }
@@ -230,6 +344,8 @@ watch(type, (txType) => {
   if (txType === 'transfer') {
     categoryId.value = ''
     subcategoryId.value = ''
+    isSplit.value = false
+    splitRows.value = []
     return
   }
   const list = txType === 'income' ? categories.income : categories.expense
@@ -251,7 +367,7 @@ async function save() {
     void errorFeedback()
     return
   }
-  if (type.value !== 'transfer' && !categoryId.value) {
+  if (type.value !== 'transfer' && !isSplit.value && !categoryId.value) {
     error.value = t('quickAdd.categoryRequired')
     void errorFeedback()
     return
@@ -259,6 +375,27 @@ async function save() {
   if (type.value === 'transfer' && !isGoalMove.value) {
     if (!toAccountId.value || toAccountId.value === accountId.value) {
       error.value = t('quickAdd.destinationRequired')
+      void errorFeedback()
+      return
+    }
+  }
+
+  let finalSplits: TransactionSplit[] | undefined
+  if (type.value !== 'transfer' && isSplit.value) {
+    finalSplits = splitRows.value.map((r) => ({
+      id: r.id,
+      amount: parseMoneyToMinor(r.amountStr),
+      categoryId: r.categoryId,
+      subcategoryId: r.subcategoryId || undefined,
+      note: r.note?.trim() || undefined,
+    }))
+    const v = validateSplits(finalSplits, amount)
+    if (!v.valid) {
+      error.value =
+        v.error ||
+        t('splits.mismatchError', {
+          remainder: formatSplitMoney(v.remainder),
+        })
       void errorFeedback()
       return
     }
@@ -280,8 +417,19 @@ async function save() {
         type.value === 'transfer' && toAccountId.value && toAccountId.value !== accountId.value
           ? toAccountId.value
           : undefined,
-      categoryId: type.value === 'transfer' ? undefined : categoryId.value,
-      subcategoryId: type.value === 'transfer' ? undefined : subcategoryId.value || undefined,
+      categoryId:
+        type.value === 'transfer'
+          ? undefined
+          : isSplit.value && finalSplits?.length
+            ? finalSplits[0].categoryId
+            : categoryId.value,
+      subcategoryId:
+        type.value === 'transfer'
+          ? undefined
+          : isSplit.value
+            ? undefined
+            : subcategoryId.value || undefined,
+      splits: isSplit.value ? finalSplits : undefined,
       note: note.value.trim(),
       date: date.value,
     }
@@ -406,24 +554,138 @@ async function remove() {
               />
             </label>
 
-            <!-- Category (Expense & Income only) -->
+            <!-- Category & Split Management (Expense & Income only) -->
             <div v-if="type !== 'transfer'" class="field">
               <div class="field-header">
-                <span>{{ t('quickAdd.category') }}</span>
-                <button type="button" class="add-cat-btn" @click="openAddCategory">
-                  <Plus :size="13" />
-                  <span>{{ t('settings.addCategory') }}</span>
-                </button>
+                <span>{{ isSplit ? t('splits.splitTitle') : t('quickAdd.category') }}</span>
+                <div class="cat-header-actions">
+                  <button
+                    type="button"
+                    class="split-toggle-btn"
+                    :class="{ 'split-toggle-btn--active': isSplit }"
+                    @click="toggleSplitMode"
+                  >
+                    <Split :size="13" />
+                    <span>{{ isSplit ? t('quickAdd.category') : t('splits.splitExpense') }}</span>
+                  </button>
+                  <button v-if="!isSplit" type="button" class="add-cat-btn" @click="openAddCategory">
+                    <Plus :size="13" />
+                    <span>{{ t('settings.addCategory') }}</span>
+                  </button>
+                </div>
               </div>
+
+              <!-- Standard Single Category View -->
               <AppSelect
+                v-if="!isSplit"
                 v-model="categoryId"
                 :options="categoryOptions"
                 :aria-label="t('quickAdd.category')"
               />
+
+              <!-- Split Category Builder -->
+              <div v-else class="split-builder">
+                <div
+                  v-for="(row, idx) in splitRows"
+                  :key="row.id"
+                  class="split-row-card"
+                >
+                  <div class="split-row-top">
+                    <span class="split-row-index">#{{ idx + 1 }}</span>
+                    <button
+                      v-if="splitRows.length > 2"
+                      type="button"
+                      class="split-delete-btn"
+                      :aria-label="t('splits.removeSplit')"
+                      @click="removeSplitRow(idx)"
+                    >
+                      <Trash2 :size="14" />
+                    </button>
+                  </div>
+
+                  <div class="split-row-grid">
+                    <div class="split-cat-select">
+                      <AppSelect
+                        v-model="row.categoryId"
+                        :options="categoryOptions"
+                        :aria-label="t('quickAdd.category')"
+                      />
+                    </div>
+                    <div class="split-amount-wrap">
+                      <input
+                        v-model="row.amountStr"
+                        type="text"
+                        inputmode="decimal"
+                        class="split-amount-input"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Subcategory pills for this split if available -->
+                  <div
+                    v-if="getSubcategoriesForCategory(row.categoryId).length"
+                    class="split-subcat-pills"
+                  >
+                    <button
+                      type="button"
+                      class="subcat-pill subcat-pill--compact"
+                      :class="{ 'subcat-pill--active': !row.subcategoryId }"
+                      @click="row.subcategoryId = ''; tickFeedback()"
+                    >
+                      {{ t('quickAdd.subcategoryNone') }}
+                    </button>
+                    <button
+                      v-for="sub in getSubcategoriesForCategory(row.categoryId)"
+                      :key="sub.id"
+                      type="button"
+                      class="subcat-pill subcat-pill--compact"
+                      :class="{ 'subcat-pill--active': row.subcategoryId === sub.id }"
+                      @click="row.subcategoryId = sub.id; tickFeedback()"
+                    >
+                      {{ sub.name }}
+                    </button>
+                  </div>
+
+                  <!-- Quick fill remaining for this split row -->
+                  <div v-if="splitRemainder !== 0" class="split-row-fill">
+                    <button
+                      type="button"
+                      class="fill-rem-btn"
+                      @click="fillRemaining(idx)"
+                    >
+                      {{ t('splits.fillRemaining') }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="split-controls">
+                  <button
+                    type="button"
+                    class="add-split-btn"
+                    @click="addSplitRow"
+                  >
+                    <Plus :size="14" />
+                    <span>{{ t('splits.addSplit') }}</span>
+                  </button>
+
+                  <div
+                    class="split-summary-badge"
+                    :class="splitRemainder === 0 ? 'split-badge--ok' : 'split-badge--warn'"
+                  >
+                    <span v-if="splitRemainder === 0">
+                      ✓ {{ t('splits.allocated') }}: {{ formatSplitMoney(allocatedSplitsTotal) }}
+                    </span>
+                    <span v-else>
+                      {{ t('splits.remaining') }}: {{ formatSplitMoney(splitRemainder) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <!-- Subcategories Chips -->
-            <div v-if="type !== 'transfer' && activeSubcategories.length" class="field">
+            <!-- Subcategories Chips (Single Mode Only) -->
+            <div v-if="type !== 'transfer' && !isSplit && activeSubcategories.length" class="field">
               <span>{{ t('quickAdd.subcategoryOptional') }}</span>
               <div class="subcat-pills">
                 <button
@@ -926,5 +1188,189 @@ async function remove() {
 .modal-fade-enter-from .modal-card,
 .modal-fade-leave-to .modal-card {
   transform: scale(0.94);
+}
+
+.cat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.split-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-on-surface-variant);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline-variant);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.split-toggle-btn:hover {
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+}
+
+.split-toggle-btn--active {
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.split-builder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.split-row-card {
+  background: var(--color-surface-container-low, var(--color-surface-container));
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.split-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.split-row-index {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.split-delete-btn {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--duration-fast);
+}
+
+.split-delete-btn:hover {
+  color: var(--color-error);
+}
+
+.split-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.split-amount-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-outline-variant);
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.split-subcat-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0;
+}
+
+.subcat-pill--compact {
+  min-height: 26px;
+  padding: 0 8px;
+  font-size: 0.7rem;
+}
+
+.split-row-fill {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.fill-rem-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast);
+}
+
+.fill-rem-btn:hover {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.split-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.add-split-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-surface-container);
+  border: 1px dashed var(--color-outline-variant);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.add-split-btn:hover {
+  background: var(--color-surface-container-high);
+  border-color: var(--color-primary);
+}
+
+.split-summary-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+}
+
+.split-badge--ok {
+  background: color-mix(in srgb, #22c55e 15%, transparent);
+  color: #16a34a;
+}
+
+.split-badge--warn {
+  background: color-mix(in srgb, #f59e0b 15%, transparent);
+  color: #d97706;
 }
 </style>

@@ -49,6 +49,62 @@ export interface DataCleanResult {
 }
 
 /**
+ * Audits a transaction's splits for internal consistency, integer bounds, and category integrity.
+ */
+export function auditTransactionSplits(
+  tx: Pick<Transaction, 'id' | 'amount' | 'splits'>,
+  categories?: Category[],
+): DataAnomaly[] {
+  const anomalies: DataAnomaly[] = []
+  if (!tx.splits || tx.splits.length === 0) return anomalies
+
+  const catMap = categories ? new Map(categories.map((c) => [c.id, c])) : null
+
+  let allocated = 0
+  for (const s of tx.splits) {
+    allocated += s.amount || 0
+
+    if (s.amount <= 0 || !Number.isInteger(s.amount)) {
+      anomalies.push({
+        entity: 'transactions',
+        id: tx.id,
+        severity: 'high',
+        type: 'invalid_split_amount',
+        message: `Split "${s.id}" has invalid amount (${s.amount}).`,
+        field: 'splits',
+        fixable: true,
+      })
+    }
+
+    if (catMap && s.categoryId && !catMap.has(s.categoryId)) {
+      anomalies.push({
+        entity: 'transactions',
+        id: tx.id,
+        severity: 'medium',
+        type: 'orphaned_category',
+        message: `Split "${s.id}" references deleted category ID "${s.categoryId}".`,
+        field: 'splits',
+        fixable: true,
+      })
+    }
+  }
+
+  if (allocated !== tx.amount) {
+    anomalies.push({
+      entity: 'transactions',
+      id: tx.id,
+      severity: 'high',
+      type: 'split_sum_mismatch',
+      message: `Split sum (${allocated}) does not match transaction total (${tx.amount}).`,
+      field: 'splits',
+      fixable: true,
+    })
+  }
+
+  return anomalies
+}
+
+/**
  * Perform deep diagnostic profiling across all stored finance records.
  * Identifies orphaned foreign keys, malformed numbers, invalid dates,
  * debt discrepancies, and account balance drift.
@@ -239,6 +295,9 @@ export async function profileDataQuality(): Promise<DataQualityProfile> {
         fixable: true,
       })
     }
+    // Check splits consistency
+    const splitAnomalies = auditTransactionSplits(tx, categories)
+    anomalies.push(...splitAnomalies)
   }
 
   // 4. Audit Budgets
@@ -531,6 +590,38 @@ export async function cleanAndSanitizeData(options: CleanOptions = {}): Promise<
             changed = true
             fixesApplied++
             details.push(`Unlinked non-existent subcategory ID from tx "${tx.id}".`)
+          }
+        }
+
+        if (cleaned.splits?.length) {
+          let splitChanged = false
+          const sanitizedSplits = cleaned.splits.map((s) => {
+            const split = { ...s }
+            if (opts.fixAmounts && (!Number.isInteger(split.amount) || split.amount < 0)) {
+              split.amount = Math.round(Math.abs(split.amount))
+              splitChanged = true
+            }
+            if (opts.fixOrphanedCategories && split.categoryId && !catMap.has(split.categoryId)) {
+              split.categoryId = 'uncategorized'
+              split.subcategoryId = undefined
+              splitChanged = true
+            }
+            return split
+          })
+
+          const totalSplits = sanitizedSplits.reduce((acc, s) => acc + s.amount, 0)
+          if (totalSplits !== cleaned.amount && sanitizedSplits.length > 0) {
+            const diff = cleaned.amount - totalSplits
+            sanitizedSplits[sanitizedSplits.length - 1].amount += diff
+            splitChanged = true
+            details.push(`Rebalanced split sum to match tx amount for "${tx.id}".`)
+          }
+
+          if (splitChanged) {
+            cleaned.splits = sanitizedSplits
+            changed = true
+            fixesApplied++
+            details.push(`Sanitized split allocations for tx "${tx.id}".`)
           }
         }
 

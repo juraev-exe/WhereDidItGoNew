@@ -66,5 +66,23 @@ const penalty = 1 * 15 + 1 * 5 + 1 * 1
 const healthScore = Math.max(0, Math.min(100, Math.round(100 - penalty)))
 test('health score penalized correctly', healthScore, 79)
 
-console.log(`\nResults: ${failures === 0 ? 'All 8 data autocleaning checks passed.' : `${failures} failures found.`}`)
+import { auditTransactionSplits } from '../src/services/dataCleaning.ts'
+
+// 7. Split Transactions Diagnostics
+const badSplitTx = {
+  id: 'tx_bad_split',
+  amount: 5000,
+  type: 'expense',
+  accountId: 'acc_1',
+  splits: [
+    { id: 's1', amount: 3000, categoryId: 'cat_valid' },
+    { id: 's2', amount: 1000, categoryId: 'cat_valid' }, // sum is 4000 != 5000
+  ],
+  date: '2026-10-01',
+}
+const splitAnomalies = auditTransactionSplits(badSplitTx)
+test('detects split sum mismatch anomaly', splitAnomalies.length > 0, true)
+test('anomaly type is split_sum_mismatch', splitAnomalies[0]?.type, 'split_sum_mismatch')
+
+console.log(`\nResults: ${failures === 0 ? 'All data autocleaning checks passed.' : `${failures} failures found.`}`)
 if (failures > 0) process.exit(1)

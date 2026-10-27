@@ -18,6 +18,7 @@ import type {
   Recurring,
   Subcategory,
   Transaction,
+  TransactionSplit,
   TransactionType,
 } from '@/types/finance'
 import { BACKUP_VERSION } from '@/types/finance'
@@ -164,6 +165,29 @@ function sanitizeBudget(value: unknown): Budget | null {
   }
 }
 
+function sanitizeSplits(value: unknown): TransactionSplit[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((row) => {
+      const r = asRecord(row)
+      const id = str(r?.id)
+      const categoryId = str(r?.categoryId)
+      if (!r || !id || !categoryId) return null
+      const amount = Math.round(Math.abs(num(r.amount)))
+      if (amount <= 0) return null
+      const subcategoryId = str(r.subcategoryId)
+      const note = str(r.note)
+      return {
+        id,
+        amount,
+        categoryId,
+        ...(subcategoryId ? { subcategoryId } : {}),
+        ...(note ? { note } : {}),
+      }
+    })
+    .filter((row): row is TransactionSplit => row !== null)
+}
+
 function sanitizeTransaction(value: unknown): Transaction | null {
   const r = asRecord(value)
   const id = str(r?.id)
@@ -173,6 +197,7 @@ function sanitizeTransaction(value: unknown): Transaction | null {
   const toAccountId = str(r.toAccountId)
   const categoryId = str(r.categoryId)
   const subcategoryId = str(r.subcategoryId)
+  const splits = sanitizeSplits(r.splits)
   const now = new Date().toISOString()
   return {
     id,
@@ -182,6 +207,7 @@ function sanitizeTransaction(value: unknown): Transaction | null {
     ...(type === 'transfer' && toAccountId ? { toAccountId } : {}),
     ...(type !== 'transfer' && categoryId ? { categoryId } : {}),
     ...(type !== 'transfer' && subcategoryId ? { subcategoryId } : {}),
+    ...(type !== 'transfer' && splits.length ? { splits } : {}),
     note: str(r.note),
     date: str(r.date, str(r.createdAt, now).slice(0, 10)),
     createdAt: str(r.createdAt, now),

@@ -8,7 +8,7 @@ import { nowISO, todayISO } from '@/lib/dates'
 import { useAccountsStore } from '@/stores/accounts'
 import { usePremiumStore } from '@/stores/premium'
 import { recordTransactionForAdPacing } from '@/services/native/ads'
-import type { Transaction, TransactionType } from '@/types/finance'
+import type { Transaction, TransactionSplit, TransactionType } from '@/types/finance'
 
 export interface TxInput {
   type: TransactionType
@@ -19,6 +19,7 @@ export interface TxInput {
   subcategoryId?: string
   note?: string
   date?: string
+  splits?: TransactionSplit[]
 }
 
 export const useTransactionsStore = defineStore('transactions', () => {

@@ -44,6 +44,10 @@ import {
   extractMerchantName,
 } from '../src/services/receiptParser.ts'
 import { parseDeepLink } from '../src/services/native/deepLinks.ts'
+import {
+  validateSplits,
+  flattenTransactionSplits,
+} from '../src/services/splits.ts'
 
 let failures = 0
 
@@ -508,6 +512,43 @@ eq('deep link budget singular', parseDeepLink('wherediditgo://budget'), 'budgets
 eq('deep link unknown action', parseDeepLink('wherediditgo://unknown'), 'unknown')
 eq('deep link http scheme ignored', parseDeepLink('https://example.com/add'), 'unknown')
 eq('deep link invalid url', parseDeepLink('not-a-valid-url'), 'unknown')
+
+console.log('\n— Split Transactions Engine (Task 1) —')
+const validSplits = [
+  { id: 's1', amount: 3000, categoryId: 'cat_groceries' },
+  { id: 's2', amount: 2000, categoryId: 'cat_household' },
+]
+eq('splits sum matches total', validateSplits(validSplits, 5000).valid, true)
+eq('remainder is zero', validateSplits(validSplits, 5000).remainder, 0)
+eq('splits sum mismatch is invalid', validateSplits(validSplits, 6000).valid, false)
+eq('calculates remaining 1000 cents', validateSplits(validSplits, 6000).remainder, 1000)
+eq('rejects negative split amount', validateSplits([{ id: 's1', amount: -500, categoryId: 'cat_1' }], 500).valid, false)
+eq('rejects zero split amount', validateSplits([{ id: 's1', amount: 0, categoryId: 'cat_1' }, { id: 's2', amount: 500, categoryId: 'cat_2' }], 500).valid, false)
+eq('rejects split without category', validateSplits([{ id: 's1', amount: 500, categoryId: '' }], 500).valid, false)
+
+// Test flattenTransactionSplits
+const txWithSplits = {
+  id: 'tx_1',
+  amount: 5000,
+  categoryId: 'cat_default',
+  note: 'Target run',
+  splits: validSplits,
+}
+const flattenedWithSplits = flattenTransactionSplits(txWithSplits)
+eq('flatten splits returns 2 parts', flattenedWithSplits.length, 2)
+eq('flatten first split category', flattenedWithSplits[0].categoryId, 'cat_groceries')
+eq('flatten first split amount', flattenedWithSplits[0].amount, 3000)
+
+const txWithoutSplits = {
+  id: 'tx_2',
+  amount: 1500,
+  categoryId: 'cat_coffee',
+  note: 'Latte',
+}
+const flattenedSingle = flattenTransactionSplits(txWithoutSplits)
+eq('flatten single returns 1 part', flattenedSingle.length, 1)
+eq('flatten single category', flattenedSingle[0].categoryId, 'cat_coffee')
+eq('flatten single amount', flattenedSingle[0].amount, 1500)
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

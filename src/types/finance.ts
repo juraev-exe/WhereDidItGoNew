@@ -50,6 +50,14 @@ export interface Goal {
   createdAt: string
 }
 
+export interface TransactionSplit {
+  id: string
+  amount: number
+  categoryId: string
+  subcategoryId?: string
+  note?: string
+}
+
 export interface Transaction {
   id: string
   type: TransactionType
@@ -60,6 +68,7 @@ export interface Transaction {
   subcategoryId?: string
   note: string
   date: string
+  splits?: TransactionSplit[]
   createdAt: string
   updatedAt: string
 }

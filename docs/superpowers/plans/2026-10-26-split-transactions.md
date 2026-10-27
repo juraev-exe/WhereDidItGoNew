@@ -38,7 +38,7 @@
 **Interfaces:**
 - Produces: `TransactionSplit`, `validateSplits(splits: TransactionSplit[], totalAmount: number)`, `flattenTransactionSplits(tx: Transaction)`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add unit test suite to `scripts/unit-check.mjs`:
 ```javascript
@@ -54,12 +54,12 @@ assert(validateSplits(validSplits, 6000).remainder === 1000, 'calculates remaini
 assert(validateSplits([{ id: 's1', amount: -500, categoryId: 'cat_1' }], 500).valid === false, 'rejects negative split amount')
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node scripts/unit-check.mjs`
 Expected: FAIL with "validateSplits is not defined"
 
-- [ ] **Step 3: Implement domain types and `splits.ts`**
+- [x] **Step 3: Implement domain types and `splits.ts`**
 
 Update `src/types/finance.ts`:
 ```typescript
@@ -77,12 +77,12 @@ Create `src/services/splits.ts` exporting:
 - `validateSplits(splits: TransactionSplit[] | undefined, totalAmount: number): { valid: boolean; remainder: number; error?: string }`
 - `flattenTransactionSplits(tx: Transaction): Array<{ categoryId: string; subcategoryId?: string; amount: number; note: string }>`
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `node scripts/unit-check.mjs`
 Expected: PASS with "All unit checks passed."
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/types/finance.ts src/services/splits.ts scripts/unit-check.mjs
@@ -102,7 +102,7 @@ git commit -m "feat(domain): add TransactionSplit type and splits validation ser
 - Consumes: `flattenTransactionSplits` from `@/services/splits`
 - Produces: Multi-category budget attribution in `monthSpendByBudget` and `categorySpendBreakdown`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add unit test to `scripts/unit-check.mjs`:
 ```javascript
@@ -125,12 +125,12 @@ assert(catBreakdown.find(c => c.categoryId === 'cat_groceries')?.amount === 6000
 assert(catBreakdown.find(c => c.categoryId === 'cat_entertainment')?.amount === 4000, 'entertainment allocated 4000 cents')
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node scripts/unit-check.mjs`
 Expected: FAIL because `categorySpendBreakdown` currently groups solely by `tx.categoryId`.
 
-- [ ] **Step 3: Update `src/stores/transactions.ts` and `src/services/stats.ts`**
+- [x] **Step 3: Update `src/stores/transactions.ts` and `src/services/stats.ts`**
 
 In `src/stores/transactions.ts`:
 - Validate splits if present: `if (input.splits?.length) { const v = validateSplits(input.splits, input.amount); if (!v.valid) throw new Error(v.error) }`
@@ -141,12 +141,12 @@ In `src/services/stats.ts`:
 - In `monthSpendByBudget()`: Iterate over `flattenTransactionSplits(t)` instead of single `t.amount` so each split amount is charged to its matching budget.
 - In `categorySpendBreakdown()`: Iterate over `flattenTransactionSplits(t)` to accumulate category and subcategory amounts accurately.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `node scripts/unit-check.mjs`
 Expected: PASS with "All unit checks passed."
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/stores/transactions.ts src/services/stats.ts scripts/unit-check.mjs
@@ -166,7 +166,7 @@ git commit -m "feat(stats): integrate split transactions into budget pacing and 
 - Consumes: `TransactionSplit` from `@/types/finance`
 - Produces: Safe JSON serialization/deserialization of `splits` and anomaly detection
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add test to `scripts/data-autocleaning-check.mjs`:
 ```javascript
@@ -186,12 +186,12 @@ assert(anomalies.length > 0, 'detects split sum mismatch anomaly')
 assert(anomalies[0].type === 'split_sum_mismatch', 'anomaly type is split_sum_mismatch')
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npm run check:autocleaning`
 Expected: FAIL with "auditTransactionSplits is not defined"
 
-- [ ] **Step 3: Update `src/services/backup.ts` and `src/services/dataCleaning.ts`**
+- [x] **Step 3: Update `src/services/backup.ts` and `src/services/dataCleaning.ts`**
 
 In `src/services/backup.ts`:
 - In `sanitizeTransaction()`: If `raw.splits` is an array, map and sanitize each split (`id`, integer `amount`, trimmed strings for `categoryId`, `subcategoryId`, `note`).
@@ -199,12 +199,12 @@ In `src/services/dataCleaning.ts`:
 - In `profileDataQuality()`: Flag anomalies when `tx.splits` sum does not equal `tx.amount` or when `split.categoryId` does not exist in categories table.
 - In `cleanAndSanitizeData()`: Auto-clean orphaned category IDs in splits to uncategorized and normalize integer split amounts.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npm run check:autocleaning`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/services/backup.ts src/services/dataCleaning.ts scripts/data-autocleaning-check.mjs
@@ -224,12 +224,12 @@ git commit -m "feat(data): add split sanitization and data quality diagnostic au
 **Interfaces:**
 - Produces: `splits.*` i18n keys across all locales
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Run: `npm run check:i18n`
 Verify current pass status before making changes.
 
-- [ ] **Step 2: Add localization keys**
+- [x] **Step 2: Add localization keys**
 
 Add `splits` block to `en.ts`, `ru.ts`, and `tj.ts`:
 ```typescript
@@ -282,12 +282,12 @@ splits: {
 }
 ```
 
-- [ ] **Step 3: Run test to verify it passes**
+- [x] **Step 3: Run test to verify it passes**
 
 Run: `npm run check:i18n`
 Expected: PASS with "All i18n keys resolve."
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/i18n/locales/en.ts src/i18n/locales/ru.ts src/i18n/locales/tj.ts
@@ -306,7 +306,7 @@ git commit -m "feat(i18n): add split transactions localization keys across en, r
 - Consumes: `TransactionSplit` from `@/types/finance`, `validateSplits` from `@/services/splits`
 - Produces: Interactive split row list, remaining balance indicator, auto-fill remainder button
 
-- [ ] **Step 1: Write verification test for form state**
+- [x] **Step 1: Write verification test for form state**
 
 Add test in `scripts/unit-check.mjs` validating split composition logic:
 ```javascript
@@ -317,11 +317,11 @@ const splitsInput = [
 assert(validateSplits(splitsInput, 10000).valid === true, 'quick add splits form matches')
 ```
 
-- [ ] **Step 2: Run test to verify it fails/passes**
+- [x] **Step 2: Run test to verify it fails/passes**
 
 Run: `node scripts/unit-check.mjs`
 
-- [ ] **Step 3: Implement split editor in `QuickAddSheet.vue`**
+- [x] **Step 3: Implement split editor in `QuickAddSheet.vue`**
 
 In `src/features/transactions/QuickAddSheet.vue`:
 1. Add toggle state: `const isSplit = ref(false)`
@@ -338,12 +338,12 @@ In `src/features/transactions/QuickAddSheet.vue`:
    - Prevent save if `isSplit` is true and `validateSplits().valid` is false.
 5. Populate `input.splits` when saving transaction to store.
 
-- [ ] **Step 4: Run typecheck and unit check**
+- [x] **Step 4: Run typecheck and unit check**
 
 Run: `npm run typecheck && npm run check:unit`
 Expected: PASS with 0 errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/features/transactions/QuickAddSheet.vue
@@ -363,7 +363,7 @@ git commit -m "feat(ui): add interactive split transaction builder to QuickAddSh
 - Consumes: `Transaction.splits`
 - Produces: `[Split]` badge, multi-category summary, and multi-category activity filtering
 
-- [ ] **Step 1: Write filter test**
+- [x] **Step 1: Write filter test**
 
 Add unit test in `scripts/unit-check.mjs`:
 ```javascript
@@ -389,11 +389,11 @@ assert(matchesUtilities === true, 'matches second split category')
 assert(matchesDining === false, 'does not match unincluded category')
 ```
 
-- [ ] **Step 2: Run test to verify it passes**
+- [x] **Step 2: Run test to verify it passes**
 
 Run: `node scripts/unit-check.mjs`
 
-- [ ] **Step 3: Update `TransactionRow.vue` and `ActivityView.vue`**
+- [x] **Step 3: Update `TransactionRow.vue` and `ActivityView.vue`**
 
 In `TransactionRow.vue`:
 - Import `Split` from `@lucide/vue`.
@@ -412,12 +412,12 @@ In `ActivityView.vue`:
   }
   ```
 
-- [ ] **Step 4: Run full check suite**
+- [x] **Step 4: Run full check suite**
 
 Run: `npm run check`
 Expected: PASS (all 4 check scripts succeed).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/ui/TransactionRow.vue src/features/activity/ActivityView.vue scripts/unit-check.mjs

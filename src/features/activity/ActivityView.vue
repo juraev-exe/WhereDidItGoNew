@@ -104,12 +104,18 @@ const filtered = computed(() => {
     if (selectedHeatmapDate.value && tx.date.slice(0, 10) !== selectedHeatmapDate.value) return false
     if (month.value && !isInMonth(tx.date, month.value)) return false
     if (typeFilter.value !== 'all' && tx.type !== typeFilter.value) return false
-    if (categoryFilter.value !== 'all' && tx.categoryId !== categoryFilter.value) return false
+    if (categoryFilter.value !== 'all') {
+      const matchesTop = tx.categoryId === categoryFilter.value
+      const matchesSplit = tx.splits?.some((s) => s.categoryId === categoryFilter.value)
+      if (!matchesTop && !matchesSplit) return false
+    }
     if (!q) return true
     const cat = tx.categoryId ? (categories.byId(tx.categoryId)?.name ?? '') : ''
+    const splitCats = tx.splits?.map((s) => categories.byId(s.categoryId)?.name ?? '').join(' ') ?? ''
     return (
       tx.note.toLowerCase().includes(q) ||
       cat.toLowerCase().includes(q) ||
+      splitCats.toLowerCase().includes(q) ||
       tx.type.includes(q)
     )
   })
@@ -120,8 +126,17 @@ const filteredTotals = computed(() => {
   let income = 0
   let expense = 0
   for (const tx of filtered.value) {
-    if (tx.type === 'income') income += tx.amount
-    if (tx.type === 'expense') expense += tx.amount
+    let effectiveAmount = tx.amount
+    if (categoryFilter.value !== 'all' && tx.splits && tx.splits.length > 0) {
+      const splitSum = tx.splits
+        .filter((s) => s.categoryId === categoryFilter.value)
+        .reduce((acc, s) => acc + s.amount, 0)
+      if (splitSum > 0) {
+        effectiveAmount = splitSum
+      }
+    }
+    if (tx.type === 'income') income += effectiveAmount
+    if (tx.type === 'expense') expense += effectiveAmount
   }
   return { income, expense, net: income - expense }
 })

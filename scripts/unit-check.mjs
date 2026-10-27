@@ -596,5 +596,29 @@ const splitsInput = [
 ]
 eq('quick add splits form matches', validateSplits(splitsInput, 10000).valid, true)
 
+console.log('\n— Split Transactions in Activity Filter (Task 6) —')
+const filterTxWithSplits = {
+  id: 'tx_s',
+  amount: 5000,
+  type: 'expense',
+  accountId: 'a1',
+  date: '2026-10-10',
+  splits: [
+    { id: 'sp1', amount: 2000, categoryId: 'cat_groceries' },
+    { id: 'sp2', amount: 3000, categoryId: 'cat_utilities' },
+  ],
+  note: '',
+  createdAt: '2026-10-10T10:00:00Z',
+  updatedAt: '2026-10-10T10:00:00Z',
+}
+const filterCategory = (tx, catId) => {
+  if (tx.categoryId === catId) return true
+  if (tx.splits?.some((s) => s.categoryId === catId)) return true
+  return false
+}
+eq('matches split category', filterCategory(filterTxWithSplits, 'cat_groceries'), true)
+eq('matches second split category', filterCategory(filterTxWithSplits, 'cat_utilities'), true)
+eq('does not match unrelated category', filterCategory(filterTxWithSplits, 'cat_other'), false)
+
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

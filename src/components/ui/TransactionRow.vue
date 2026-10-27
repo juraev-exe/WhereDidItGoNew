@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeftRight } from '@lucide/vue'
+import { ArrowLeftRight, Split } from '@lucide/vue'
 import IconByName from '@/components/ui/IconByName.vue'
 import MoneyText from '@/components/ui/MoneyText.vue'
+import { formatMoney } from '@/lib/money'
 import { iconForMerchant } from '@/lib/merchantIcons'
 import { formatTxDate } from '@/services/stats'
 import { useAccountsStore } from '@/stores/accounts'
@@ -22,6 +23,8 @@ const { t } = useI18n()
 const categories = useCategoriesStore()
 const accounts = useAccountsStore()
 const settings = useSettingsStore()
+
+const hasSplits = computed(() => Boolean(props.transaction.splits && props.transaction.splits.length > 0))
 
 const category = computed(() =>
   props.transaction.categoryId ? categories.byId(props.transaction.categoryId) : null,
@@ -47,6 +50,9 @@ const label = computed(() => {
   if (note) {
     return subcategory.value ? `${note} (${subcategory.value.name})` : note
   }
+  if (hasSplits.value) {
+    return t('splits.splitTitle')
+  }
   if (category.value) {
     return subcategory.value ? `${category.value.name} · ${subcategory.value.name}` : category.value.name
   }
@@ -57,11 +63,30 @@ const subtitle = computed(() => {
   const date = formatTxDate(props.transaction.date, settings.intlLocale)
   if (props.transaction.type === 'transfer') return props.hideDate ? '' : date
   const parts = props.hideDate ? [] : [date]
-  const note = props.transaction.note.trim()
-  if (note && category.value) {
-    const catLabel = subcategory.value ? `${category.value.name} · ${subcategory.value.name}` : category.value.name
-    parts.push(catLabel)
+
+  if (hasSplits.value && props.transaction.splits?.length) {
+    const splitSummary = props.transaction.splits
+      .map((s) => {
+        const cat = categories.byId(s.categoryId)?.name ?? t('transaction.uncategorized')
+        const formattedAmount = formatMoney(
+          s.amount,
+          settings.currency,
+          settings.intlLocale,
+          settings.currencyPosition,
+          settings.hideCents,
+        )
+        return `${cat} (${formattedAmount})`
+      })
+      .join(', ')
+    parts.push(splitSummary)
+  } else {
+    const note = props.transaction.note.trim()
+    if (note && category.value) {
+      const catLabel = subcategory.value ? `${category.value.name} · ${subcategory.value.name}` : category.value.name
+      parts.push(catLabel)
+    }
   }
+
   if (account.value) parts.push(account.value.name)
   return parts.join(' · ')
 })
@@ -76,6 +101,9 @@ const iconBg = computed(() => {
   if (props.transaction.type === 'transfer') {
     return 'color-mix(in srgb, var(--color-transfer) 18%, transparent)'
   }
+  if (hasSplits.value) {
+    return 'color-mix(in srgb, var(--color-primary, #6366f1) 20%, transparent)'
+  }
   const c = category.value?.color ?? '#6c757d'
   return `color-mix(in srgb, ${c} 22%, transparent)`
 })
@@ -85,10 +113,17 @@ const iconBg = computed(() => {
   <button type="button" class="row" @click="$emit('select')">
     <span class="icon" :style="{ background: iconBg }">
       <ArrowLeftRight v-if="transaction.type === 'transfer'" :size="18" />
+      <Split v-else-if="hasSplits" :size="18" />
       <IconByName v-else :name="icon" :size="18" />
     </span>
     <span class="meta">
-      <span class="title">{{ label }}</span>
+      <span class="title">
+        <span class="title-text">{{ label }}</span>
+        <span v-if="hasSplits" class="split-badge">
+          <Split :size="10" />
+          {{ t('splits.badge') }}
+        </span>
+      </span>
       <span v-if="subtitle" class="sub">{{ subtitle }}</span>
     </span>
     <span class="amount" :class="amountClass">
@@ -157,12 +192,36 @@ const iconBg = computed(() => {
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-weight: 600;
   font-size: var(--text-body);
+  min-width: 0;
+  color: var(--color-on-surface);
+}
+
+.title-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--color-on-surface);
+}
+
+.split-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm, 6px);
+  background: color-mix(in srgb, var(--color-primary, #6366f1) 14%, transparent);
+  color: var(--color-primary, #6366f1);
+  border: 1px solid color-mix(in srgb, var(--color-primary, #6366f1) 24%, transparent);
+  flex-shrink: 0;
+  line-height: 1.2;
 }
 
 .sub {

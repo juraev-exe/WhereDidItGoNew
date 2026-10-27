@@ -920,6 +920,20 @@ export default {
     anomaliesFound: 'Обнаружено проблем: {count}',
     cleanedReport: 'Детали очистки:',
   },
+  splits: {
+    splitExpense: 'Разделить на несколько категорий',
+    splitTitle: 'Разделение транзакции',
+    addSplit: 'Добавить категорию',
+    removeSplit: 'Удалить разделение',
+    amountRequired: 'Требуется сумма разделения',
+    totalToAllocate: 'Сумма для распределения',
+    allocated: 'Распределено',
+    remaining: 'Осталось',
+    fillRemaining: 'Заполнить остаток',
+    mismatchError: 'Сумма разделений должна быть равна итогу (осталось {remainder})',
+    badge: 'Разделено',
+    details: 'Категорий: {count}',
+  },
 }
 
 

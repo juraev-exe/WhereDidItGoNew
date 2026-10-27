@@ -939,6 +939,20 @@ export default {
     anomaliesFound: 'Мушкилоти ошкоршуда: {count}',
     cleanedReport: 'Тафсилоти тозакунӣ:',
   },
+  splits: {
+    splitExpense: 'Тақсим кардан ба якчанд категорияҳо',
+    splitTitle: 'Тақсимкунии муомила',
+    addSplit: 'Илова кардани категория',
+    removeSplit: 'Нобуд кардани тақсимот',
+    amountRequired: 'Маблағи тақсимот лозим аст',
+    totalToAllocate: 'Маблағи умумӣ барои тақсим',
+    allocated: 'Тақсимшуда',
+    remaining: 'Боқимонда',
+    fillRemaining: 'Пур кардани боқимонда',
+    mismatchError: 'Ҳаҷми тақсимот бояд ба маблағи умумӣ баробар бошад (боқӣ: {remainder})',
+    badge: 'Тақсимшуда',
+    details: '{count} тақсимот',
+  },
 }
 
 

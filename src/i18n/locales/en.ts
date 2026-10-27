@@ -903,6 +903,20 @@ export default {
     anomaliesFound: '{count} issues detected',
     cleanedReport: 'Cleaned details:',
   },
+  splits: {
+    splitExpense: 'Split into multiple categories',
+    splitTitle: 'Split Transaction',
+    addSplit: 'Add another split',
+    removeSplit: 'Remove split',
+    amountRequired: 'Split amount required',
+    totalToAllocate: 'Total to allocate',
+    allocated: 'Allocated',
+    remaining: 'Remaining',
+    fillRemaining: 'Allocate Remaining',
+    mismatchError: 'Splits must equal total amount ({remainder} left)',
+    badge: 'Split',
+    details: '{count} splits',
+  },
 }
 
 

@@ -550,5 +550,44 @@ eq('flatten single returns 1 part', flattenedSingle.length, 1)
 eq('flatten single category', flattenedSingle[0].categoryId, 'cat_coffee')
 eq('flatten single amount', flattenedSingle[0].amount, 1500)
 
+console.log('\n— Split Transactions in Stats & Budgets (Task 2) —')
+const splitTx = {
+  id: 'tx_split_1',
+  amount: 10000,
+  type: 'expense',
+  accountId: 'acc_1',
+  date: '2026-10-15',
+  splits: [
+    { id: 'sp_1', amount: 6000, categoryId: 'cat_groceries' },
+    { id: 'sp_2', amount: 4000, categoryId: 'cat_entertainment' },
+  ],
+  note: 'Target Run',
+  createdAt: '2026-10-15T10:00:00Z',
+  updatedAt: '2026-10-15T10:00:00Z',
+}
+const catBreakdown = detailedSpendByCategoryInRange(
+  [splitTx],
+  [{ id: 'cat_groceries', name: 'Groceries' }, { id: 'cat_entertainment', name: 'Entertainment' }],
+  { start: '2026-10-01', end: '2026-10-31' }
+)
+eq('groceries allocated 6000 cents', catBreakdown.find((c) => c.categoryId === 'cat_groceries')?.amount, 6000)
+eq('entertainment allocated 4000 cents', catBreakdown.find((c) => c.categoryId === 'cat_entertainment')?.amount, 4000)
+
+const splitMockBudgets = [
+  { id: 'b_groc', categoryId: 'cat_groceries', month: '2026-10', limitAmount: 10000, rollover: false },
+  { id: 'b_ent', categoryId: 'cat_entertainment', month: '2026-10', limitAmount: 5000, rollover: false },
+]
+const bp = budgetProgress(
+  splitMockBudgets,
+  [splitTx],
+  [{ id: 'cat_groceries', name: 'Groceries' }, { id: 'cat_entertainment', name: 'Entertainment' }],
+  '2026-10',
+)
+eq('budget progress groceries spent is 6000', bp.find((b) => b.category.id === 'cat_groceries')?.spent, 6000)
+eq('budget progress entertainment spent is 4000', bp.find((b) => b.category.id === 'cat_entertainment')?.spent, 4000)
+
+const txsForGroc = transactionsForCategoryInRange([splitTx], 'cat_groceries', { start: '2026-10-01', end: '2026-10-31' })
+eq('transactions for category finds split tx', txsForGroc.length, 1)
+
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

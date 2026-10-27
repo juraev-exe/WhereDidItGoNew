@@ -25,6 +25,7 @@ import {
   shortDayLabel,
   shortMonthLabel,
 } from '@/lib/dates'
+import { flattenTransactionSplits } from '@/services/splits'
 
 export type InsightsPeriod =
   | 'this_month'
@@ -115,9 +116,15 @@ export function summarizeMonth(
   const monthBudgets = budgets.filter((b) => b.month === month)
   const budgetTotal = monthBudgets.reduce((s, b) => s + b.limitAmount, 0)
   const budgetCategoryIds = new Set(monthBudgets.map((b) => b.categoryId))
-  const budgetSpent = monthTx
-    .filter((t) => t.type === 'expense' && t.categoryId && budgetCategoryIds.has(t.categoryId))
-    .reduce((s, t) => s + t.amount, 0)
+  let budgetSpent = 0
+  for (const t of monthTx) {
+    if (t.type !== 'expense') continue
+    for (const p of flattenTransactionSplits(t)) {
+      if (p.categoryId && budgetCategoryIds.has(p.categoryId)) {
+        budgetSpent += p.amount
+      }
+    }
+  }
 
   // Remaining can go negative (overspend). Do not clamp to 0.
   const leftToSpend = budgetTotal > 0 ? budgetTotal - budgetSpent : income - expense
@@ -156,8 +163,11 @@ export function spendByCategoryInRange(
 ): CategorySpend[] {
   const map = new Map<string, number>()
   for (const t of transactions) {
-    if (t.type !== 'expense' || !t.categoryId || !inStatsRange(t.date, range)) continue
-    map.set(t.categoryId, (map.get(t.categoryId) ?? 0) + t.amount)
+    if (t.type !== 'expense' || !inStatsRange(t.date, range)) continue
+    for (const p of flattenTransactionSplits(t)) {
+      if (!p.categoryId) continue
+      map.set(p.categoryId, (map.get(p.categoryId) ?? 0) + p.amount)
+    }
   }
   const total = [...map.values()].reduce((a, b) => a + b, 0) || 1
   const catMap = Object.fromEntries(categories.map((c) => [c.id, c]))
@@ -200,20 +210,24 @@ export function detailedSpendByCategoryInRange(
   const subMap = new Map<string, Map<string, { amount: number; txCount: number }>>()
 
   for (const t of transactions) {
-    if (t.type !== 'expense' || !t.categoryId || !inStatsRange(t.date, range)) continue
+    if (t.type !== 'expense' || !inStatsRange(t.date, range)) continue
 
-    catAmountMap.set(t.categoryId, (catAmountMap.get(t.categoryId) ?? 0) + t.amount)
-    catTxCountMap.set(t.categoryId, (catTxCountMap.get(t.categoryId) ?? 0) + 1)
+    const parts = flattenTransactionSplits(t)
+    for (const p of parts) {
+      if (!p.categoryId) continue
+      catAmountMap.set(p.categoryId, (catAmountMap.get(p.categoryId) ?? 0) + p.amount)
+      catTxCountMap.set(p.categoryId, (catTxCountMap.get(p.categoryId) ?? 0) + 1)
 
-    if (t.subcategoryId) {
-      if (!subMap.has(t.categoryId)) {
-        subMap.set(t.categoryId, new Map())
+      if (p.subcategoryId) {
+        if (!subMap.has(p.categoryId)) {
+          subMap.set(p.categoryId, new Map())
+        }
+        const catSubs = subMap.get(p.categoryId)!
+        const curSub = catSubs.get(p.subcategoryId) ?? { amount: 0, txCount: 0 }
+        curSub.amount += p.amount
+        curSub.txCount += 1
+        catSubs.set(p.subcategoryId, curSub)
       }
-      const catSubs = subMap.get(t.categoryId)!
-      const curSub = catSubs.get(t.subcategoryId) ?? { amount: 0, txCount: 0 }
-      curSub.amount += t.amount
-      curSub.txCount += 1
-      catSubs.set(t.subcategoryId, curSub)
     }
   }
 
@@ -262,13 +276,15 @@ export function transactionsForCategoryInRange(
   subcategoryId?: string,
 ): Transaction[] {
   return transactions
-    .filter(
-      (t) =>
-        t.type === 'expense' &&
-        t.categoryId === categoryId &&
-        inStatsRange(t.date, range) &&
-        (!subcategoryId || t.subcategoryId === subcategoryId),
-    )
+    .filter((t) => {
+      if (t.type !== 'expense' || !inStatsRange(t.date, range)) return false
+      const parts = flattenTransactionSplits(t)
+      return parts.some(
+        (p) =>
+          p.categoryId === categoryId &&
+          (!subcategoryId || p.subcategoryId === subcategoryId),
+      )
+    })
     .sort((a, b) => b.date.localeCompare(a.date))
 }
 
@@ -303,14 +319,16 @@ export function budgetProgress(
   return budgets
     .filter((b) => b.month === month)
     .map((budget) => {
-      const spent = transactions
-        .filter(
-          (t) =>
-            t.type === 'expense' &&
-            t.categoryId === budget.categoryId &&
-            isInMonth(t.date, month),
-        )
-        .reduce((s, t) => s + t.amount, 0)
+      let spent = 0
+      for (const t of transactions) {
+        if (t.type === 'expense' && isInMonth(t.date, month)) {
+          for (const p of flattenTransactionSplits(t)) {
+            if (p.categoryId === budget.categoryId) {
+              spent += p.amount
+            }
+          }
+        }
+      }
       const category = catMap[budget.categoryId]
       if (!category) return null
 
@@ -321,14 +339,16 @@ export function budgetProgress(
           const pb = budgets.find((b) => b.month === checkMonth && b.categoryId === budget.categoryId)
           if (!pb) break
           
-          const prevSpent = transactions
-            .filter(
-              (t) =>
-                t.type === 'expense' &&
-                t.categoryId === budget.categoryId &&
-                isInMonth(t.date, checkMonth),
-            )
-            .reduce((s, t) => s + t.amount, 0)
+          let prevSpent = 0
+          for (const t of transactions) {
+            if (t.type === 'expense' && isInMonth(t.date, checkMonth)) {
+              for (const p of flattenTransactionSplits(t)) {
+                if (p.categoryId === budget.categoryId) {
+                  prevSpent += p.amount
+                }
+              }
+            }
+          }
           
           rollover += (pb.limitAmount - prevSpent)
           if (!pb.rollover) break
@@ -1182,11 +1202,13 @@ export function computeExecutiveKpis(
       income += t.amount
     } else if (t.type === 'expense') {
       expense += t.amount
-      const cat = t.categoryId ? categoryMap.get(t.categoryId) : null
-      if (isEssentialCategory(cat)) {
-        essentialAmount += t.amount
-      } else {
-        discretionaryAmount += t.amount
+      for (const p of flattenTransactionSplits(t)) {
+        const cat = p.categoryId ? categoryMap.get(p.categoryId) : null
+        if (isEssentialCategory(cat)) {
+          essentialAmount += p.amount
+        } else {
+          discretionaryAmount += p.amount
+        }
       }
     }
   }

@@ -8,6 +8,7 @@ import { nowISO, todayISO } from '@/lib/dates'
 import { useAccountsStore } from '@/stores/accounts'
 import { usePremiumStore } from '@/stores/premium'
 import { recordTransactionForAdPacing } from '@/services/native/ads'
+import { validateSplits } from '@/services/splits'
 import type { Transaction, TransactionSplit, TransactionType } from '@/types/finance'
 
 export interface TxInput {
@@ -105,6 +106,12 @@ export const useTransactionsStore = defineStore('transactions', () => {
     if (input.type === 'transfer' && input.toAccountId && input.accountId === input.toAccountId) {
       throw new Error('Source and destination accounts must be different')
     }
+    if (input.splits?.length) {
+      const v = validateSplits(input.splits, Math.round(input.amount))
+      if (!v.valid) {
+        throw new Error(v.error || 'Invalid splits')
+      }
+    }
     const tx: Transaction = {
       id: createId('tx'),
       type: input.type,
@@ -115,6 +122,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
       subcategoryId: input.type === 'transfer' ? undefined : input.subcategoryId || undefined,
       note: input.note?.trim() ?? '',
       date: input.date ?? todayISO(),
+      splits: input.type === 'transfer' ? undefined : (input.splits?.length ? input.splits : undefined),
       createdAt: nowISO(),
       updatedAt: nowISO(),
     }
@@ -137,6 +145,12 @@ export const useTransactionsStore = defineStore('transactions', () => {
     if (input.type === 'transfer' && input.toAccountId && input.accountId === input.toAccountId) {
       throw new Error('Source and destination accounts must be different')
     }
+    if (input.splits?.length) {
+      const v = validateSplits(input.splits, Math.round(input.amount))
+      if (!v.valid) {
+        throw new Error(v.error || 'Invalid splits')
+      }
+    }
     const existing = await db.transactions.get(id)
     if (!existing) throw new Error('Transaction not found')
 
@@ -150,6 +164,12 @@ export const useTransactionsStore = defineStore('transactions', () => {
       subcategoryId: input.type === 'transfer' ? undefined : input.subcategoryId || undefined,
       note: input.note?.trim() ?? '',
       date: input.date ?? existing.date,
+      splits:
+        input.type === 'transfer'
+          ? undefined
+          : input.splits !== undefined
+            ? (input.splits.length ? input.splits : undefined)
+            : existing.splits,
       updatedAt: nowISO(),
     }
 

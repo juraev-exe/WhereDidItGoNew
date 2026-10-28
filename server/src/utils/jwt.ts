@@ -16,6 +16,7 @@ interface JwtHeader {
 interface FullJwtPayload extends TokenPayload {
   iat: number;
   exp: number;
+  jti: string;
 }
 
 function parseDuration(durationStr: string): number {
@@ -48,6 +49,7 @@ function signJwt(payload: TokenPayload, secret: string, durationStr: string): st
     ...payload,
     iat: now,
     exp,
+    jti: crypto.randomUUID(),
   };
 
   const headerB64 = Buffer.from(JSON.stringify(header)).toString('base64url');

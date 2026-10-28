@@ -26,7 +26,8 @@ const REVENUECAT_API_KEY_STRIPE =
   import.meta.env.VITE_REVENUECAT_STRIPE_KEY || 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
 
 /** Primary Pro Entitlement Identifier in RevenueCat Dashboard */
-export const ENTITLEMENT_ID = 'wherediditgo_pro'
+export const ENTITLEMENT_ID =
+  import.meta.env.VITE_REVENUECAT_ENTITLEMENT_ID || 'wherediditgo_pro'
 
 export type SubscriptionPlanId = 'lifetime' | 'annual' | 'monthly'
 
@@ -50,15 +51,40 @@ export interface PurchaseResult {
   error?: any
 }
 
+export function isProEntitlementActive(entitlements: Record<string, any> | undefined | null): boolean {
+  if (!entitlements) return false
+  if (entitlements[ENTITLEMENT_ID] !== undefined) return true
+  if (entitlements['pro'] !== undefined || entitlements['premium'] !== undefined) return true
+  return Object.keys(entitlements).length > 0
+}
+
+export function isWebEntitlementActive(entitlements: Record<string, any> | undefined | null): boolean {
+  if (!entitlements) return false
+  if (entitlements[ENTITLEMENT_ID]?.isActive) return true
+  if (entitlements['pro']?.isActive || entitlements['premium']?.isActive) return true
+  return Object.values(entitlements).some((e: any) => Boolean(e?.isActive))
+}
+
 function currentApiKey(): string {
-  return platform() === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID
+  if (isNative()) {
+    return platform() === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID
+  }
+  return REVENUECAT_API_KEY_STRIPE
 }
 
 export function isConfigured(): boolean {
-  const key = currentApiKey()
-  if (!key) return false
-  // In a native release build, RevenueCat Android SDK will force-close the app if given a test_ key.
-  if (isNative() && import.meta.env.PROD && key.startsWith('test_')) {
+  if (isNative()) {
+    const key = platform() === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID
+    if (!key) return false
+    // In a native release build, RevenueCat Android SDK will force-close the app if given a test_ key.
+    if (import.meta.env.PROD && key.startsWith('test_')) {
+      return false
+    }
+    return true
+  }
+  // Web / Electron: only configured if a non-test Stripe / Web key is provided
+  const stripeKey = REVENUECAT_API_KEY_STRIPE
+  if (!stripeKey || stripeKey.startsWith('test_')) {
     return false
   }
   return true
@@ -91,7 +117,7 @@ async function ensureConfigured(): Promise<void> {
 
         // Real-time listener for customer updates
         await NativePurchases.addCustomerInfoUpdateListener((customerInfo: NativeCustomerInfo) => {
-          const active = customerInfo.entitlements?.active?.[ENTITLEMENT_ID] !== undefined
+          const active = isProEntitlementActive(customerInfo.entitlements?.active)
           void PremiumManager.setPremium(active)
         })
       } catch (err) {
@@ -100,7 +126,7 @@ async function ensureConfigured(): Promise<void> {
     })()
   } else {
     const stripeKey = REVENUECAT_API_KEY_STRIPE
-    if (!stripeKey || (import.meta.env.PROD && stripeKey.startsWith('test_'))) {
+    if (!stripeKey || stripeKey.startsWith('test_')) {
       configurePromise = Promise.resolve()
       return configurePromise
     }
@@ -181,16 +207,16 @@ export class PremiumManager {
         let active = false
         if (isNative()) {
           const res = await NativePurchases.getCustomerInfo()
-          active = res.customerInfo.entitlements?.active?.[ENTITLEMENT_ID] !== undefined
+          active = isProEntitlementActive(res.customerInfo.entitlements?.active)
         } else if (webPurchases) {
           const customerInfo: WebCustomerInfo = await webPurchases.getCustomerInfo()
-          active = customerInfo.entitlements?.active?.[ENTITLEMENT_ID]?.isActive ?? false
+          active = isWebEntitlementActive(customerInfo.entitlements?.active)
         }
 
         await this.setPremium(active)
         return active
       } catch (e) {
-        console.warn('RevenueCat status check failed, falling back to cached value:', e)
+        console.warn('[RevenueCat] Status check failed, falling back to cached value:', e)
       }
     }
 
@@ -214,14 +240,23 @@ export class PremiumManager {
     if (!isConfigured()) return null
     try {
       await ensureConfigured()
+      let offerings: PurchasesOfferings | null = null
       if (isNative()) {
-        return await NativePurchases.getOfferings()
+        offerings = await NativePurchases.getOfferings()
       } else if (webPurchases) {
-        return (await webPurchases.getOfferings()) as any
+        offerings = (await webPurchases.getOfferings()) as any
       }
-      return null
+      // If current offering is not designated in dashboard, fallback to the first offering in all
+      if (offerings && !offerings.current && offerings.all && Object.keys(offerings.all).length > 0) {
+        const firstKey = Object.keys(offerings.all)[0]
+        return {
+          ...offerings,
+          current: offerings.all[firstKey],
+        }
+      }
+      return offerings
     } catch (e) {
-      console.error('Failed to get offerings:', e)
+      console.warn('[RevenueCat] Failed to get offerings:', e)
       return null
     }
   }
@@ -280,8 +315,13 @@ export class PremiumManager {
    */
   static async purchasePlan(plan: SubscriptionPlanId = 'lifetime'): Promise<PurchaseResult> {
     if (!isConfigured()) {
-      console.warn('RevenueCat is not configured (no API key set).')
-      return { success: false, cancelled: false, error: new Error('Not configured') }
+      if (import.meta.env.DEV) {
+        console.info('[RevenueCat] Simulating Pro unlock in dev mode (billing not configured).')
+        await this.setPremium(true)
+        return { success: true, cancelled: false }
+      }
+      console.warn('[RevenueCat] Billing is not configured (no API key set).')
+      return { success: false, cancelled: false, error: new Error('RevenueCat not configured') }
     }
 
     try {
@@ -313,10 +353,10 @@ export class PremiumManager {
 
       if (isNative()) {
         const { customerInfo } = await NativePurchases.purchasePackage({ aPackage: pkg })
-        active = customerInfo.entitlements?.active?.[ENTITLEMENT_ID] !== undefined
+        active = isProEntitlementActive(customerInfo.entitlements?.active)
       } else if (webPurchases) {
         const { customerInfo } = await webPurchases.purchasePackage(pkg as any)
-        active = customerInfo.entitlements?.active?.[ENTITLEMENT_ID]?.isActive ?? false
+        active = isWebEntitlementActive(customerInfo.entitlements?.active)
       }
 
       await this.setPremium(active)
@@ -347,10 +387,10 @@ export class PremiumManager {
       let active = false
       if (isNative()) {
         const { customerInfo } = await NativePurchases.restorePurchases()
-        active = customerInfo.entitlements?.active?.[ENTITLEMENT_ID] !== undefined
+        active = isProEntitlementActive(customerInfo.entitlements?.active)
       } else if (webPurchases) {
         const customerInfo = await webPurchases.getCustomerInfo()
-        active = customerInfo.entitlements?.active?.[ENTITLEMENT_ID]?.isActive ?? false
+        active = isWebEntitlementActive(customerInfo.entitlements?.active)
       }
 
       await this.setPremium(active)

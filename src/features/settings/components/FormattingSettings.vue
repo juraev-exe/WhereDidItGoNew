@@ -63,7 +63,13 @@ async function onTogglePosition() {
 
 async function onToggleHideCents() {
   if (!premium.isPremiumUser && !settings.hideCents) {
-    premium.openPaywall(t('premium.limitHideCents', 'Hide cents is a Pro feature.'))
+    premium.openPaywall(
+      t('premium.limitHideCents', 'Hide cents is a Pro feature.'),
+      async () => {
+        await settings.setHideCents(true)
+        void tickFeedback()
+      },
+    )
     return
   }
   await settings.setHideCents(!settings.hideCents)
@@ -72,7 +78,14 @@ async function onToggleHideCents() {
 
 async function onSelectStartDay(day: number) {
   if (!premium.isPremiumUser && day !== 1) {
-    premium.openPaywall(t('premium.limitStartOfMonth', 'Custom month start date is a Pro feature.'))
+    startOfMonthModalOpen.value = false
+    premium.openPaywall(
+      t('premium.limitStartOfMonth', 'Custom month start date is a Pro feature.'),
+      async () => {
+        await settings.setStartOfMonth(day)
+        void tickFeedback()
+      },
+    )
     return
   }
   await settings.setStartOfMonth(day)
@@ -128,10 +141,15 @@ async function onToggleFirstDayOfWeek() {
           </div>
           <span class="subtitle">{{ t('settings.hideCentsDesc', 'Round numbers without decimal fractions') }}</span>
         </div>
-        <label class="switch" @click.stop>
-          <input type="checkbox" :checked="settings.hideCents" @change="onToggleHideCents" />
-          <span class="slider" />
-        </label>
+        <button
+          type="button"
+          class="switch"
+          :class="{ 'switch--on': settings.hideCents }"
+          role="switch"
+          :aria-checked="settings.hideCents"
+          :aria-label="t('settings.hideCents', 'Hide cents')"
+          @click.stop="onToggleHideCents"
+        />
       </div>
 
       <div class="divider" />
@@ -336,49 +354,44 @@ h2 {
 
 /* iOS Toggle Switch */
 .switch {
-  position: relative;
-  display: inline-block;
   width: 48px;
   height: 28px;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container-highest, #3a3a3c);
+  position: relative;
+  transition: background var(--duration-fast, 0.2s) var(--ease-standard, ease);
+  border: none;
   cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--color-surface-container-high);
-  transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  border-radius: 28px;
+  padding: 0;
 }
 
-.slider:before {
+.switch::after {
+  content: '';
   position: absolute;
-  content: "";
-  height: 22px;
-  width: 22px;
+  top: 3px;
   left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
+  background: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform var(--duration-fast, 0.2s) var(--ease-spring-snappy, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
-input:checked + .slider {
-  background-color: var(--color-primary);
+.switch--on {
+  background: var(--color-primary);
 }
 
-input:checked + .slider:before {
+.switch--on::after {
   transform: translateX(20px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch,
+  .switch::after {
+    transition: none;
+  }
 }
 
 /* Modals */

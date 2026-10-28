@@ -620,5 +620,60 @@ eq('matches split category', filterCategory(filterTxWithSplits, 'cat_groceries')
 eq('matches second split category', filterCategory(filterTxWithSplits, 'cat_utilities'), true)
 eq('does not match unrelated category', filterCategory(filterTxWithSplits, 'cat_other'), false)
 
+console.log('\n— Pro Feature Toggle & Auto-activation —')
+let pendingAction = null
+let paywallOpen = false
+let hideCents = false
+
+function openPaywall(reason, onUnlock) {
+  paywallOpen = true
+  pendingAction = onUnlock || null
+}
+
+function closePaywall(clearPending = true) {
+  paywallOpen = false
+  if (clearPending) pendingAction = null
+}
+
+async function unlockPro() {
+  if (pendingAction) {
+    const action = pendingAction
+    pendingAction = null
+    await action()
+  }
+  closePaywall(false)
+}
+
+// Case 1: Non-pro user toggles hideCents -> paywall opens, hideCents stays false
+let isPremiumUser = false
+async function handleToggleHideCents() {
+  if (!isPremiumUser && !hideCents) {
+    openPaywall('Hide cents is a Pro feature.', async () => {
+      hideCents = true
+    })
+    return
+  }
+  hideCents = !hideCents
+}
+
+await handleToggleHideCents()
+eq('toggle when non-Pro does not turn on feature', hideCents, false)
+eq('paywall is opened', paywallOpen, true)
+eq('pending action is queued', typeof pendingAction === 'function', true)
+
+// Case 2: User completes purchase / rewarded ad -> feature automatically turns on
+await unlockPro()
+eq('feature automatically turns on after Pro unlock', hideCents, true)
+eq('paywall is closed', paywallOpen, false)
+eq('pending action is cleared after execution', pendingAction, null)
+
+// Case 3: Dismissing paywall without unlocking clears pending action
+hideCents = false
+await handleToggleHideCents()
+eq('second toggle attempts to queue action', typeof pendingAction === 'function', true)
+closePaywall(true)
+eq('dismissing paywall clears pending action', pendingAction, null)
+eq('feature remains off after dismiss', hideCents, false)
+
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

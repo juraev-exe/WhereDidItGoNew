@@ -18,6 +18,19 @@ export const usePremiumStore = defineStore('premium', () => {
   const paywallReason = ref<string>('')
   const loading = ref(false)
   const productDetails = ref<ProductDetails>(PRO_PRODUCT)
+  const pendingAction = ref<(() => Promise<void> | void) | null>(null)
+
+  async function executePendingAction() {
+    if (pendingAction.value) {
+      const action = pendingAction.value
+      pendingAction.value = null
+      try {
+        await action()
+      } catch (err) {
+        console.error('Failed to execute pending action after unlock:', err)
+      }
+    }
+  }
 
   async function load() {
     const isPurchased = await PremiumManager.checkStatus()
@@ -25,14 +38,18 @@ export const usePremiumStore = defineStore('premium', () => {
     isPremiumUser.value = isPurchased || isRewardedPassActive.value
   }
 
-  function openPaywall(reason = '') {
+  function openPaywall(reason = '', onUnlock?: () => Promise<void> | void) {
     paywallReason.value = reason
+    pendingAction.value = onUnlock || null
     paywallOpen.value = true
   }
 
-  function closePaywall() {
+  function closePaywall(clearPending = true) {
     paywallOpen.value = false
     paywallReason.value = ''
+    if (clearPending) {
+      pendingAction.value = null
+    }
   }
 
   async function buyPro(plan: SubscriptionPlanId = 'lifetime'): Promise<{ success: boolean; cancelled: boolean }> {
@@ -41,7 +58,8 @@ export const usePremiumStore = defineStore('premium', () => {
       const res = await PremiumManager.purchasePlan(plan)
       if (res.success) {
         isPremiumUser.value = true
-        closePaywall()
+        await executePendingAction()
+        closePaywall(false)
       }
       return res
     } finally {
@@ -55,7 +73,8 @@ export const usePremiumStore = defineStore('premium', () => {
       const success = await PremiumManager.presentPaywall()
       if (success) {
         isPremiumUser.value = true
-        closePaywall()
+        await executePendingAction()
+        closePaywall(false)
       }
       return success
     } finally {
@@ -74,7 +93,8 @@ export const usePremiumStore = defineStore('premium', () => {
       const restored = await PremiumManager.restorePurchases()
       if (restored) {
         isPremiumUser.value = true
-        closePaywall()
+        await executePendingAction()
+        closePaywall(false)
       }
       return restored
     } finally {
@@ -89,7 +109,8 @@ export const usePremiumStore = defineStore('premium', () => {
       if (earned) {
         isRewardedPassActive.value = true
         isPremiumUser.value = true
-        closePaywall()
+        await executePendingAction()
+        closePaywall(false)
       }
       return earned
     } finally {
@@ -136,5 +157,7 @@ export const usePremiumStore = defineStore('premium', () => {
     canAddAccount,
     canAddCategory,
     canAddTransaction,
+    pendingAction,
+    executePendingAction,
   }
 })

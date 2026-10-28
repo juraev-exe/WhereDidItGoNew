@@ -18,7 +18,13 @@ const premium = usePremiumStore()
 
 async function onToggleHideInRecents() {
   if (!premium.isPremiumUser && !settings.hideInRecents) {
-    premium.openPaywall(t('premium.limitHideInRecents', 'Recent apps privacy guard is a Pro feature.'))
+    premium.openPaywall(
+      t('premium.limitHideInRecents', 'Recent apps privacy guard is a Pro feature.'),
+      async () => {
+        await settings.setHideInRecents(true)
+        void tickFeedback()
+      },
+    )
     return
   }
   await settings.setHideInRecents(!settings.hideInRecents)
@@ -27,7 +33,13 @@ async function onToggleHideInRecents() {
 
 async function onSelectPrivacyMode(mode: PrivacyMode) {
   if (!premium.isPremiumUser && mode !== 'none') {
-    premium.openPaywall(t('premium.limitPrivacy', 'Custom privacy mode is a Pro feature.'))
+    premium.openPaywall(
+      t('premium.limitPrivacy', 'Custom privacy mode is a Pro feature.'),
+      async () => {
+        await settings.setPrivacyMode(mode)
+        void tickFeedback()
+      },
+    )
     return
   }
   await settings.setPrivacyMode(mode)
@@ -57,10 +69,15 @@ async function onSelectPrivacyMode(mode: PrivacyMode) {
             {{ t('settings.hideInRecentsDesc', 'Hides the app content in the recent apps list. This also protects screenshots.') }}
           </span>
         </div>
-        <label class="switch" @click.stop>
-          <input type="checkbox" :checked="settings.hideInRecents" @change="onToggleHideInRecents" />
-          <span class="slider" />
-        </label>
+        <button
+          type="button"
+          class="switch"
+          :class="{ 'switch--on': settings.hideInRecents }"
+          role="switch"
+          :aria-checked="settings.hideInRecents"
+          :aria-label="t('settings.hideInRecents', 'Hide preview in recents')"
+          @click.stop="onToggleHideInRecents"
+        />
       </div>
     </div>
 
@@ -254,49 +271,43 @@ h2 {
 
 /* iOS Toggle Switch */
 .switch {
-  position: relative;
-  display: inline-block;
   width: 48px;
   height: 28px;
   flex-shrink: 0;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container-highest, #3a3a3c);
+  position: relative;
+  transition: background var(--duration-fast, 0.2s) var(--ease-standard, ease);
+  border: none;
   cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--color-surface-container-high);
-  transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  border-radius: 28px;
+  padding: 0;
 }
 
-.slider:before {
+.switch::after {
+  content: '';
   position: absolute;
-  content: "";
-  height: 22px;
-  width: 22px;
+  top: 3px;
   left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
+  background: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform var(--duration-fast, 0.2s) var(--ease-spring-snappy, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
-input:checked + .slider {
-  background-color: var(--color-primary);
+.switch--on {
+  background: var(--color-primary);
 }
 
-input:checked + .slider:before {
+.switch--on::after {
   transform: translateX(20px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch,
+  .switch::after {
+    transition: none;
+  }
 }
 </style>

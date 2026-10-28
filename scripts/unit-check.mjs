@@ -48,6 +48,11 @@ import {
   validateSplits,
   flattenTransactionSplits,
 } from '../src/services/splits.ts'
+import {
+  getFriendlyBiometryName,
+  BiometryType,
+  checkBiometricsAvailable,
+} from '../src/services/native/biometrics.ts'
 
 let failures = 0
 
@@ -674,6 +679,19 @@ eq('second toggle attempts to queue action', typeof pendingAction === 'function'
 closePaywall(true)
 eq('dismissing paywall clears pending action', pendingAction, null)
 eq('feature remains off after dismiss', hideCents, false)
+
+console.log('\n— Biometric Authentication Engine —')
+eq('Face ID name mapping', getFriendlyBiometryName(BiometryType.faceId), 'Face ID')
+eq('Touch ID name mapping', getFriendlyBiometryName(BiometryType.touchId), 'Touch ID')
+eq('Fingerprint name mapping', getFriendlyBiometryName(BiometryType.fingerprintAuthentication), 'Fingerprint')
+eq('Face authentication name mapping', getFriendlyBiometryName(BiometryType.faceAuthentication), 'Face Recognition')
+eq('Iris authentication name mapping', getFriendlyBiometryName(BiometryType.irisAuthentication), 'Iris')
+eq('None name mapping fallback', getFriendlyBiometryName(BiometryType.none), 'Biometrics')
+
+const bioCheck = await checkBiometricsAvailable()
+eq('checkBiometricsAvailable returns isAvailable boolean', typeof bioCheck.isAvailable, 'boolean')
+eq('checkBiometricsAvailable returns biometryName string', typeof bioCheck.biometryName, 'string')
+eq('checkBiometricsAvailable returns isFace boolean', typeof bioCheck.isFace, 'boolean')
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

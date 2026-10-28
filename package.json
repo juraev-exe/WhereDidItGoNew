@@ -33,6 +33,7 @@
     "audit:onboarding": "node scripts/onboarding-check.mjs"
   },
   "dependencies": {
+    "@aparajita/capacitor-biometric-auth": "^10.0.0",
     "@capacitor-community/admob": "^8.2.1",
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",

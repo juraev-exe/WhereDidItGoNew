@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Lock, Fingerprint, Delete, ShieldAlert } from '@lucide/vue'
+import { Lock, Fingerprint, ScanFace, Delete, ShieldAlert } from '@lucide/vue'
 import { useSettingsStore } from '@/stores/settings'
 import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 import { tickFeedback, errorFeedback, successFeedback } from '@/services/native/haptics'
+import {
+  authenticateWithBiometrics,
+  checkBiometricsAvailable,
+} from '@/services/native/biometrics'
 
 const props = defineProps<{
   mode?: 'unlock' | 'setup'
@@ -23,6 +27,8 @@ const confirmPin = ref('')
 const isConfirming = ref(false)
 const errorMessage = ref('')
 const isShaking = ref(false)
+const isFace = ref(false)
+const isAuthenticating = ref(false)
 
 watch(pin, (newVal) => {
   if (newVal.length === 4) {
@@ -88,12 +94,48 @@ function clear() {
 }
 
 async function handleBiometrics() {
-  if (props.mode !== 'setup' && settings.biometricEnabled) {
-    // Biometric unlock simulated or native API
-    settings.unlockApp()
-    emit('success')
+  if (props.mode === 'setup' || !settings.biometricEnabled || isAuthenticating.value) {
+    return
+  }
+
+  isAuthenticating.value = true
+  try {
+    const res = await authenticateWithBiometrics({
+      reason: t('security.biometricsReason'),
+      title: t('security.biometrics'),
+      subtitle: t('security.biometricsHint'),
+    })
+
+    if (res.success) {
+      void successFeedback()
+      settings.unlockApp()
+      emit('success')
+    } else if (res.cancelled) {
+      // User cancelled prompt or opted to use PIN — stay on keypad without intrusive error
+    } else if (res.error) {
+      triggerError(t('security.biometricsFailed'))
+    }
+  } finally {
+    isAuthenticating.value = false
   }
 }
+
+onMounted(async () => {
+  if (props.mode !== 'setup' && settings.biometricEnabled) {
+    try {
+      const bio = await checkBiometricsAvailable()
+      isFace.value = bio.isFace
+      if (bio.isAvailable) {
+        // Small delay to allow transition/dom mount to settle before system dialog opens
+        setTimeout(() => {
+          void handleBiometrics()
+        }, 150)
+      }
+    } catch {
+      // Fallback silently to PIN entry
+    }
+  }
+})
 
 const confirmResetOpen = ref(false)
 
@@ -149,9 +191,10 @@ async function handleResetLock() {
             v-if="mode !== 'setup' && settings.biometricEnabled"
             type="button"
             class="key-btn action-key"
+            :aria-label="t('security.biometrics')"
             @click="handleBiometrics"
           >
-            <Fingerprint class="w-6 h-6 text-primary" />
+            <component :is="isFace ? ScanFace : Fingerprint" class="w-6 h-6 text-primary" />
           </button>
           <button v-else type="button" class="key-btn action-key" @click="clear">
             C

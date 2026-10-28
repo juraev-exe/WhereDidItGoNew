@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Fingerprint, Lock } from '@lucide/vue'
+import { ArrowLeft, Fingerprint, ScanFace, Lock } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import PinLockModal from '@/components/PinLockModal.vue'
 import { useSettingsStore } from '@/stores/settings'
 import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
+import {
+  checkBiometricsAvailable,
+  authenticateWithBiometrics,
+} from '@/services/native/biometrics'
 
 defineProps<{ embedded?: boolean }>()
 const emit = defineEmits<{
@@ -16,6 +20,21 @@ const { t } = useI18n()
 const settings = useSettingsStore()
 
 const pinSetupOpen = ref(false)
+const isFace = ref(false)
+const biometryTitle = ref('')
+const isChecking = ref(false)
+
+onMounted(async () => {
+  try {
+    const bio = await checkBiometricsAvailable()
+    isFace.value = bio.isFace
+    if (bio.biometryName) {
+      biometryTitle.value = bio.biometryName
+    }
+  } catch {
+    // Ignored
+  }
+})
 
 async function onPinSetupSuccess(newPin?: string) {
   if (newPin) {
@@ -33,7 +52,35 @@ async function disablePinLock() {
 }
 
 async function toggleBiometrics() {
-  await settings.setBiometricEnabled(!settings.biometricEnabled)
+  if (isChecking.value) return
+
+  if (!settings.biometricEnabled) {
+    isChecking.value = true
+    try {
+      const bio = await checkBiometricsAvailable()
+      if (!bio.isAvailable) {
+        emit('notify', t('security.biometricsNotAvailable'))
+        return
+      }
+
+      const auth = await authenticateWithBiometrics({
+        reason: t('security.biometricsVerify'),
+        title: t('security.biometrics'),
+        subtitle: t('security.biometricsHint'),
+      })
+
+      if (auth.success) {
+        await settings.setBiometricEnabled(true)
+        emit('notify', (biometryTitle.value || t('security.biometrics')) + ': ' + t('common.done'))
+      } else if (!auth.cancelled && auth.error) {
+        emit('notify', auth.error)
+      }
+    } finally {
+      isChecking.value = false
+    }
+  } else {
+    await settings.setBiometricEnabled(false)
+  }
 }
 </script>
 
@@ -74,9 +121,9 @@ async function toggleBiometrics() {
 
         <div class="biometric-row">
           <div class="bio-info">
-            <Fingerprint :size="20" class="bio-icon" />
+            <component :is="isFace ? ScanFace : Fingerprint" :size="20" class="bio-icon" />
             <div class="bio-text">
-              <span class="bio-title">{{ t('security.biometrics') }}</span>
+              <span class="bio-title">{{ biometryTitle || t('security.biometrics') }}</span>
               <span class="bio-hint">{{ t('security.biometricsHint') }}</span>
             </div>
           </div>
@@ -87,6 +134,7 @@ async function toggleBiometrics() {
             role="switch"
             :aria-checked="settings.biometricEnabled"
             :aria-label="t('security.biometrics')"
+            :disabled="isChecking"
             @click="toggleBiometrics"
           />
         </div>

@@ -18,6 +18,11 @@ const settings = useSettingsStore()
 
 const COLOR_SCHEMES: { id: ColorScheme; label: string; gradient: string; color: string }[] = [
   { id: 'teal', label: 'Emerald Teal', gradient: 'linear-gradient(135deg, #0b6e6a, #2a9d8f)', color: '#0b6e6a' },
+  { id: 'tiffany', label: 'Tiffany & Dark Gray', gradient: 'linear-gradient(135deg, #171717, #21F1A8)', color: '#21F1A8' },
+  { id: 'true-pink', label: 'True Pink & Chill White', gradient: 'linear-gradient(135deg, #FD1843, #FFF9FA)', color: '#FD1843' },
+  { id: 'cyber-violet', label: 'Charcoal Violet & Cyber Lime', gradient: 'linear-gradient(135deg, #3C1A47, #B6FF00)', color: '#B6FF00' },
+  { id: 'lime-canopy', label: 'Lime Sprout & Fresh Canopy', gradient: 'linear-gradient(135deg, #2D3E2C, #E4FD97)', color: '#E4FD97' },
+  { id: 'milky-mantis', label: 'Milky & Mantis', gradient: 'linear-gradient(135deg, #FFFDF1, #59C749)', color: '#59C749' },
   { id: 'luxury-navy', label: 'Midnight Coral', gradient: 'linear-gradient(135deg, #004e72, #ff6e42)', color: '#ff6e42' },
   { id: 'violet-peach', label: 'Celestial Peach', gradient: 'linear-gradient(135deg, #391a77, #fedfcb)', color: '#a855f7' },
   { id: 'navy-cyan', label: 'Navy Cyan', gradient: 'linear-gradient(135deg, #1c1c28, #1ec1cb)', color: '#1ec1cb' },

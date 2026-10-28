@@ -135,6 +135,11 @@ export type ColorScheme =
   | 'luxury-navy'
   | 'violet-peach'
   | 'navy-cyan'
+  | 'tiffany'
+  | 'true-pink'
+  | 'cyber-violet'
+  | 'lime-canopy'
+  | 'milky-mantis'
 /** Bottom nav tab style: icon + text label, or icon only (more room per tab). */
 export type NavLabelStyle = 'labels' | 'icons'
 export type AppFont =

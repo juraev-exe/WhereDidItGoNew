@@ -16,6 +16,7 @@ import type { AppFont, ColorScheme, CurrencyPosition, HeroMetric, NavLabelStyle,
 const VALID_COLOR_SCHEMES: ColorScheme[] = [
   'teal', 'blue', 'purple', 'rose', 'amber', 'obsidian',
   'luxury-navy', 'violet-peach', 'navy-cyan',
+  'tiffany', 'true-pink', 'cyber-violet', 'lime-canopy', 'milky-mantis',
 ]
 
 function isColorScheme(value: string | undefined | null): value is ColorScheme {

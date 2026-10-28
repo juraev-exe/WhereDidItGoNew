@@ -497,6 +497,141 @@
   --glow-primary: 0 0 0 3px color-mix(in srgb, #1ec1cb 40%, transparent), 0 4px 20px color-mix(in srgb, #1ec1cb 35%, transparent);
 }
 
+/* ── Tiffany & Dark Gray (Combo 01) ───────────────────────────────────────
+   Tiffany #21F1A8 · Dark Gray #171717 */
+[data-color-scheme='tiffany'] {
+  --color-primary: #0dbd81;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #d6faee;
+  --color-on-primary-container: #064e35;
+  --color-tertiary: #21F1A8;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #0dbd81 28%, transparent), 0 4px 16px color-mix(in srgb, #0dbd81 22%, transparent);
+}
+[data-theme='dark'][data-color-scheme='tiffany'] {
+  --color-primary: #21F1A8;
+  --color-on-primary: #063725;
+  --color-primary-container: #171717;
+  --color-on-primary-container: #a7fbe0;
+  --color-tertiary: #21F1A8;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #21F1A8 35%, transparent), 0 4px 20px color-mix(in srgb, #21F1A8 28%, transparent);
+}
+[data-theme='oled'][data-color-scheme='tiffany'] {
+  --color-primary: #21F1A8;
+  --color-on-primary: #000000;
+  --color-primary-container: #0a1f17;
+  --color-on-primary-container: #a7fbe0;
+  --color-tertiary: #21F1A8;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #21F1A8 40%, transparent), 0 4px 20px color-mix(in srgb, #21F1A8 35%, transparent);
+}
+
+/* ── True Pink & Chill White (Combo 02) ───────────────────────────────────
+   True Pink #FD1843 · Chill White #FFF9FA */
+[data-color-scheme='true-pink'] {
+  --color-primary: #FD1843;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #FFF9FA;
+  --color-on-primary-container: #8e041e;
+  --color-tertiary: #ff4d6d;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #FD1843 28%, transparent), 0 4px 16px color-mix(in srgb, #FD1843 22%, transparent);
+}
+[data-theme='dark'][data-color-scheme='true-pink'] {
+  --color-primary: #ff4d6d;
+  --color-on-primary: #3f020d;
+  --color-primary-container: #590616;
+  --color-on-primary-container: #FFF9FA;
+  --color-tertiary: #FD1843;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #FD1843 35%, transparent), 0 4px 20px color-mix(in srgb, #FD1843 28%, transparent);
+}
+[data-theme='oled'][data-color-scheme='true-pink'] {
+  --color-primary: #ff4d6d;
+  --color-on-primary: #000000;
+  --color-primary-container: #2d020a;
+  --color-on-primary-container: #FFF9FA;
+  --color-tertiary: #FD1843;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #FD1843 40%, transparent), 0 4px 20px color-mix(in srgb, #FD1843 35%, transparent);
+}
+
+/* ── Charcoal Violet & Cyber Lime (Combo 03) ──────────────────────────────
+   Charcoal Violet #3C1A47 · Cyber Lime #B6FF00 */
+[data-color-scheme='cyber-violet'] {
+  --color-primary: #3C1A47;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #f4ffcc;
+  --color-on-primary-container: #3C1A47;
+  --color-tertiary: #84b800;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #3C1A47 28%, transparent), 0 4px 16px color-mix(in srgb, #3C1A47 22%, transparent);
+}
+[data-theme='dark'][data-color-scheme='cyber-violet'] {
+  --color-primary: #B6FF00;
+  --color-on-primary: #1f0b27;
+  --color-primary-container: #3C1A47;
+  --color-on-primary-container: #e8ff99;
+  --color-tertiary: #B6FF00;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #B6FF00 35%, transparent), 0 4px 20px color-mix(in srgb, #B6FF00 28%, transparent);
+}
+[data-theme='oled'][data-color-scheme='cyber-violet'] {
+  --color-primary: #B6FF00;
+  --color-on-primary: #000000;
+  --color-primary-container: #220e29;
+  --color-on-primary-container: #e8ff99;
+  --color-tertiary: #B6FF00;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #B6FF00 40%, transparent), 0 4px 20px color-mix(in srgb, #B6FF00 35%, transparent);
+}
+
+/* ── Lime Sprout & Fresh Canopy (Combo 05) ────────────────────────────────
+   Lime Sprout #E4FD97 · Fresh Canopy #2D3E2C */
+[data-color-scheme='lime-canopy'] {
+  --color-primary: #2D3E2C;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #f4fed5;
+  --color-on-primary-container: #172316;
+  --color-tertiary: #648461;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #2D3E2C 28%, transparent), 0 4px 16px color-mix(in srgb, #2D3E2C 22%, transparent);
+}
+[data-theme='dark'][data-color-scheme='lime-canopy'] {
+  --color-primary: #d7f57a;
+  --color-on-primary: #172316;
+  --color-primary-container: #2D3E2C;
+  --color-on-primary-container: #f4fed5;
+  --color-tertiary: #E4FD97;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #E4FD97 35%, transparent), 0 4px 20px color-mix(in srgb, #E4FD97 28%, transparent);
+}
+[data-theme='oled'][data-color-scheme='lime-canopy'] {
+  --color-primary: #E4FD97;
+  --color-on-primary: #000000;
+  --color-primary-container: #1a261a;
+  --color-on-primary-container: #f4fed5;
+  --color-tertiary: #E4FD97;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #E4FD97 40%, transparent), 0 4px 20px color-mix(in srgb, #E4FD97 35%, transparent);
+}
+
+/* ── Milky & Mantis (Combo 06) ────────────────────────────────────────────
+   Milky #FFFDF1 · Mantis #59C749 */
+[data-color-scheme='milky-mantis'] {
+  --color-primary: #3ca42d;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #FFFDF1;
+  --color-on-primary-container: #1a5b11;
+  --color-tertiary: #59C749;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #3ca42d 28%, transparent), 0 4px 16px color-mix(in srgb, #3ca42d 22%, transparent);
+}
+[data-theme='dark'][data-color-scheme='milky-mantis'] {
+  --color-primary: #6be05a;
+  --color-on-primary: #0e3508;
+  --color-primary-container: #1a5b11;
+  --color-on-primary-container: #e2f9de;
+  --color-tertiary: #59C749;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #59C749 35%, transparent), 0 4px 20px color-mix(in srgb, #59C749 28%, transparent);
+}
+[data-theme='oled'][data-color-scheme='milky-mantis'] {
+  --color-primary: #6be05a;
+  --color-on-primary: #000000;
+  --color-primary-container: #0d2e07;
+  --color-on-primary-container: #e2f9de;
+  --color-tertiary: #59C749;
+  --glow-primary: 0 0 0 3px color-mix(in srgb, #59C749 40%, transparent), 0 4px 20px color-mix(in srgb, #59C749 35%, transparent);
+}
+
 /* ═══════════════════════════════════════════════
    Activity heatmap scale
    Declared here (not in the scoped component) because Vue's scoped-style

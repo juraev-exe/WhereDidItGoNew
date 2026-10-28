@@ -18,4 +18,11 @@ export const CATEGORY_COLORS = [
   { hex: '#073b4c', name: 'Midnight' },
   { hex: '#092634', name: 'Navy Blue' },
   { hex: '#6c757d', name: 'Slate Gray' },
+  { hex: '#21F1A8', name: 'Tiffany' },
+  { hex: '#FD1843', name: 'True Pink' },
+  { hex: '#B6FF00', name: 'Cyber Lime' },
+  { hex: '#3C1A47', name: 'Charcoal Violet' },
+  { hex: '#59C749', name: 'Mantis' },
+  { hex: '#E4FD97', name: 'Lime Sprout' },
+  { hex: '#2D3E2C', name: 'Fresh Canopy' },
 ] as const

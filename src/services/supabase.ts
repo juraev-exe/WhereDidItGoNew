@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient, type Session, type User, type AuthChangeEvent } from '@supabase/supabase-js'
 import type { Database } from '@/types/supabase'
+import { isNative } from '@/lib/platform'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
@@ -10,6 +11,17 @@ export const isSupabaseConfigured = Boolean(
   !supabaseUrl.includes('your-project-id') &&
   !supabaseAnonKey.includes('your-anon-key')
 )
+
+/**
+ * Returns the appropriate auth redirect URL depending on whether the app
+ * is executing in a mobile Capacitor webview or standard web browser.
+ */
+export function getAuthRedirectUrl(): string {
+  if (isNative()) {
+    return 'wherediditgo://auth-callback'
+  }
+  return typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173'
+}
 
 // When Supabase is not configured, we create a client with an invalid local URL
 // so no credentials are ever sent to an unknown external domain.
@@ -65,7 +77,7 @@ export async function signInWithMagicLink(email: string) {
   const { data, error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: window.location.origin,
+      emailRedirectTo: getAuthRedirectUrl(),
     },
   })
   if (error) throw error
@@ -109,7 +121,7 @@ export async function sendPasswordReset(email: string) {
     throw new Error('Supabase is not configured. Please check your .env credentials.')
   }
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin,
+    redirectTo: getAuthRedirectUrl(),
   })
   if (error) throw error
   return data

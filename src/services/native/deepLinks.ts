@@ -20,12 +20,13 @@ import { App } from '@capacitor/app'
 import type { PluginListenerHandle } from '@capacitor/core'
 import { isNative } from '@/lib/platform'
 
-export type DeepLinkAction = 'add' | 'scan' | 'budgets' | 'unknown'
+export type DeepLinkAction = 'add' | 'scan' | 'budgets' | 'auth' | 'unknown'
 
 export interface DeepLinkHandlers {
   onAddTransaction?: () => void
   onScanReceipt?: () => void
   onOpenBudgets?: () => void
+  onAuthComplete?: () => void
 }
 
 export function parseDeepLink(url: string): DeepLinkAction {
@@ -35,19 +36,43 @@ export function parseDeepLink(url: string): DeepLinkAction {
     if (host === 'add') return 'add'
     if (host === 'scan') return 'scan'
     if (host === 'budgets' || host === 'budget') return 'budgets'
+    if (host === 'auth-callback' || host === 'login-callback' || url.includes('access_token=') || url.includes('refresh_token=')) return 'auth'
     return 'unknown'
   } catch {
     return 'unknown'
   }
 }
 
-function dispatch(action: DeepLinkAction, handlers: DeepLinkHandlers): void {
+async function handleAuthTokens(rawUrl: string, onComplete?: () => void) {
+  try {
+    const hashIndex = rawUrl.indexOf('#')
+    const queryIndex = rawUrl.indexOf('?')
+    const paramsString = hashIndex !== -1 ? rawUrl.substring(hashIndex + 1) : queryIndex !== -1 ? rawUrl.substring(queryIndex + 1) : ''
+    const params = new URLSearchParams(paramsString)
+    const accessToken = params.get('access_token')
+    const refreshToken = params.get('refresh_token')
+    if (accessToken && refreshToken) {
+      const { supabase } = await import('@/services/supabase')
+      await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      })
+      onComplete?.()
+    }
+  } catch (err) {
+    console.error('Failed to parse and set session from auth deep link:', err)
+  }
+}
+
+function dispatch(action: DeepLinkAction, handlers: DeepLinkHandlers, rawUrl?: string): void {
   if (action === 'add') {
     handlers.onAddTransaction?.()
   } else if (action === 'scan') {
     handlers.onScanReceipt?.()
   } else if (action === 'budgets') {
     handlers.onOpenBudgets?.()
+  } else if (action === 'auth' && rawUrl) {
+    void handleAuthTokens(rawUrl, handlers.onAuthComplete)
   }
 }
 
@@ -67,7 +92,7 @@ export async function initDeepLinks(
     const launch = await App.getLaunchUrl()
     if (launch?.url) {
       const action = parseDeepLink(launch.url)
-      dispatch(action, config)
+      dispatch(action, config, launch.url)
     }
   } catch {
     // No launch URL available — nothing to do.
@@ -77,7 +102,7 @@ export async function initDeepLinks(
   try {
     handle = await App.addListener('appUrlOpen', ({ url }) => {
       const action = parseDeepLink(url)
-      dispatch(action, config)
+      dispatch(action, config, url)
     })
   } catch {
     // Listener registration failed — live deep links won't be caught, but cold-start still works.

@@ -80,7 +80,7 @@ ru-RU:
 ---------------------
 https://juraev-exe.github.io/wherediditgo/privacy.html
 
-5. APP CONTENT & POLICY QUESTIONNAIRES
+6. APP CONTENT & POLICY QUESTIONNAIRES
 ---------------------------------------
 - Target Audience: 18 and older
 - Ads: No, my app does not contain ads

@@ -57,9 +57,26 @@ Download WhereDidItGo today and discover where your money actually goes!
 - App Icon: play-store-icon-512x512.png (512x512 PNG, ready)
 - Feature Graphic: feature-graphic-1024x500.png (1024x500 PNG, ready)
 - Screenshots: screenshot-1 to screenshot-6 (ready)
-- App Bundle: app-release.aab (signed v1.1.3 release bundle, versionCode 9, ready)
+- App Bundle: app-release.aab (signed v1.1.5 release bundle, versionCode 11, ready)
 
-4. PRIVACY POLICY URL
+4. RELEASE NOTES / WHAT'S NEW (FOR PLAY CONSOLE)
+-----------------------------------------------
+en-US:
+- Added interactive split transactions: easily split an expense across multiple categories.
+- Added native fingerprint and Face ID biometric authentication support for PIN lock.
+- Added 5 new color themes (Tiffany, True Pink, Cyber Violet, Lime Canopy, Milky Mantis).
+- Added interactive yearly contribution activity heatmap.
+- Supabase cloud vault sync and backup improvements.
+- Performance enhancements and data quality optimizations.
+
+ru-RU:
+- Добавлено разделение транзакций по нескольким категориям.
+- Биометрическая аутентификация (отпечаток пальца и Face ID) для PIN-кода.
+- 5 новых цветовых тем оформления.
+- Интерактивная тепловая карта активности расходов и доходов.
+- Улучшения облачной синхронизации и резервного копирования.
+
+5. PRIVACY POLICY URL
 ---------------------
 https://juraev-exe.github.io/wherediditgo/privacy.html
 

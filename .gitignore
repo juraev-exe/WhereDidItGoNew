@@ -96,3 +96,5 @@ Thumbs.db
 
 # Audit walk output (screenshots + report)
 audit-out/
+.vercel
+.env*

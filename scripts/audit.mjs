@@ -205,9 +205,17 @@ if (!(await hasAuditRow())) problems.push('[20-write-path] new transaction did n
 
 const savedAmount = await page.evaluate(() => {
   const row = [...document.querySelectorAll('.list .row')].find((r) =>
-    r.textContent.includes('Audit expense')
+    r.textContent.includes('Audit expense'),
   )
-  return row ? row.querySelector('.amount')?.textContent?.trim() : null
+  if (!row) return null
+  const amt = row.querySelector('.amount')
+  if (!amt) return null
+  const nf = amt.querySelector('number-flow-vue, number-flow')
+  if (nf && nf.shadowRoot) {
+    const chars = [...nf.shadowRoot.querySelectorAll('.symbol__value, .digit__num:not([inert])')]
+    return chars.map((c) => c.textContent).join('')
+  }
+  return amt.textContent?.trim() || null
 })
 if (!savedAmount || savedAmount.replace(/[^\d.]/g, '') !== '20.00') {
   problems.push(`[20-write-path] expected 12+8 to save as 20.00, amount reads: ${savedAmount}`)

@@ -51,18 +51,19 @@ export async function resetDb(page) {
 export async function completeOnboarding(page) {
   await page.goto(BASE, { waitUntil: 'domcontentloaded' })
   await page.waitForTimeout(1500)
-  const next = () => page.getByRole('button', { name: /^next$/i })
-  if (!(await next().count())) return false
+  const stepButton = () =>
+    page.getByRole('button', { name: /^(next|skip|finish|done|go to home|get started)$/i })
+  if (!(await stepButton().count())) return false
   for (let guard = 0; guard < 8; guard++) {
-    if (!(await next().count())) break
-    await next().first().click()
-    await page.waitForTimeout(450)
+    const btn = stepButton()
+    if (!(await btn.count())) break
+    await btn.first().click()
+    await page.waitForTimeout(600)
   }
-  const skip = page.getByRole('button', { name: /^skip$/i })
-  if (await skip.count()) await skip.first().click()
   await page.waitForTimeout(1600)
   return true
 }
+
 
 /** Writes a realistic dataset straight into Dexie's IndexedDB stores. */
 export async function seed(page) {

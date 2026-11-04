@@ -63,7 +63,9 @@ const features = computed(() => [
 
 async function onBuy() {
   const result = await premium.buyPro(selectedPlan.value)
-  if (!result.success && !result.cancelled) {
+  if (result.success) {
+    toast.success(t('premium.purchaseSuccess', 'WhereDidItGo Pro unlocked! Welcome aboard.'))
+  } else if (!result.cancelled) {
     toast.error(t('premium.purchaseFailed', "Purchase didn't go through — try again in a moment."))
   }
 }

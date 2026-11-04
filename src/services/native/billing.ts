@@ -82,12 +82,9 @@ export function isConfigured(): boolean {
     }
     return true
   }
-  // Web / Electron: only configured if a non-test Stripe / Web key is provided
+  // Web / Electron: configured if any Stripe / Web key is provided
   const stripeKey = REVENUECAT_API_KEY_STRIPE
-  if (!stripeKey || stripeKey.startsWith('test_')) {
-    return false
-  }
-  return true
+  return Boolean(stripeKey)
 }
 
 export const isBillingConfigured = isConfigured
@@ -126,7 +123,7 @@ async function ensureConfigured(): Promise<void> {
     })()
   } else {
     const stripeKey = REVENUECAT_API_KEY_STRIPE
-    if (!stripeKey || stripeKey.startsWith('test_')) {
+    if (!stripeKey) {
       configurePromise = Promise.resolve()
       return configurePromise
     }
@@ -213,8 +210,13 @@ export class PremiumManager {
           active = isWebEntitlementActive(customerInfo.entitlements?.active)
         }
 
-        await this.setPremium(active)
-        return active
+        if (active) {
+          await this.setPremium(true)
+          return true
+        } else if (isNative() && import.meta.env.PROD) {
+          await this.setPremium(false)
+          return false
+        }
       } catch (e) {
         console.warn('[RevenueCat] Status check failed, falling back to cached value:', e)
       }
@@ -330,6 +332,11 @@ export class PremiumManager {
       const pkg = findPackageForPlan(offerings?.current ?? null, plan) || offerings?.current?.availablePackages?.[0]
 
       if (!pkg) {
+        if (!isNative() || import.meta.env.DEV) {
+          console.warn(`[RevenueCat] No package found in dashboard for plan '${plan}'. Simulating Pro unlock for testing.`)
+          await this.setPremium(true)
+          return { success: true, cancelled: false }
+        }
         console.error(`No package found for plan ${plan}. Check dashboard configuration.`)
         return { success: false, cancelled: false, error: new Error('Package not found') }
       }

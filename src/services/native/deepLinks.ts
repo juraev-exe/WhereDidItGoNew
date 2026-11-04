@@ -19,6 +19,7 @@
 import { App } from '@capacitor/app'
 import type { PluginListenerHandle } from '@capacitor/core'
 import { isNative } from '@/lib/platform'
+import { supabase } from '@/services/supabase'
 
 export type DeepLinkAction = 'add' | 'scan' | 'budgets' | 'auth' | 'unknown'
 
@@ -52,7 +53,6 @@ async function handleAuthTokens(rawUrl: string, onComplete?: () => void) {
     const accessToken = params.get('access_token')
     const refreshToken = params.get('refresh_token')
     if (accessToken && refreshToken) {
-      const { supabase } = await import('@/services/supabase')
       await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,

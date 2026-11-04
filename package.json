@@ -23,6 +23,7 @@
     "check:i18n": "tsx scripts/i18n-check.mjs",
     "check:unit": "tsx scripts/unit-check.mjs",
     "check:autocleaning": "tsx scripts/data-autocleaning-check.mjs",
+    "check:unslop": "unslop .",
     "check": "npm run typecheck && npm run check:i18n && npm run check:unit && npm run check:autocleaning",
     "audit": "node scripts/audit.mjs",
     "audit:backup": "node scripts/backup-check.mjs",

@@ -2,8 +2,9 @@ import { createClient, type SupabaseClient, type Session, type User, type AuthCh
 import type { Database } from '@/types/supabase'
 import { isNative } from '@/lib/platform'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+const env = (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {}) as Record<string, string | undefined>
+const supabaseUrl = env.VITE_SUPABASE_URL || (typeof process !== 'undefined' && process.env?.VITE_SUPABASE_URL) || ''
+const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || (typeof process !== 'undefined' && process.env?.VITE_SUPABASE_ANON_KEY) || ''
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&

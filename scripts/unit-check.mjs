@@ -693,5 +693,21 @@ eq('checkBiometricsAvailable returns isAvailable boolean', typeof bioCheck.isAva
 eq('checkBiometricsAvailable returns biometryName string', typeof bioCheck.biometryName, 'string')
 eq('checkBiometricsAvailable returns isFace boolean', typeof bioCheck.isFace, 'boolean')
 
+console.log('\n— RevenueCat Purchase & Entitlement Verification Engine —')
+import { isProEntitlementActive, isWebEntitlementActive, ENTITLEMENT_ID } from '../src/services/native/billing'
+
+eq('null entitlements returns false', isProEntitlementActive(null), false)
+eq('undefined entitlements returns false', isProEntitlementActive(undefined), false)
+eq('empty entitlements returns false', isProEntitlementActive({}), false)
+eq('exact entitlement id active returns true', isProEntitlementActive({ [ENTITLEMENT_ID]: { isActive: true } }), true)
+eq('pro entitlement active returns true', isProEntitlementActive({ pro: { isActive: true } }), true)
+eq('premium entitlement active returns true', isProEntitlementActive({ premium: { isActive: true } }), true)
+eq('generic active entitlement returns true', isProEntitlementActive({ custom_plan: { isActive: true } }), true)
+
+eq('web null entitlements returns false', isWebEntitlementActive(null), false)
+eq('web empty entitlements returns false', isWebEntitlementActive({}), false)
+eq('web active entitlement returns true', isWebEntitlementActive({ [ENTITLEMENT_ID]: { isActive: true } }), true)
+eq('web inactive entitlement returns false', isWebEntitlementActive({ [ENTITLEMENT_ID]: { isActive: false } }), false)
+
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

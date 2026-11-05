@@ -18,16 +18,18 @@ const PREMIUM_KEY = 'wdg_is_premium'
  * In production release builds, Google Play requires a public production key starting with "goog_".
  * Test keys (test_...) cause RevenueCat's native Android SDK to force-close the app in release mode.
  */
+const env = (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {}) as Record<string, any>
+
 const REVENUECAT_API_KEY_ANDROID =
-  import.meta.env.VITE_REVENUECAT_ANDROID_KEY || 'goog_jsxFosZXptnMUILBUeVnPlzePQS'
+  env.VITE_REVENUECAT_ANDROID_KEY || 'goog_jsxFosZXptnMUILBUeVnPlzePQS'
 const REVENUECAT_API_KEY_IOS =
-  import.meta.env.VITE_REVENUECAT_IOS_KEY || 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
+  env.VITE_REVENUECAT_IOS_KEY || 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
 const REVENUECAT_API_KEY_STRIPE =
-  import.meta.env.VITE_REVENUECAT_STRIPE_KEY || 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
+  env.VITE_REVENUECAT_STRIPE_KEY || 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
 
 /** Primary Pro Entitlement Identifier in RevenueCat Dashboard */
 export const ENTITLEMENT_ID =
-  import.meta.env.VITE_REVENUECAT_ENTITLEMENT_ID || 'wherediditgo_pro'
+  env.VITE_REVENUECAT_ENTITLEMENT_ID || 'wherediditgo_pro'
 
 export type SubscriptionPlanId = 'lifetime' | 'annual' | 'monthly'
 
@@ -77,7 +79,7 @@ export function isConfigured(): boolean {
     const key = platform() === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID
     if (!key) return false
     // In a native release build, RevenueCat Android SDK will force-close the app if given a test_ key.
-    if (import.meta.env.PROD && key.startsWith('test_')) {
+    if (Boolean(env.PROD) && key.startsWith('test_')) {
       return false
     }
     return true
@@ -99,7 +101,7 @@ async function ensureConfigured(): Promise<void> {
   if (isNative()) {
     const key = currentApiKey()
     // Guard: Prevent RevenueCat native SDK from force-closing the app with an AlertDialog in release builds when using a test key
-    if (!key || (import.meta.env.PROD && key.startsWith('test_'))) {
+    if (!key || (Boolean(env.PROD) && key.startsWith('test_'))) {
       console.warn(
         '[RevenueCat] Test API key detected in production build. RevenueCat disabled to prevent app termination. Provide a production Google Play key (goog_...) to enable Play Store billing.',
       )
@@ -109,7 +111,7 @@ async function ensureConfigured(): Promise<void> {
 
     configurePromise = (async () => {
       try {
-        await NativePurchases.setLogLevel({ level: import.meta.env.PROD ? LOG_LEVEL.WARN : LOG_LEVEL.DEBUG })
+        await NativePurchases.setLogLevel({ level: env.PROD ? LOG_LEVEL.WARN : LOG_LEVEL.DEBUG })
         await NativePurchases.configure({ apiKey: key })
 
         // Real-time listener for customer updates

@@ -270,15 +270,34 @@ export class PremiumManager {
    * Uses paywall configured in the RevenueCat dashboard.
    */
   static async presentPaywall(): Promise<boolean> {
-    if (!isNative() || !isConfigured()) return false
+    const res = await this.presentPaywallWithDetails()
+    return res.success
+  }
+
+  /**
+   * Present the native RevenueCat Paywall with detailed error output.
+   */
+  static async presentPaywallWithDetails(): Promise<{ success: boolean; error?: any }> {
+    if (!isNative() || !isConfigured()) {
+      return { success: false, error: new Error('RevenueCat native paywall is only available on iOS/Android native builds.') }
+    }
     try {
       await ensureConfigured()
+      const offerings = await this.getOfferings()
+      if (!offerings?.current || !offerings.current.availablePackages?.length) {
+        return {
+          success: false,
+          error: new Error(
+            'No packages found in RevenueCat Default Offering. In RevenueCat dashboard, go to Product Catalog → Offerings → default → "+ New Package" and link your Google Play product.',
+          ),
+        }
+      }
       const { result } = await RevenueCatUI.presentPaywall()
       const active = await this.checkStatus()
-      return result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED || active
-    } catch (e) {
+      return { success: result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED || active }
+    } catch (e: any) {
       console.error('Failed to present paywall:', e)
-      return false
+      return { success: false, error: e }
     }
   }
 
@@ -334,13 +353,19 @@ export class PremiumManager {
       const pkg = findPackageForPlan(offerings?.current ?? null, plan) || offerings?.current?.availablePackages?.[0]
 
       if (!pkg) {
-        if (!isNative() || import.meta.env.DEV) {
+        if (!isNative() || Boolean(env.DEV)) {
           console.warn(`[RevenueCat] No package found in dashboard for plan '${plan}'. Simulating Pro unlock for testing.`)
           await this.setPremium(true)
           return { success: true, cancelled: false }
         }
         console.error(`No package found for plan ${plan}. Check dashboard configuration.`)
-        return { success: false, cancelled: false, error: new Error('Package not found') }
+        return {
+          success: false,
+          cancelled: false,
+          error: new Error(
+            `No package found for "${plan}". In the RevenueCat dashboard, go to Product Catalog → Offerings → default → "+ New Package" and add $rc_lifetime.`,
+          ),
+        }
       }
 
       return await this.purchasePackage(pkg)

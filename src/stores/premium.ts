@@ -52,7 +52,7 @@ export const usePremiumStore = defineStore('premium', () => {
     }
   }
 
-  async function buyPro(plan: SubscriptionPlanId = 'lifetime'): Promise<{ success: boolean; cancelled: boolean }> {
+  async function buyPro(plan: SubscriptionPlanId = 'lifetime'): Promise<{ success: boolean; cancelled: boolean; error?: any }> {
     loading.value = true
     try {
       const res = await PremiumManager.purchasePlan(plan)
@@ -67,16 +67,16 @@ export const usePremiumStore = defineStore('premium', () => {
     }
   }
 
-  async function presentNativePaywall(): Promise<boolean> {
+  async function presentNativePaywall(): Promise<{ success: boolean; error?: any }> {
     loading.value = true
     try {
-      const success = await PremiumManager.presentPaywall()
-      if (success) {
+      const res = await PremiumManager.presentPaywallWithDetails()
+      if (res.success) {
         isPremiumUser.value = true
         await executePendingAction()
         closePaywall(false)
       }
-      return success
+      return res
     } finally {
       loading.value = false
     }

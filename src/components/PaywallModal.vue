@@ -66,7 +66,17 @@ async function onBuy() {
   if (result.success) {
     toast.success(t('premium.purchaseSuccess', 'WhereDidItGo Pro unlocked! Welcome aboard.'))
   } else if (!result.cancelled) {
-    toast.error(t('premium.purchaseFailed', "Purchase didn't go through — try again in a moment."))
+    const errorMsg = result.error?.message || t('premium.purchaseFailed', "Purchase didn't go through — try again in a moment.")
+    toast.error(errorMsg)
+  }
+}
+
+async function onNativePaywall() {
+  const result = await premium.presentNativePaywall()
+  if (result.success) {
+    toast.success(t('premium.purchaseSuccess', 'WhereDidItGo Pro unlocked! Welcome aboard.'))
+  } else if (result.error) {
+    toast.error(result.error.message || 'RevenueCat paywall could not open. Please add packages to your offering.')
   }
 }
 
@@ -211,7 +221,7 @@ async function onWatchAd() {
           type="button"
           class="restore-btn"
           :disabled="premium.loading"
-          @click="premium.presentNativePaywall()"
+          @click="onNativePaywall"
         >
           <Crown :size="14" />
           {{ t('premium.openNativePaywall', 'Open RevenueCat Paywall') }}

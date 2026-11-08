@@ -118,6 +118,28 @@ export const usePremiumStore = defineStore('premium', () => {
     }
   }
 
+  async function resetProStatus(): Promise<void> {
+    await PremiumManager.resetPremium()
+    try {
+      localStorage.removeItem('wdg_rewarded_pass_expires')
+    } catch {}
+    isRewardedPassActive.value = false
+    isPremiumUser.value = false
+  }
+
+  async function recheckStatus(): Promise<boolean> {
+    loading.value = true
+    try {
+      await PremiumManager.resetPremium()
+      const isPurchased = await PremiumManager.checkStatus()
+      isRewardedPassActive.value = hasActiveRewardedPass()
+      isPremiumUser.value = isPurchased || isRewardedPassActive.value
+      return isPremiumUser.value
+    } finally {
+      loading.value = false
+    }
+  }
+
   function canAddAccount(): boolean {
     if (isPremiumUser.value) return true
     const accounts = useAccountsStore()
@@ -152,6 +174,8 @@ export const usePremiumStore = defineStore('premium', () => {
     openCustomerCenter,
     restore,
     watchAdForPro,
+    resetProStatus,
+    recheckStatus,
     isRewardedPassActive,
     getRewardedPassHoursRemaining,
     canAddAccount,

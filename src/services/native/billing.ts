@@ -159,8 +159,11 @@ export function findPackageForPlan(
         (p) =>
           p.identifier === '$rc_lifetime' ||
           p.identifier.toLowerCase().includes('lifetime') ||
-          p.product?.identifier?.toLowerCase().includes('lifetime'),
+          p.product?.identifier?.toLowerCase().includes('lifetime') ||
+          p.identifier.toLowerCase().includes('pro') ||
+          p.product?.identifier?.toLowerCase().includes('pro'),
       ) ||
+      offering.availablePackages[0] ||
       null
     )
   }
@@ -196,8 +199,8 @@ export class PremiumManager {
   private static cachedState: boolean | null = null
 
   /** Check if user has active Pro entitlement. Cached locally for offline access. */
-  static async checkStatus(): Promise<boolean> {
-    if (this.cachedState !== null) return this.cachedState
+  static async checkStatus(force = false): Promise<boolean> {
+    if (!force && this.cachedState !== null) return this.cachedState
 
     if (isConfigured()) {
       try {
@@ -215,7 +218,8 @@ export class PremiumManager {
         if (active) {
           await this.setPremium(true)
           return true
-        } else if (isNative() && import.meta.env.PROD) {
+        } else {
+          // Entitlement is not active in RevenueCat, sync local cache to false
           await this.setPremium(false)
           return false
         }
@@ -237,6 +241,17 @@ export class PremiumManager {
   static async setPremium(status: boolean): Promise<void> {
     this.cachedState = status
     await Preferences.set({ key: PREMIUM_KEY, value: status ? 'true' : 'false' })
+  }
+
+  /** Reset local purchase status cache back to free tier. */
+  static async resetPremium(): Promise<void> {
+    this.cachedState = false
+    try {
+      await Preferences.remove({ key: PREMIUM_KEY })
+    } catch {}
+    try {
+      localStorage.removeItem(PREMIUM_KEY)
+    } catch {}
   }
 
   /** Fetch available offerings from RevenueCat */
@@ -338,13 +353,8 @@ export class PremiumManager {
    */
   static async purchasePlan(plan: SubscriptionPlanId = 'lifetime'): Promise<PurchaseResult> {
     if (!isConfigured()) {
-      if (import.meta.env.DEV) {
-        console.info('[RevenueCat] Simulating Pro unlock in dev mode (billing not configured).')
-        await this.setPremium(true)
-        return { success: true, cancelled: false }
-      }
       console.warn('[RevenueCat] Billing is not configured (no API key set).')
-      return { success: false, cancelled: false, error: new Error('RevenueCat not configured') }
+      return { success: false, cancelled: false, error: new Error('RevenueCat billing is not configured.') }
     }
 
     try {
@@ -353,24 +363,23 @@ export class PremiumManager {
       const pkg = findPackageForPlan(offerings?.current ?? null, plan) || offerings?.current?.availablePackages?.[0]
 
       if (!pkg) {
-        if (!isNative() || Boolean(env.DEV)) {
-          console.warn(`[RevenueCat] No package found in dashboard for plan '${plan}'. Simulating Pro unlock for testing.`)
-          await this.setPremium(true)
-          return { success: true, cancelled: false }
-        }
         console.error(`No package found for plan ${plan}. Check dashboard configuration.`)
         return {
           success: false,
           cancelled: false,
           error: new Error(
-            `No package found for "${plan}". In the RevenueCat dashboard, go to Product Catalog → Offerings → default → "+ New Package" and add $rc_lifetime.`,
+            `No package found for "${plan}". In the RevenueCat dashboard, go to Product Catalog → Offerings → default, click "+ New Package", and link your Google Play product to $rc_lifetime.`,
           ),
         }
       }
 
       return await this.purchasePackage(pkg)
     } catch (e: any) {
-      if (e?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+      const isCancelled =
+        e?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR ||
+        e?.errorCode === 1 ||
+        String(e?.message || '').toLowerCase().includes('cancel')
+      if (isCancelled) {
         return { success: false, cancelled: true }
       }
       return { success: false, cancelled: false, error: e }
@@ -396,7 +405,11 @@ export class PremiumManager {
       await this.setPremium(active)
       return { success: active, cancelled: false }
     } catch (e: any) {
-      if (e?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+      const isCancelled =
+        e?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR ||
+        e?.errorCode === 1 ||
+        String(e?.message || '').toLowerCase().includes('cancel')
+      if (isCancelled) {
         return { success: false, cancelled: true }
       }
       console.error('Purchase failed:', e)
@@ -432,6 +445,65 @@ export class PremiumManager {
     } catch (e) {
       console.error('Restore failed:', e)
       return false
+    }
+  }
+
+  /** Simulate Pro unlock for dev testing */
+  static async simulateDevPurchase(): Promise<PurchaseResult> {
+    await this.setPremium(true)
+    return { success: true, cancelled: false }
+  }
+
+  /** Retrieve live diagnostics about RevenueCat configuration and offerings */
+  static async getBillingDiagnostics(): Promise<{
+    configured: boolean
+    isNative: boolean
+    platform: string
+    apiKeyPrefix: string
+    offeringsLoaded: boolean
+    currentOfferingId: string | null
+    packagesCount: number
+    packageIdentifiers: string[]
+    entitlementActive: boolean
+    error?: string
+  }> {
+    const configured = isConfigured()
+    const currentPlatform = platform()
+    const native = isNative()
+    const key = currentApiKey()
+    const apiKeyPrefix = key ? key.substring(0, 8) + '...' : 'none'
+
+    try {
+      await ensureConfigured()
+      const offerings = await this.getOfferings()
+      const current = offerings?.current
+      const pkgs = current?.availablePackages || []
+      const active = await this.checkStatus(true)
+
+      return {
+        configured,
+        isNative: native,
+        platform: currentPlatform,
+        apiKeyPrefix,
+        offeringsLoaded: Boolean(offerings),
+        currentOfferingId: current?.identifier || null,
+        packagesCount: pkgs.length,
+        packageIdentifiers: pkgs.map((p) => p.identifier),
+        entitlementActive: active,
+      }
+    } catch (e: any) {
+      return {
+        configured,
+        isNative: native,
+        platform: currentPlatform,
+        apiKeyPrefix,
+        offeringsLoaded: false,
+        currentOfferingId: null,
+        packagesCount: 0,
+        packageIdentifiers: [],
+        entitlementActive: false,
+        error: e?.message || String(e),
+      }
     }
   }
 }

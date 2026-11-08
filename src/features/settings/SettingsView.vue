@@ -32,6 +32,7 @@ import { resetLocalData } from '@/db'
 import { useAccountsStore } from '@/stores/accounts'
 import { useUiStore } from '@/stores/ui'
 import { usePremiumStore } from '@/stores/premium'
+import { isNative } from '@/lib/platform'
 import pkg from '../../../package.json'
 
 type Subpage = 'root' | 'formatting' | 'appearance' | 'navigation' | 'securityPrivacy' | 'backups' | 'legal'
@@ -47,6 +48,47 @@ const ui = useUiStore()
 
 const activeSubpage = ref<Subpage>('root')
 const message = ref('')
+
+const proSheetOpen = ref(false)
+const checkingStatus = ref(false)
+
+function openProStatusSheet() {
+  void tickFeedback()
+  proSheetOpen.value = true
+}
+
+function openPaywallFromSheet() {
+  proSheetOpen.value = false
+  premium.openPaywall()
+}
+
+async function manageNativeSubscription() {
+  proSheetOpen.value = false
+  await premium.openCustomerCenter()
+}
+
+async function recheckStatus() {
+  checkingStatus.value = true
+  try {
+    const isPro = await premium.recheckStatus()
+    if (isPro) {
+      onNotify(t('premium.verifiedPro', 'RevenueCat verified: Pro active!'))
+    } else {
+      onNotify(t('premium.notPro', 'No active subscription found. Returned to Free tier.'))
+      proSheetOpen.value = false
+    }
+  } catch (err: any) {
+    onNotify(err && err.message ? err.message : 'Verification check failed')
+  } finally {
+    checkingStatus.value = false
+  }
+}
+
+async function resetProTier() {
+  await premium.resetProStatus()
+  proSheetOpen.value = false
+  onNotify(t('premium.resetSuccess', 'Pro status reset. You are now on the Free tier.'))
+}
 
 const resetSheetOpen = ref(false)
 const resetA = ref(2)
@@ -179,7 +221,7 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
         v-else
         type="button"
         class="pro-banner pro-banner--active"
-        @click="premium.openCustomerCenter()"
+        @click="openProStatusSheet"
       >
         <div class="pro-badge-icon pro-badge-icon--active">
           <Sparkles :size="22" />
@@ -353,6 +395,68 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
         </button>
       </div>
     </div>
+
+    <!-- Pro Status & Management Sheet -->
+    <BottomSheet :open="proSheetOpen" :title="t('premium.proStatusTitle', 'WhereDidItGo Pro')" @close="proSheetOpen = false">
+      <div class="sheet-body pro-status-sheet">
+        <div class="pro-status-badge-card">
+          <div class="pro-status-icon">
+            <Sparkles :size="28" />
+          </div>
+          <div class="pro-status-info">
+            <h3 class="pro-status-name">{{ t('premium.proActiveTitle', 'WhereDidItGo Pro Active') }}</h3>
+            <p v-if="premium.isRewardedPassActive" class="pro-status-desc">
+              {{ t('premium.adPassActive', '24-hour pass active') }} (~{{ premium.getRewardedPassHoursRemaining() }}h remaining)
+            </p>
+            <p v-else class="pro-status-desc">
+              {{ t('premium.unlimitedProDesc', 'Full Pro features unlocked.') }}
+            </p>
+          </div>
+        </div>
+
+        <div class="pro-sheet-actions">
+          <AppButton
+            block
+            variant="filled"
+            class="pro-sheet-primary-btn"
+            @click="openPaywallFromSheet"
+          >
+            <Crown :size="18" />
+            {{ t('premium.viewPaywall', 'View Paywall & Plans') }}
+          </AppButton>
+
+          <AppButton
+            v-if="isNative()"
+            block
+            variant="tonal"
+            @click="manageNativeSubscription"
+          >
+            <ExternalLink :size="18" />
+            {{ t('premium.manageGooglePlay', 'Manage on Google Play') }}
+          </AppButton>
+
+          <AppButton
+            block
+            variant="tonal"
+            :loading="checkingStatus"
+            @click="recheckStatus"
+          >
+            <RefreshCw :size="18" />
+            {{ t('premium.recheckStatus', 'Verify with RevenueCat') }}
+          </AppButton>
+
+          <AppButton
+            block
+            variant="tonal"
+            class="reset-pro-btn"
+            @click="resetProTier"
+          >
+            <Trash2 :size="18" />
+            {{ t('premium.resetToFree', 'Reset Pro Status to Free (Test)') }}
+          </AppButton>
+        </div>
+      </div>
+    </BottomSheet>
 
     <!-- Reset Sheet -->
     <BottomSheet :open="resetSheetOpen" :title="t('settings.resetTitle', 'Delete Account & Data')" @close="resetSheetOpen = false">
@@ -728,5 +832,63 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
 .danger-action-btn {
   background: var(--color-expense) !important;
   color: var(--color-on-error) !important;
+}
+
+/* Pro Status Sheet */
+.pro-status-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.pro-status-badge-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+  border-radius: var(--radius-lg);
+}
+
+.pro-status-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-circle);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pro-status-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pro-status-name {
+  font-size: var(--text-title);
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+.pro-status-desc {
+  font-size: var(--text-caption);
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.pro-sheet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.reset-pro-btn {
+  color: var(--color-expense) !important;
 }
 </style>

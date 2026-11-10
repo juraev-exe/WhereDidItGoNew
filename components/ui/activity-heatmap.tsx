@@ -57,6 +57,8 @@ export interface ActivityHeatmapProps {
   /** Formatting locale. Fixed by default so server and client render the same labels. */
   locale?: string;
   className?: string;
+  /** Whether data is currently loading (displays skeleton shimmer to prevent CLS). */
+  loading?: boolean;
 }
 
 type Model = {
@@ -212,6 +214,7 @@ export function ActivityHeatmap({
   actions,
   locale = "en-US",
   className,
+  loading = false,
 }: ActivityHeatmapProps) {
   const reduced = useReducedMotionSafe();
   const id = useId();
@@ -268,132 +271,144 @@ export function ActivityHeatmap({
     ? Math.round((toUtc(selectedDate) - model.start) / DAY)
     : -1;
 
+  // Calibrated 5-tier emerald ramp ensuring crisp contrast across light & dark themes
+  const levelClasses = [
+    "bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/90",
+    "bg-emerald-200 hover:bg-emerald-300 dark:bg-emerald-900/70 dark:hover:bg-emerald-800/80",
+    "bg-emerald-400 hover:bg-emerald-500 dark:bg-emerald-700 dark:hover:bg-emerald-600",
+    "bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-400",
+    "bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-400 dark:hover:bg-emerald-300",
+  ];
+
   return (
     <div
       ref={rootRef}
       className={`activity-heatmap-root relative flex flex-col gap-3 font-sans ${className ?? ""}`}
     >
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
-          <span className="font-semibold">{formats.number.format(model.total)}</span>{" "}
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-sm font-medium text-slate-900 dark:text-zinc-100 [text-wrap:balance]">
+          <span className="font-semibold tabular-nums tracking-tight">
+            {formats.number.format(model.total)}
+          </span>{" "}
           {noun(model.total, unit)} in {period}
         </p>
-        {actions && <div>{actions}</div>}
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
 
-      <div ref={scrollerRef} className="overflow-x-auto pb-2">
-        <div ref={plotRef} className="inline-flex flex-col gap-1">
-          <div className="flex gap-1">
-            {Array.from({ length: model.weeks }, (_, col) => (
+      {loading ? (
+        <div className="overflow-x-auto pb-2 animate-pulse">
+          <div className="inline-flex gap-1">
+            {Array.from({ length: 52 }).map((_, col) => (
               <div key={col} className="flex flex-col gap-1">
-                {Array.from({ length: 7 }, (_, row) => {
-                  const index = col * 7 + row - model.lead;
-                  const inRange = index >= 0 && index < model.length;
-                  if (!inRange) {
-                    return (
-                      <span
-                        key={row}
-                        className="w-3.5 h-3.5 rounded-sm opacity-0"
-                      />
-                    );
-                  }
-                  const count = model.counts[index];
-                  const level = model.levels[index];
-                  const isSelected = index === selectedIndex;
-                  const date = new Date(model.start + index * DAY);
-                  const isHighlighted =
-                    highlight === null || highlight === level;
-
-                  const levelClasses = [
-                    "bg-slate-100 dark:bg-zinc-800",
-                    "bg-emerald-200 dark:bg-emerald-950",
-                    "bg-emerald-400 dark:bg-emerald-800",
-                    "bg-emerald-500 dark:bg-emerald-600",
-                    "bg-emerald-600 dark:bg-emerald-400",
-                  ];
-
-                  return (
-                    <button
-                      key={row}
-                      type="button"
-                      aria-label={`${count} ${noun(count, unit)}, ${formats.short.format(date)}`}
-                      className={`w-3.5 h-3.5 rounded-sm transition-all duration-150 cursor-pointer ${
-                        levelClasses[level]
-                      } ${isSelected ? "ring-2 ring-emerald-500 ring-offset-1" : ""} ${
-                        !isHighlighted ? "opacity-30" : "opacity-100"
-                      }`}
-                      onClick={() => onSelectDate?.(toIso(date.getTime()))}
-                      onMouseEnter={(e) => {
-                        const cell = e.currentTarget;
-                        const box = rootRef.current?.getBoundingClientRect();
-                        const rect = cell.getBoundingClientRect();
-                        if (box) {
-                          tipX.set(rect.left - box.left + rect.width / 2);
-                          tipY.set(rect.top - box.top);
-                        }
-                        setTip({
-                          key: toIso(date.getTime()),
-                          primary: `${formats.number.format(count)} ${noun(count, unit)}`,
-                          secondary: formats.short.format(date),
-                          value: count,
-                          anchor: cell,
-                        });
-                        setOpen(true);
-                      }}
-                      onMouseLeave={() => setOpen(false)}
-                    />
-                  );
-                })}
+                {Array.from({ length: 7 }).map((_, row) => (
+                  <span
+                    key={row}
+                    className="w-3.5 h-3.5 rounded-[3px] bg-slate-200/80 dark:bg-zinc-800/80"
+                  />
+                ))}
               </div>
             ))}
           </div>
         </div>
-      </div>
+      ) : (
+        <div ref={scrollerRef} className="overflow-x-auto pb-2">
+          <div ref={plotRef} className="inline-flex flex-col gap-1">
+            <div className="flex gap-1">
+              {Array.from({ length: model.weeks }, (_, col) => (
+                <div key={col} className="flex flex-col gap-1">
+                  {Array.from({ length: 7 }, (_, row) => {
+                    const index = col * 7 + row - model.lead;
+                    const inRange = index >= 0 && index < model.length;
+                    if (!inRange) {
+                      return (
+                        <span
+                          key={row}
+                          className="w-3.5 h-3.5 rounded-[3px] opacity-0"
+                        />
+                      );
+                    }
+                    const count = model.counts[index];
+                    const level = model.levels[index];
+                    const isSelected = index === selectedIndex;
+                    const date = new Date(model.start + index * DAY);
+                    const isHighlighted =
+                      highlight === null || highlight === level;
 
-      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1">
+                    return (
+                      <button
+                        key={row}
+                        type="button"
+                        aria-label={`${count} ${noun(count, unit)}, ${formats.short.format(date)}`}
+                        className={`w-3.5 h-3.5 rounded-[3px] transition-all duration-100 cursor-pointer active:scale-90 ${
+                          levelClasses[level]
+                        } ${isSelected ? "ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-zinc-950" : ""} ${
+                          !isHighlighted ? "opacity-25" : "opacity-100"
+                        }`}
+                        onClick={() => onSelectDate?.(toIso(date.getTime()))}
+                        onMouseEnter={(e) => {
+                          const cell = e.currentTarget;
+                          const box = rootRef.current?.getBoundingClientRect();
+                          const rect = cell.getBoundingClientRect();
+                          if (box) {
+                            tipX.set(rect.left - box.left + rect.width / 2);
+                            tipY.set(rect.top - box.top - 8);
+                          }
+                          setTip({
+                            key: toIso(date.getTime()),
+                            primary: `${formats.number.format(count)} ${noun(count, unit)}`,
+                            secondary: formats.short.format(date),
+                            value: count,
+                            anchor: cell,
+                          });
+                          setOpen(true);
+                        }}
+                        onMouseLeave={() => setOpen(false)}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-zinc-400 pt-1 select-none">
         <span>Less</span>
-        <div className="flex items-center gap-1">
-          {LEVELS.map((level) => {
-            const levelClasses = [
-              "bg-slate-100 dark:bg-zinc-800",
-              "bg-emerald-200 dark:bg-emerald-950",
-              "bg-emerald-400 dark:bg-emerald-800",
-              "bg-emerald-500 dark:bg-emerald-600",
-              "bg-emerald-600 dark:bg-emerald-400",
-            ];
-            return (
-              <button
-                key={level}
-                type="button"
-                className={`w-3 h-3 rounded-xs cursor-pointer ${levelClasses[level]} ${
-                  pinned === level ? "ring-1 ring-emerald-500" : ""
-                }`}
-                onClick={() =>
-                  setPinned((current) => (current === level ? null : level))
-                }
-                onMouseEnter={() => setPreview(level)}
-                onMouseLeave={() => setPreview(null)}
-              />
-            );
-          })}
+        <div className="flex items-center gap-1.5">
+          {LEVELS.map((level) => (
+            <button
+              key={level}
+              type="button"
+              aria-label={`Highlight level ${level}`}
+              className={`w-3 h-3 rounded-[2px] transition-transform duration-100 cursor-pointer active:scale-90 ${levelClasses[level]} ${
+                pinned === level ? "ring-1.5 ring-emerald-500 ring-offset-1 dark:ring-offset-zinc-950" : ""
+              }`}
+              onClick={() =>
+                setPinned((current) => (current === level ? null : level))
+              }
+              onMouseEnter={() => setPreview(level)}
+              onMouseLeave={() => setPreview(null)}
+            />
+          ))}
         </div>
         <span>More</span>
       </div>
 
       {open && tip && (
         <motion.div
-          className="absolute pointer-events-none z-50 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-2.5 py-1.5 rounded-md shadow-lg text-xs"
+          className="absolute pointer-events-none z-50 bg-slate-900 text-white dark:bg-zinc-100 dark:text-zinc-900 px-3 py-1.5 rounded-lg shadow-xl text-xs border border-slate-800 dark:border-zinc-200/50 backdrop-blur-sm"
           style={{
             left: tipX,
             top: tipY,
-            transform: "translate(-50%, -120%)",
+            transform: "translate(-50%, -100%)",
           }}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
         >
-          <div className="font-semibold">{tip.primary}</div>
-          <div className="text-[10px] opacity-75">{tip.secondary}</div>
+          <div className="font-semibold tabular-nums">{tip.primary}</div>
+          <div className="text-[11px] text-slate-400 dark:text-zinc-500 font-medium">{tip.secondary}</div>
         </motion.div>
       )}
     </div>

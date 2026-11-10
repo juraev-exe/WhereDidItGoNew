@@ -317,6 +317,7 @@ function togglePinnedLevel(level: number) {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
+  text-wrap: balance;
 }
 
 .total-count {
@@ -325,6 +326,7 @@ function togglePinnedLevel(level: number) {
   font-weight: 700;
   color: var(--color-on-surface);
   letter-spacing: var(--tracking-title);
+  font-variant-numeric: tabular-nums;
 }
 
 .period-text {
@@ -513,6 +515,7 @@ function togglePinnedLevel(level: number) {
   display: flex;
   align-items: center;
   gap: 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 .tip-amount {

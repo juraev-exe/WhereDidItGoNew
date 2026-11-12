@@ -88,7 +88,39 @@ async function runHttpTests() {
     });
     assert(logoutRes.status === 200, 'POST /auth/logout returns 200');
 
-    // 8. Login with seed demo user (alex@example.com)
+    // 8. Security checks: RBAC, IDOR, and privilege escalation prevention
+    const listUsersNoAuth = await fetch(`${baseUrl}/users`);
+    assert(listUsersNoAuth.status === 401, 'GET /users without auth returns 401');
+
+    const listUsersAsUser = await fetch(`${baseUrl}/users`, {
+      headers: { Authorization: `Bearer ${newAccessToken}` },
+    });
+    assert(listUsersAsUser.status === 403, 'GET /users as standard user returns 403');
+
+    const idorUpdateRes = await fetch(`${baseUrl}/users/usr_demo123`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${newAccessToken}`,
+      },
+      body: JSON.stringify({ name: 'Hacked' }),
+    });
+    assert(idorUpdateRes.status === 403, 'PUT /users/:otherId returns 403 (IDOR blocked)');
+
+    const privEscRes = await fetch(`${baseUrl}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'escalate@crypto.org',
+        password: 'Password123!',
+        name: 'Try Admin',
+        role: 'admin',
+      }),
+    });
+    const privEscData = await privEscRes.json();
+    assert(privEscData.data.user.role === 'user', 'POST /auth/register strips client role and forces user role');
+
+    // 9. Login with seed demo user (alex@example.com)
     const demoRes = await fetch(`${baseUrl}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -101,6 +133,7 @@ async function runHttpTests() {
     console.log(`\n========================================`);
     console.log(`HTTP Results: ${passed} passed, ${failed} failed`);
     console.log(`========================================\n`);
+    if (failed > 0) process.exit(1);
   } finally {
     server.close();
   }

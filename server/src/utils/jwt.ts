@@ -92,15 +92,21 @@ function verifyJwt(token: string, secret: string, tokenType = 'Access'): TokenPa
     throw new AppError(`Invalid ${tokenType.toLowerCase()} token signature`, 401);
   }
 
+  let header: JwtHeader;
   let fullPayload: FullJwtPayload;
   try {
+    header = JSON.parse(Buffer.from(headerB64, 'base64url').toString('utf8'));
     fullPayload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
   } catch {
     throw new AppError(`Corrupted ${tokenType.toLowerCase()} token payload`, 401);
   }
 
+  if (header.alg !== 'HS256' || header.typ !== 'JWT') {
+    throw new AppError(`Unsupported ${tokenType.toLowerCase()} token algorithm`, 401);
+  }
+
   const now = Math.floor(Date.now() / 1000);
-  if (fullPayload.exp && fullPayload.exp < now) {
+  if (typeof fullPayload.exp !== 'number' || fullPayload.exp < now) {
     throw new AppError(`${tokenType} token has expired`, 401);
   }
 

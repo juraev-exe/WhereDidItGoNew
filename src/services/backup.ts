@@ -551,8 +551,14 @@ export async function exportTransactionsCsv(): Promise<void> {
     categories.flatMap((c) => (c.subcategories ?? []).map((sub) => [sub.id, sub.name])),
   )
 
-  /** Quote every cell: names may contain commas, quotes or newlines. */
-  const cell = (value: string) => '"' + value.replaceAll('"', '""') + '"'
+  /** Quote every cell and neutralize spreadsheet formula injection (=, +, -, @, tab, cr). */
+  const cell = (value: string) => {
+    const safe =
+      /^\s*[=+@\t\r]/.test(value) || /^\s*-(?![0-9]+(\.[0-9]+)?$)/.test(value)
+        ? "'" + value
+        : value
+    return '"' + safe.replaceAll('"', '""') + '"'
+  }
 
   const header = ['date', 'type', 'amount', 'category', 'subcategory', 'account', 'to_account', 'note']
     .map(cell)

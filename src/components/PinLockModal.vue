@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Lock, Fingerprint, ScanFace, Delete, ShieldAlert } from '@lucide/vue'
 import { useSettingsStore } from '@/stores/settings'
+import { resetLocalData } from '@/db'
+import { signOutUser } from '@/services/supabase'
 import ConfirmSheet from '@/components/ui/ConfirmSheet.vue'
 import { tickFeedback, errorFeedback, successFeedback } from '@/services/native/haptics'
 import {
@@ -11,12 +13,13 @@ import {
 } from '@/services/native/biometrics'
 
 const props = defineProps<{
-  mode?: 'unlock' | 'setup'
+  mode?: 'unlock' | 'setup' | 'verify'
 }>()
 
 const emit = defineEmits<{
   (e: 'success', pin?: string): void
   (e: 'cancel'): void
+  (e: 'close'): void
 }>()
 
 const { t } = useI18n()
@@ -29,10 +32,17 @@ const errorMessage = ref('')
 const isShaking = ref(false)
 const isFace = ref(false)
 const isAuthenticating = ref(false)
+const nowMs = ref(Date.now())
+let lockoutTimer: ReturnType<typeof setInterval> | null = null
+
+const lockoutSeconds = computed(() =>
+  Math.max(0, Math.ceil((settings.pinLockoutUntil - nowMs.value) / 1000)),
+)
+const isLockedOut = computed(() => props.mode !== 'setup' && lockoutSeconds.value > 0)
 
 watch(pin, (newVal) => {
   if (newVal.length === 4) {
-    handleComplete()
+    void handleComplete()
   }
 })
 
@@ -56,12 +66,21 @@ async function handleComplete() {
       }
     }
   } else {
-    const valid = await settings.verifyPin(pin.value)
+    if (isLockedOut.value) {
+      pin.value = ''
+      triggerError(t('security.pinLockedOut', { seconds: lockoutSeconds.value }))
+      return
+    }
+    const valid = await settings.verifyPin(pin.value, { unlock: props.mode !== 'verify' })
     if (valid) {
       void successFeedback()
       emit('success')
     } else {
-      triggerError(t('security.incorrectPin'))
+      nowMs.value = Date.now()
+      const msg = lockoutSeconds.value > 0
+        ? t('security.pinLockedOut', { seconds: lockoutSeconds.value })
+        : t('security.incorrectPin')
+      triggerError(msg)
       pin.value = ''
     }
   }
@@ -77,6 +96,7 @@ function triggerError(msg: string) {
 }
 
 function pressKey(num: string) {
+  if (isLockedOut.value) return
   if (pin.value.length < 4) {
     void tickFeedback()
     pin.value += num
@@ -84,17 +104,24 @@ function pressKey(num: string) {
 }
 
 function backspace() {
+  if (isLockedOut.value) return
   void tickFeedback()
   pin.value = pin.value.slice(0, -1)
 }
 
 function clear() {
+  if (isLockedOut.value) return
   void tickFeedback()
   pin.value = ''
 }
 
+function handleCancel() {
+  emit('cancel')
+  emit('close')
+}
+
 async function handleBiometrics() {
-  if (props.mode === 'setup' || !settings.biometricEnabled || isAuthenticating.value) {
+  if (props.mode === 'setup' || !settings.biometricEnabled || isAuthenticating.value || isLockedOut.value) {
     return
   }
 
@@ -108,7 +135,9 @@ async function handleBiometrics() {
 
     if (res.success) {
       void successFeedback()
-      settings.unlockApp()
+      if (props.mode !== 'verify') {
+        settings.unlockApp()
+      }
       emit('success')
     } else if (res.cancelled) {
       // User cancelled prompt or opted to use PIN — stay on keypad without intrusive error
@@ -121,7 +150,11 @@ async function handleBiometrics() {
 }
 
 onMounted(async () => {
-  if (props.mode !== 'setup' && settings.biometricEnabled) {
+  lockoutTimer = setInterval(() => {
+    nowMs.value = Date.now()
+  }, 1000)
+
+  if (props.mode !== 'setup' && settings.biometricEnabled && !isLockedOut.value) {
     try {
       const bio = await checkBiometricsAvailable()
       isFace.value = bio.isFace
@@ -137,12 +170,25 @@ onMounted(async () => {
   }
 })
 
+onUnmounted(() => {
+  if (lockoutTimer) {
+    clearInterval(lockoutTimer)
+    lockoutTimer = null
+  }
+})
+
 const confirmResetOpen = ref(false)
 
 async function handleResetLock() {
   confirmResetOpen.value = false
+  try {
+    await signOutUser()
+  } catch {
+    // Offline fallback: local wipe proceeds below
+  }
+  await resetLocalData()
   await settings.removePin()
-  emit('cancel')
+  window.location.reload()
 }
 </script>
 
@@ -158,11 +204,17 @@ async function handleResetLock() {
             <template v-if="mode === 'setup'">
               {{ isConfirming ? t('security.confirmPin') : t('security.createPin') }}
             </template>
+            <template v-else-if="mode === 'verify'">
+              {{ t('security.verifyCurrentPin') }}
+            </template>
             <template v-else>
               {{ t('security.enterPin') }}
             </template>
           </h2>
-          <p v-if="errorMessage" class="pin-error">{{ errorMessage }}</p>
+          <p v-if="isLockedOut" class="pin-error">
+            {{ t('security.pinLockedOut', { seconds: lockoutSeconds }) }}
+          </p>
+          <p v-else-if="errorMessage" class="pin-error">{{ errorMessage }}</p>
         </div>
 
         <!-- PIN Dots -->
@@ -182,6 +234,7 @@ async function handleResetLock() {
             :key="num"
             type="button"
             class="key-btn"
+            :disabled="isLockedOut"
             @click="pressKey(num)"
           >
             {{ num }}
@@ -192,30 +245,31 @@ async function handleResetLock() {
             type="button"
             class="key-btn action-key"
             :aria-label="t('security.biometrics')"
+            :disabled="isLockedOut"
             @click="handleBiometrics"
           >
             <component :is="isFace ? ScanFace : Fingerprint" class="w-6 h-6 text-primary" />
           </button>
-          <button v-else type="button" class="key-btn action-key" @click="clear">
+          <button v-else type="button" class="key-btn action-key" :disabled="isLockedOut" @click="clear">
             C
           </button>
 
-          <button type="button" class="key-btn" @click="pressKey('0')">0</button>
+          <button type="button" class="key-btn" :disabled="isLockedOut" @click="pressKey('0')">0</button>
 
-          <button type="button" class="key-btn action-key" @click="backspace">
+          <button type="button" class="key-btn action-key" :disabled="isLockedOut" @click="backspace">
             <Delete class="w-6 h-6" />
           </button>
         </div>
 
-        <div v-if="mode !== 'setup'" class="pin-footer">
+        <div v-if="mode === 'setup' || mode === 'verify'" class="pin-footer">
+          <button type="button" class="cancel-btn" @click="handleCancel">
+            {{ t('common.cancel') }}
+          </button>
+        </div>
+        <div v-else class="pin-footer">
           <button type="button" class="reset-link" @click="confirmResetOpen = true">
             <ShieldAlert class="w-4 h-4 mr-1" />
             {{ t('security.forgotPin') }}
-          </button>
-        </div>
-        <div v-else-if="mode === 'setup'" class="pin-footer">
-          <button type="button" class="cancel-btn" @click="emit('cancel')">
-            {{ t('common.cancel') }}
           </button>
         </div>
       </div>

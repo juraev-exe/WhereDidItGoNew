@@ -37,6 +37,9 @@ let lastInterstitialShowTime = 0
 const MIN_INTERSTITIAL_INTERVAL_MS = 90 * 1000 // At most once every 90 seconds
 const TRANSACTIONS_BETWEEN_ADS = 4 // Show ad on every 4th logged transaction for free users
 
+const isDev = Boolean(import.meta.env?.DEV)
+const PASS_DURATION_MS = 24 * 60 * 60 * 1000
+
 /**
  * Initialize Google AdMob SDK and request user consent
  */
@@ -45,8 +48,8 @@ export async function initializeAds(): Promise<void> {
 
   try {
     await AdMob.initialize({
-      testingDevices: ['2077ef9a63d2b398840261c8221a0c9b'],
-      initializeForTesting: true,
+      ...(isDev ? { testingDevices: ['2077ef9a63d2b398840261c8221a0c9b'] } : {}),
+      initializeForTesting: isDev,
     })
 
     // Request consent (GDPR / UMP)
@@ -81,7 +84,7 @@ export async function prepareInterstitial(): Promise<void> {
     const adId = getAdUnitId('interstitial')
     const options: AdOptions = {
       adId,
-      isTesting: true,
+      isTesting: isDev,
     }
     await AdMob.prepareInterstitial(options)
     interstitialReady = true
@@ -129,7 +132,7 @@ export async function prepareRewarded(): Promise<void> {
     const adId = getAdUnitId('rewarded')
     const options: AdOptions = {
       adId,
-      isTesting: true,
+      isTesting: isDev,
     }
     await AdMob.prepareRewardVideoAd(options)
     rewardedReady = true
@@ -144,7 +147,10 @@ export async function prepareRewarded(): Promise<void> {
  */
 export async function showRewardedAd(): Promise<boolean> {
   if (!isNative()) {
-    // In dev / web mode, simulate successful ad watch
+    if (!isDev) {
+      return false
+    }
+    // In dev mode only, simulate successful ad watch
     grant24HourProPass()
     return true
   }
@@ -202,7 +208,7 @@ const REWARDED_PASS_KEY = 'wdg_rewarded_pass_expires'
  * Grant a 24-hour temporary Pro pass for watching a rewarded ad
  */
 export function grant24HourProPass(): void {
-  const expires = Date.now() + 24 * 60 * 60 * 1000 // 24 hours from now
+  const expires = Date.now() + PASS_DURATION_MS // 24 hours from now
   localStorage.setItem(REWARDED_PASS_KEY, String(expires))
 }
 
@@ -211,7 +217,9 @@ export function grant24HourProPass(): void {
  */
 export function hasActiveRewardedPass(): boolean {
   const expires = Number(localStorage.getItem(REWARDED_PASS_KEY) || '0')
-  return Date.now() < expires
+  if (!Number.isFinite(expires) || expires <= 0) return false
+  const remaining = expires - Date.now()
+  return remaining > 0 && remaining <= PASS_DURATION_MS + 60_000
 }
 
 /**
@@ -220,6 +228,6 @@ export function hasActiveRewardedPass(): boolean {
 export function getRewardedPassHoursRemaining(): number {
   const expires = Number(localStorage.getItem(REWARDED_PASS_KEY) || '0')
   const diff = expires - Date.now()
-  if (diff <= 0) return 0
+  if (!Number.isFinite(diff) || diff <= 0 || diff > PASS_DURATION_MS + 60_000) return 0
   return Math.ceil(diff / (1000 * 60 * 60))
 }

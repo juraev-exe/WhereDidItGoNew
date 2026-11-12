@@ -54,10 +54,11 @@ export interface PurchaseResult {
 }
 
 export function isProEntitlementActive(entitlements: Record<string, any> | undefined | null): boolean {
-  if (!entitlements) return false
-  if (entitlements[ENTITLEMENT_ID] !== undefined) return true
-  if (entitlements['pro'] !== undefined || entitlements['premium'] !== undefined) return true
-  return Object.keys(entitlements).length > 0
+  if (!entitlements || typeof entitlements !== 'object') return false
+  if (entitlements[ENTITLEMENT_ID] && entitlements[ENTITLEMENT_ID].isActive !== false) return true
+  if (entitlements['pro'] && entitlements['pro'].isActive !== false) return true
+  if (entitlements['premium'] && entitlements['premium'].isActive !== false) return true
+  return Object.values(entitlements).some((e: any) => Boolean(e) && e?.isActive !== false)
 }
 
 export function isWebEntitlementActive(entitlements: Record<string, any> | undefined | null): boolean {
@@ -448,8 +449,11 @@ export class PremiumManager {
     }
   }
 
-  /** Simulate Pro unlock for dev testing */
+  /** Simulate Pro unlock for dev testing only */
   static async simulateDevPurchase(): Promise<PurchaseResult> {
+    if (!env.DEV) {
+      return { success: false, cancelled: false, error: new Error('Simulated purchases are disabled in production builds.') }
+    }
     await this.setPremium(true)
     return { success: true, cancelled: false }
   }

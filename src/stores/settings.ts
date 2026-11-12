@@ -10,7 +10,7 @@ import { defaultCurrencyForLocale } from '@/lib/currencies'
 import { monthKey, setCycleStartDay } from '@/lib/dates'
 import { createId } from '@/lib/id'
 import { getCurrencySymbol } from '@/lib/money'
-import { applyStatusBar } from '@/services/native/chrome'
+import { applyPrivacyScreen, applyStatusBar } from '@/services/native/chrome'
 import type { AppFont, ColorScheme, CurrencyPosition, HeroMetric, NavLabelStyle, PrivacyMode, ThemeMode } from '@/types/finance'
 
 const VALID_COLOR_SCHEMES: ColorScheme[] = [
@@ -24,6 +24,9 @@ function isColorScheme(value: string | undefined | null): value is ColorScheme {
 }
 
 const PIN_PBKDF2_ITERATIONS = 100_000
+const PIN_MAX_FREE_ATTEMPTS = 5
+const PIN_BASE_LOCKOUT_MS = 30_000
+const PIN_MAX_LOCKOUT_MS = 15 * 60 * 1000
 
 
 
@@ -66,6 +69,8 @@ export const useSettingsStore = defineStore('settings', () => {
   const pinEnabled = ref(false)
   const pinHash = ref('')
   const pinSalt = ref('')
+  const pinFailedAttempts = ref(0)
+  const pinLockoutUntil = ref(0)
   const biometricEnabled = ref(false)
   const isUnlocked = ref(true)
   const showActivityTab = ref(true)
@@ -147,6 +152,8 @@ export const useSettingsStore = defineStore('settings', () => {
     pinEnabled.value = map.pinEnabled === 'true'
     pinHash.value = map.pinHash ?? ''
     pinSalt.value = map.pinSalt ?? ''
+    pinFailedAttempts.value = Math.max(0, Number.parseInt(map.pinFailedAttempts || '0', 10) || 0)
+    pinLockoutUntil.value = Math.max(0, Number.parseInt(map.pinLockoutUntil || '0', 10) || 0)
     biometricEnabled.value = map.biometricEnabled === 'true'
     showActivityTab.value = map.showActivityTab !== 'false'
     showCategoriesTab.value = map.showCategoriesTab !== 'false'
@@ -173,6 +180,7 @@ export const useSettingsStore = defineStore('settings', () => {
     // (done in verifyPin)
     applyColorScheme(colorScheme.value)
     applyFontFamily(fontFamily.value)
+    void applyPrivacyScreen(hideInRecents.value)
     ready.value = true
   }
 
@@ -201,6 +209,28 @@ export const useSettingsStore = defineStore('settings', () => {
     await db.meta.put({ key: 'showInsightsTab', value: val ? 'true' : 'false' })
   }
 
+  async function clearPinFailures() {
+    pinFailedAttempts.value = 0
+    pinLockoutUntil.value = 0
+    await db.meta.bulkPut([
+      { key: 'pinFailedAttempts', value: '0' },
+      { key: 'pinLockoutUntil', value: '0' },
+    ])
+  }
+
+  async function recordPinFailure() {
+    pinFailedAttempts.value += 1
+    if (pinFailedAttempts.value >= PIN_MAX_FREE_ATTEMPTS) {
+      const exponent = pinFailedAttempts.value - PIN_MAX_FREE_ATTEMPTS
+      const lockMs = Math.min(PIN_MAX_LOCKOUT_MS, PIN_BASE_LOCKOUT_MS * Math.pow(2, exponent))
+      pinLockoutUntil.value = Date.now() + lockMs
+    }
+    await db.meta.bulkPut([
+      { key: 'pinFailedAttempts', value: String(pinFailedAttempts.value) },
+      { key: 'pinLockoutUntil', value: String(pinLockoutUntil.value) },
+    ])
+  }
+
   async function setPin(pinCode: string) {
     const salt = crypto.getRandomValues(new Uint8Array(16))
     const saltHex = bytesToHex(salt)
@@ -208,11 +238,15 @@ export const useSettingsStore = defineStore('settings', () => {
     pinEnabled.value = true
     pinHash.value = hash
     pinSalt.value = saltHex
+    pinFailedAttempts.value = 0
+    pinLockoutUntil.value = 0
     isUnlocked.value = true
     await db.meta.bulkPut([
       { key: 'pinEnabled', value: 'true' },
       { key: 'pinHash', value: hash },
       { key: 'pinSalt', value: saltHex },
+      { key: 'pinFailedAttempts', value: '0' },
+      { key: 'pinLockoutUntil', value: '0' },
     ])
   }
 
@@ -220,38 +254,51 @@ export const useSettingsStore = defineStore('settings', () => {
     pinEnabled.value = false
     pinHash.value = ''
     pinSalt.value = ''
+    pinFailedAttempts.value = 0
+    pinLockoutUntil.value = 0
     biometricEnabled.value = false
     isUnlocked.value = true
     await db.meta.bulkPut([
       { key: 'pinEnabled', value: 'false' },
       { key: 'pinHash', value: '' },
       { key: 'pinSalt', value: '' },
+      { key: 'pinFailedAttempts', value: '0' },
+      { key: 'pinLockoutUntil', value: '0' },
       { key: 'biometricEnabled', value: 'false' },
     ])
   }
 
-  async function verifyPin(pinCode: string): Promise<boolean> {
+  async function verifyPin(pinCode: string, options?: { unlock?: boolean }): Promise<boolean> {
     if (!pinHash.value) return true
+    if (Date.now() < pinLockoutUntil.value) {
+      return false
+    }
+
+    const shouldUnlock = options?.unlock !== false
 
     // Try PBKDF2 verification first (new format with salt)
     if (pinSalt.value) {
       const salt = hexToBytes(pinSalt.value)
       const hash = await hashPinPbkdf2(pinCode, salt)
       if (hash === pinHash.value) {
-        isUnlocked.value = true
+        await clearPinFailures()
+        if (shouldUnlock) isUnlocked.value = true
         return true
       }
+      await recordPinFailure()
       return false
     }
 
     // Fall back to legacy SHA-256 verification and auto-migrate
     const legacyHash = await legacyHashPin(pinCode)
     if (legacyHash === pinHash.value) {
-      isUnlocked.value = true
+      await clearPinFailures()
+      if (shouldUnlock) isUnlocked.value = true
       // Auto-migrate to PBKDF2 on successful legacy verification
       await setPin(pinCode)
       return true
     }
+    await recordPinFailure()
     return false
   }
 
@@ -262,6 +309,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   function unlockApp() {
     isUnlocked.value = true
+    void clearPinFailures()
   }
 
   function lockApp() {
@@ -440,6 +488,7 @@ export const useSettingsStore = defineStore('settings', () => {
   async function setHideInRecents(val: boolean) {
     hideInRecents.value = val
     await db.meta.put({ key: 'hideInRecents', value: val ? 'true' : 'false' })
+    await applyPrivacyScreen(val)
   }
 
   const currencySymbol = computed(() =>
@@ -468,6 +517,8 @@ export const useSettingsStore = defineStore('settings', () => {
     lastBackupAt,
     pinEnabled,
     pinHash,
+    pinFailedAttempts,
+    pinLockoutUntil,
     biometricEnabled,
     isUnlocked,
     showActivityTab,

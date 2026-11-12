@@ -3,7 +3,7 @@ const path = require('node:path')
 const http = require('node:http')
 const fs = require('node:fs')
 
-const DIST_DIR = path.join(__dirname, '..', 'dist')
+const DIST_DIR = path.resolve(__dirname, '..', 'dist')
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -24,10 +24,17 @@ const MIME_TYPES = {
  */
 function createStaticServer() {
   return http.createServer((req, res) => {
-    let reqPath = decodeURIComponent((req.url || '/').split('?')[0])
-    let filePath = path.join(DIST_DIR, reqPath)
+    let reqPath = '/'
+    try {
+      reqPath = decodeURIComponent((req.url || '/').split('?')[0])
+    } catch {
+      res.writeHead(400)
+      res.end('Bad Request')
+      return
+    }
+    const filePath = path.resolve(DIST_DIR, reqPath.replace(/^\/+/, ''))
 
-    if (!filePath.startsWith(DIST_DIR)) {
+    if (filePath !== DIST_DIR && !filePath.startsWith(DIST_DIR + path.sep)) {
       res.writeHead(403)
       res.end('Forbidden')
       return
@@ -59,12 +66,26 @@ function createWindow(port) {
     },
   })
 
-  win.loadURL(`http://localhost:${port}/`)
+  const appOrigin = `http://127.0.0.1:${port}`
+  win.loadURL(`${appOrigin}/`)
 
-  // Open any external link (e.g. GitHub, docs) in the OS browser instead of
-  // inside the app window.
+  // Block unexpected top-level navigations away from the local bundled app
+  win.webContents.on('will-navigate', (event, targetUrl) => {
+    if (!targetUrl.startsWith(appOrigin + '/')) {
+      event.preventDefault()
+    }
+  })
+
+  // Open only safe https:// or mailto: external links in the OS browser
   win.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url)
+    try {
+      const parsed = new URL(url)
+      if (parsed.protocol === 'https:' || parsed.protocol === 'mailto:') {
+        void shell.openExternal(url)
+      }
+    } catch {
+      // Ignore malformed URLs
+    }
     return { action: 'deny' }
   })
 }

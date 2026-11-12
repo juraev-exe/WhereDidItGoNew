@@ -21,7 +21,10 @@ export interface EncryptedBackupEnvelope {
   createdAt: string
 }
 
-const PBKDF2_ITERATIONS = 100_000
+const PBKDF2_ITERATIONS = 600_000
+const MIN_PBKDF2_ITERATIONS = 100_000
+const MAX_PBKDF2_ITERATIONS = 2_000_000
+const MIN_PASSPHRASE_LENGTH = 8
 
 function getSubtleCrypto(): SubtleCrypto {
   const subtle = globalThis.crypto?.subtle
@@ -89,8 +92,8 @@ export async function encryptBackup(
   payload: BackupPayload | string,
   passphrase: string,
 ): Promise<EncryptedBackupEnvelope> {
-  if (!passphrase || passphrase.trim().length === 0) {
-    throw new Error('Encryption passphrase cannot be empty.')
+  if (!passphrase || passphrase.trim().length < MIN_PASSPHRASE_LENGTH) {
+    throw new Error(`Encryption passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters.`)
   }
 
   const subtle = getSubtleCrypto()
@@ -150,7 +153,16 @@ export async function decryptBackup(
   const iv = base64ToBytes(envelope.iv)
   const ciphertextBytes = base64ToBytes(envelope.ciphertext)
 
-  const key = await deriveAesGcmKey(passphrase, salt, envelope.iterations || PBKDF2_ITERATIONS)
+  const rawIterations = Number(envelope.iterations)
+  if (
+    !Number.isInteger(rawIterations) ||
+    rawIterations < MIN_PBKDF2_ITERATIONS ||
+    rawIterations > MAX_PBKDF2_ITERATIONS
+  ) {
+    throw new Error('Unsupported or unsafe key derivation iteration count in encrypted backup.')
+  }
+
+  const key = await deriveAesGcmKey(passphrase, salt, rawIterations)
 
   let decryptedBuffer: ArrayBuffer
   try {

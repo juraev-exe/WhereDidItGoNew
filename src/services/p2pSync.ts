@@ -35,6 +35,8 @@ const RTC_CONFIG: RTCConfiguration = {
 
 /** Max safe payload size per WebRTC DataChannel message (48 KB, well below the 64 KB limit). */
 const CHUNK_SIZE = 48 * 1024
+const MAX_CHUNKS = 512 // ~24 MB upper bound on incoming WebRTC sync snapshot
+const MAX_CHUNK_PAYLOAD_CHARS = CHUNK_SIZE + 1024
 
 interface P2PChunkHeader {
   __p2p_chunk__: true
@@ -65,30 +67,61 @@ function sendChunked(channel: RTCDataChannel, rawData: string): void {
 }
 
 class ChunkReceiver {
-  private buffers = new Map<string, { chunks: string[]; total: number; received: number }>()
+  private buffers = new Map<string, { chunks: Map<number, string>; total: number }>()
 
   handleMessage(raw: string): string | null {
+    if (typeof raw !== 'string' || raw.length > MAX_CHUNK_PAYLOAD_CHARS * 2) {
+      throw new Error('Oversized WebRTC payload rejected.')
+    }
     try {
       const parsed = JSON.parse(raw)
       if (parsed && typeof parsed === 'object' && parsed.__p2p_chunk__ === true) {
         const { id, index, total, chunk } = parsed as P2PChunkHeader
+        if (
+          typeof id !== 'string' ||
+          id.length === 0 ||
+          id.length > 64 ||
+          typeof chunk !== 'string' ||
+          chunk.length > MAX_CHUNK_PAYLOAD_CHARS ||
+          !Number.isInteger(total) ||
+          total < 1 ||
+          total > MAX_CHUNKS ||
+          !Number.isInteger(index) ||
+          index < 0 ||
+          index >= total
+        ) {
+          throw new Error('Malformed WebRTC chunk header.')
+        }
+
         let entry = this.buffers.get(id)
         if (!entry) {
-          entry = { chunks: new Array(total), total, received: 0 }
+          if (this.buffers.size >= 8) {
+            throw new Error('Too many concurrent WebRTC transfers.')
+          }
+          entry = { chunks: new Map<number, string>(), total }
           this.buffers.set(id, entry)
-        }
-        if (!entry.chunks[index]) {
-          entry.chunks[index] = chunk
-          entry.received++
-        }
-        if (entry.received === entry.total) {
-          const full = entry.chunks.join('')
+        } else if (entry.total !== total) {
           this.buffers.delete(id)
-          return full
+          throw new Error('Inconsistent WebRTC chunk total.')
+        }
+
+        if (!entry.chunks.has(index)) {
+          entry.chunks.set(index, chunk)
+        }
+        if (entry.chunks.size === entry.total) {
+          const ordered: string[] = []
+          for (let i = 0; i < entry.total; i++) {
+            ordered.push(entry.chunks.get(i) ?? '')
+          }
+          this.buffers.delete(id)
+          return ordered.join('')
         }
         return null // Awaiting remaining chunks
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.message.startsWith('Malformed') || (err instanceof Error && err.message.startsWith('Inconsistent')) || (err instanceof Error && err.message.startsWith('Too many'))) {
+        throw err
+      }
       // Not a JSON chunk header, return as raw string
     }
     return raw

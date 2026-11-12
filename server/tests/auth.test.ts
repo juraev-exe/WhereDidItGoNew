@@ -35,7 +35,6 @@ async function runAuthTests() {
       email: 'sarah@example.com',
       password: 'StrongPassword123!',
       name: 'Sarah Connor',
-      role: 'user',
     });
     assert(registerResult.user.email === 'sarah@example.com', 'Registered user email matches');
     assert(registerResult.user.name === 'Sarah Connor', 'Registered user name matches');
@@ -49,7 +48,6 @@ async function runAuthTests() {
         email: 'sarah@example.com',
         password: 'AnotherPassword1!',
         name: 'Duplicate Sarah',
-        role: 'user',
       });
       assert(false, 'Should throw on duplicate email');
     } catch (err: any) {

@@ -20,6 +20,7 @@ const { t } = useI18n()
 const settings = useSettingsStore()
 
 const pinSetupOpen = ref(false)
+const pinVerifyAction = ref<'change' | 'remove' | null>(null)
 const isFace = ref(false)
 const biometryTitle = ref('')
 const isChecking = ref(false)
@@ -45,6 +46,32 @@ async function onPinSetupSuccess(newPin?: string) {
 }
 
 const confirmRemoveOpen = ref(false)
+
+function requestChangePin() {
+  if (settings.pinEnabled) {
+    pinVerifyAction.value = 'change'
+  } else {
+    pinSetupOpen.value = true
+  }
+}
+
+function requestRemovePin() {
+  if (settings.pinEnabled) {
+    pinVerifyAction.value = 'remove'
+  } else {
+    confirmRemoveOpen.value = true
+  }
+}
+
+function onVerifyCurrentSuccess() {
+  const action = pinVerifyAction.value
+  pinVerifyAction.value = null
+  if (action === 'change') {
+    pinSetupOpen.value = true
+  } else if (action === 'remove') {
+    confirmRemoveOpen.value = true
+  }
+}
 
 async function disablePinLock() {
   confirmRemoveOpen.value = false
@@ -111,10 +138,10 @@ async function toggleBiometrics() {
 
       <template v-else>
         <div class="btn-group">
-          <AppButton variant="outline" @click="pinSetupOpen = true">
+          <AppButton variant="outline" @click="requestChangePin">
             {{ t('security.changePin') }}
           </AppButton>
-          <AppButton variant="ghost" @click="confirmRemoveOpen = true">
+          <AppButton variant="ghost" @click="requestRemovePin">
             {{ t('security.removePin') }}
           </AppButton>
         </div>
@@ -142,8 +169,17 @@ async function toggleBiometrics() {
     </div>
 
     <PinLockModal
+      v-if="pinVerifyAction"
+      mode="verify"
+      @cancel="pinVerifyAction = null"
+      @close="pinVerifyAction = null"
+      @success="onVerifyCurrentSuccess"
+    />
+
+    <PinLockModal
       v-if="pinSetupOpen"
       mode="setup"
+      @cancel="pinSetupOpen = false"
       @close="pinSetupOpen = false"
       @success="onPinSetupSuccess"
     />

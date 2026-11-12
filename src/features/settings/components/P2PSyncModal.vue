@@ -10,7 +10,7 @@ import {
   X,
 } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
-import { generateQrSvg } from '@/lib/qrcode'
+import { generateQrDataUrl } from '@/lib/qrcode'
 import {
   P2PHostSession,
   P2PClientSession,
@@ -83,7 +83,7 @@ async function startHost() {
   try {
     const offer = await hostSession.initOffer()
     hostOfferCode.value = offer
-    hostOfferQrSvg.value = await generateQrSvg(offer)
+    hostOfferQrSvg.value = await generateQrDataUrl(offer)
     void tickFeedback()
   } catch (err) {
     status.value = 'error'
@@ -127,7 +127,7 @@ async function submitOfferToClient() {
   try {
     const answer = await clientSession.acceptOfferAndGenerateAnswer(offer)
     clientAnswerCode.value = answer
-    clientAnswerQrSvg.value = await generateQrSvg(answer)
+    clientAnswerQrSvg.value = await generateQrDataUrl(answer)
     void tickFeedback()
   } catch (err) {
     status.value = 'error'
@@ -229,7 +229,9 @@ onUnmounted(() => {
           </div>
 
           <div v-if="hostOfferQrSvg" class="qr-container">
-            <div class="qr-box" v-html="hostOfferQrSvg" />
+            <div class="qr-box">
+              <img :src="hostOfferQrSvg" alt="Host pairing QR code" class="qr-img" />
+            </div>
             <button type="button" class="copy-pill" @click="copyText(hostOfferCode)">
               <Copy :size="14" />
               <span>{{ copied ? t('settings.p2pCopied', 'Copied!') : t('settings.p2pCopyOffer', 'Copy Pairing Code') }}</span>
@@ -294,7 +296,9 @@ onUnmounted(() => {
             </div>
 
             <div v-if="clientAnswerQrSvg" class="qr-container">
-              <div class="qr-box" v-html="clientAnswerQrSvg" />
+              <div class="qr-box">
+                <img :src="clientAnswerQrSvg" alt="Client answer QR code" class="qr-img" />
+              </div>
               <button type="button" class="copy-pill" @click="copyText(clientAnswerCode)">
                 <Copy :size="14" />
                 <span>{{ copied ? t('settings.p2pCopied', 'Copied!') : t('settings.p2pCopyAnswer', 'Copy Answer Code') }}</span>
@@ -457,9 +461,11 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.qr-box :deep(svg) {
+.qr-box :deep(svg),
+.qr-img {
   width: 100%;
   height: 100%;
+  display: block;
 }
 
 .copy-pill {

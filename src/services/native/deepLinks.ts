@@ -33,11 +33,14 @@ export interface DeepLinkHandlers {
 export function parseDeepLink(url: string): DeepLinkAction {
   try {
     const parsed = new URL(url)
+    if (parsed.protocol.toLowerCase() !== 'wherediditgo:') {
+      return 'unknown'
+    }
     const host = parsed.host.toLowerCase()
     if (host === 'add') return 'add'
     if (host === 'scan') return 'scan'
     if (host === 'budgets' || host === 'budget') return 'budgets'
-    if (host === 'auth-callback' || host === 'login-callback' || url.includes('access_token=') || url.includes('refresh_token=')) return 'auth'
+    if (host === 'auth-callback' || host === 'login-callback') return 'auth'
     return 'unknown'
   } catch {
     return 'unknown'
@@ -46,12 +49,24 @@ export function parseDeepLink(url: string): DeepLinkAction {
 
 async function handleAuthTokens(rawUrl: string, onComplete?: () => void) {
   try {
-    const hashIndex = rawUrl.indexOf('#')
-    const queryIndex = rawUrl.indexOf('?')
-    const paramsString = hashIndex !== -1 ? rawUrl.substring(hashIndex + 1) : queryIndex !== -1 ? rawUrl.substring(queryIndex + 1) : ''
-    const params = new URLSearchParams(paramsString)
-    const accessToken = params.get('access_token')
-    const refreshToken = params.get('refresh_token')
+    const parsed = new URL(rawUrl)
+    if (parsed.protocol.toLowerCase() !== 'wherediditgo:') return
+    const host = parsed.host.toLowerCase()
+    if (host !== 'auth-callback' && host !== 'login-callback') return
+
+    // Prefer PKCE authorization code exchange over implicit token params
+    const authCode = parsed.searchParams.get('code')
+    if (authCode) {
+      const { error } = await supabase.auth.exchangeCodeForSession(authCode)
+      if (!error) {
+        onComplete?.()
+      }
+      return
+    }
+
+    const hashParams = new URLSearchParams(parsed.hash.startsWith('#') ? parsed.hash.slice(1) : parsed.hash)
+    const accessToken = hashParams.get('access_token') || parsed.searchParams.get('access_token')
+    const refreshToken = hashParams.get('refresh_token') || parsed.searchParams.get('refresh_token')
     if (accessToken && refreshToken) {
       await supabase.auth.setSession({
         access_token: accessToken,

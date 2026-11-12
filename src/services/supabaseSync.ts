@@ -241,6 +241,18 @@ export async function syncTwoWay(): Promise<SyncStats> {
       supabase.from('debts').select('*').eq('user_id', user.id),
     ])
 
+  const firstFetchError =
+    remoteAccs.error ||
+    remoteCats.error ||
+    remoteBudgets.error ||
+    remoteGoals.error ||
+    remoteTxs.error ||
+    remoteRecs.error ||
+    remoteDebts.error
+  if (firstFetchError) {
+    throw new Error(`Cloud sync pull failed: ${firstFetchError.message}`)
+  }
+
   // Process Accounts
   if (localAccounts.length > 0) {
     const accRows: Database['public']['Tables']['accounts']['Insert'][] = localAccounts.map((a) => ({
@@ -256,7 +268,8 @@ export async function syncTwoWay(): Promise<SyncStats> {
       updated_at: now,
     }))
     const { error } = await supabase.from('accounts').upsert(accRows, { onConflict: 'id' })
-    if (!error) pushed += accRows.length
+    if (error) throw new Error(`Cloud sync accounts push failed: ${error.message}`)
+    pushed += accRows.length
   }
 
   if (remoteAccs.data && remoteAccs.data.length > 0) {
@@ -298,7 +311,8 @@ export async function syncTwoWay(): Promise<SyncStats> {
       updated_at: now,
     }))
     const { error } = await supabase.from('categories').upsert(catRows, { onConflict: 'id' })
-    if (!error) pushed += catRows.length
+    if (error) throw new Error(`Cloud sync categories push failed: ${error.message}`)
+    pushed += catRows.length
   }
 
   if (remoteCats.data && remoteCats.data.length > 0) {
@@ -340,7 +354,8 @@ export async function syncTwoWay(): Promise<SyncStats> {
       updated_at: t.updatedAt || now,
     }))
     const { error } = await supabase.from('transactions').upsert(txRows, { onConflict: 'id' })
-    if (!error) pushed += txRows.length
+    if (error) throw new Error(`Cloud sync transactions push failed: ${error.message}`)
+    pushed += txRows.length
   }
 
   if (remoteTxs.data && remoteTxs.data.length > 0) {
@@ -389,7 +404,8 @@ export async function syncTwoWay(): Promise<SyncStats> {
       updated_at: now,
     }))
     const { error } = await supabase.from('budgets').upsert(budgetRows, { onConflict: 'id' })
-    if (!error) pushed += budgetRows.length
+    if (error) throw new Error(`Cloud sync budgets push failed: ${error.message}`)
+    pushed += budgetRows.length
   }
 
   if (remoteBudgets.data && remoteBudgets.data.length > 0) {
@@ -427,7 +443,8 @@ export async function syncTwoWay(): Promise<SyncStats> {
       updated_at: now,
     }))
     const { error } = await supabase.from('goals').upsert(goalRows, { onConflict: 'id' })
-    if (!error) pushed += goalRows.length
+    if (error) throw new Error(`Cloud sync goals push failed: ${error.message}`)
+    pushed += goalRows.length
   }
 
   if (remoteGoals.data && remoteGoals.data.length > 0) {
@@ -469,7 +486,8 @@ export async function syncTwoWay(): Promise<SyncStats> {
       updated_at: d.updatedAt || now,
     }))
     const { error } = await supabase.from('debts').upsert(debtRows, { onConflict: 'id' })
-    if (!error) pushed += debtRows.length
+    if (error) throw new Error(`Cloud sync debts push failed: ${error.message}`)
+    pushed += debtRows.length
   }
 
   if (remoteDebts.data && remoteDebts.data.length > 0) {
@@ -514,7 +532,8 @@ export async function syncTwoWay(): Promise<SyncStats> {
       updated_at: now,
     }))
     const { error } = await supabase.from('recurring').upsert(recRows, { onConflict: 'id' })
-    if (!error) pushed += recRows.length
+    if (error) throw new Error(`Cloud sync recurring push failed: ${error.message}`)
+    pushed += recRows.length
   }
 
   if (remoteRecs.data && remoteRecs.data.length > 0) {

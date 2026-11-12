@@ -26,7 +26,7 @@ export class AuthService {
       email: input.email,
       name: input.name,
       passwordHash,
-      role: input.role || 'user',
+      role: 'user',
     });
 
     const tokenPayload: TokenPayload = {

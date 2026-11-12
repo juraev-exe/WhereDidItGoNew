@@ -113,7 +113,25 @@ function computeWidgetData() {
   }
 }
 
+let storesStarted = false
+
+async function startUnlockedSession() {
+  if (storesStarted || !settings.isUnlocked) return
+  storesStarted = true
+  accounts.start()
+  categories.start()
+  budgets.start()
+  goals.start()
+  debts.start()
+  transactions.start()
+  recurring.start()
+  void supabaseStore.init()
+  void initializeAds()
+  await runForegroundJobs()
+}
+
 async function runForegroundJobs() {
+  if (!settings.isUnlocked) return
   await recurring.postDue()
   const copied = await budgets.carryForwardIfNeeded()
   if (copied === 'copied') ui.notifyBudgetCopied(monthKey())
@@ -174,16 +192,9 @@ onMounted(async () => {
     }
 
     await settings.load()
-    accounts.start()
-    categories.start()
-    budgets.start()
-    goals.start()
-    debts.start()
-    transactions.start()
-    recurring.start()
-    void supabaseStore.init()
-    void initializeAds()
-    await runForegroundJobs()
+    if (settings.isUnlocked) {
+      await startUnlockedSession()
+    }
 
     if (needsOnboardingRedirect()) {
       // Can reject if the onboarding chunk itself fails to load.
@@ -266,6 +277,15 @@ onUnmounted(() => {
   transactions.stop()
   recurring.stop()
 })
+
+watch(
+  () => settings.isUnlocked,
+  (unlocked) => {
+    if (unlocked) {
+      void startUnlockedSession()
+    }
+  },
+)
 
 watch(
   () => settings.onboardingDone,

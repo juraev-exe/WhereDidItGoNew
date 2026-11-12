@@ -25,9 +25,18 @@ export interface AnalyticsReportOptions {
   locale?: string
 }
 
-function escapeCell(val: unknown): string {
-  if (val == null) return '""'
+function sanitizeCsvCell(val: unknown): string {
+  if (val == null) return ''
   const str = String(val)
+  // Neutralize Excel/Sheets formula injection while preserving valid signed numbers (e.g. -50.00)
+  if (/^\s*[=+@\t\r]/.test(str) || /^\s*-(?![0-9]+(\.[0-9]+)?$)/.test(str)) {
+    return "'" + str
+  }
+  return str
+}
+
+function escapeCell(val: unknown): string {
+  const str = sanitizeCsvCell(val)
   return '"' + str.replaceAll('"', '""') + '"'
 }
 

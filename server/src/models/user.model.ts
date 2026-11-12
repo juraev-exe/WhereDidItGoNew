@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+
 export interface User {
   id: string;
   email: string;
@@ -31,22 +33,26 @@ export function toSafeUser(user: User): SafeUser {
  * Ready to be swapped with Prisma (`prisma.user`) or Drizzle queries.
  */
 class UserModel {
-  private users: Map<string, User> = new Map([
-    [
-      'usr_demo123',
-      {
-        id: 'usr_demo123',
-        email: 'alex@example.com',
-        name: 'Alex Developer',
-        role: 'user',
-        // pre-hashed scrypt hash for 'Password123!'
-        passwordHash: 'a1b2c3d4e5f60718293a4b5c6d7e8f90:39db16b7a872a4ec181634e45877088ca1af88894e8ec3434b3fa8a056c6a737d7956e3ed13047e3525f909d4c79866f87a29f847b4e9d8ae915cddef1d7c9ee',
-        refreshToken: null,
-        createdAt: new Date('2026-01-01T00:00:00.000Z'),
-        updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-      },
-    ],
-  ]);
+  private users: Map<string, User> = new Map(
+    process.env.NODE_ENV === 'production'
+      ? []
+      : [
+          [
+            'usr_demo123',
+            {
+              id: 'usr_demo123',
+              email: 'alex@example.com',
+              name: 'Alex Developer',
+              role: 'user',
+              // pre-hashed scrypt hash for 'Password123!'
+              passwordHash: 'a1b2c3d4e5f60718293a4b5c6d7e8f90:39db16b7a872a4ec181634e45877088ca1af88894e8ec3434b3fa8a056c6a737d7956e3ed13047e3525f909d4c79866f87a29f847b4e9d8ae915cddef1d7c9ee',
+              refreshToken: null,
+              createdAt: new Date('2026-01-01T00:00:00.000Z'),
+              updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+            },
+          ],
+        ]
+  );
 
   async findById(id: string): Promise<User | null> {
     return this.users.get(id) || null;
@@ -62,7 +68,7 @@ class UserModel {
   }
 
   async create(data: CreateUserInput): Promise<User> {
-    const id = `usr_${Math.random().toString(36).substring(2, 9)}`;
+    const id = `usr_${crypto.randomUUID()}`;
     const now = new Date();
     const newUser: User = {
       id,

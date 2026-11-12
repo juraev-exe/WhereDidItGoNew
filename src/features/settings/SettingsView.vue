@@ -39,6 +39,7 @@ type Subpage = 'root' | 'formatting' | 'appearance' | 'navigation' | 'securityPr
 
 const APP_VERSION = pkg.version
 const REPO_URL = 'https://github.com/juraev-exe/wherediditgo'
+const isDev = import.meta.env.DEV
 
 const { t } = useI18n()
 const router = useRouter()
@@ -446,6 +447,7 @@ onUnmounted(() => ui.setSettingsSubpage('root'))
           </AppButton>
 
           <AppButton
+            v-if="isDev"
             block
             variant="tonal"
             class="reset-pro-btn"

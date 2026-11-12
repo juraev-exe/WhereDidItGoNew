@@ -768,7 +768,9 @@ export default {
     forgotPin: 'Forgot PIN?',
     resetSecurity: 'Reset App Lock',
     removePinConfirm: 'Anyone with this device will be able to open the app.',
-    resetSecurityConfirm: 'This clears your PIN. Your data stays on the device.',
+    resetSecurityConfirm: 'For your security, resetting a forgotten PIN permanently erases all local financial data and signs out cloud sync.',
+    pinLockedOut: 'Too many failed attempts. Try again in {seconds}s.',
+    verifyCurrentPin: 'Enter Current PIN',
   },
   debts: {
     title: 'Debts & Loans',

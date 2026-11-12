@@ -232,8 +232,8 @@ function openEncryptedExport() {
 }
 
 async function executeEncryptedExport() {
-  if (exportPassphrase.value.length < 4) {
-    exportPassError.value = t('settings.passphraseTooShort', 'Password must be at least 4 characters')
+  if (exportPassphrase.value.length < 8) {
+    exportPassError.value = t('settings.passphraseTooShort', 'Password must be at least 8 characters')
     void errorFeedback()
     return
   }
@@ -681,7 +681,7 @@ async function executeReset() {
       <div class="sheet-body">
         <p class="sheet-desc">{{ t('settings.exportEncryptedDesc', 'Set a password to encrypt this backup with AES-256-GCM. You will need this password to restore your data.') }}</p>
         <label class="field-box">
-          <span class="field-label">{{ t('settings.encryptionPassword', 'Password (min. 4 characters)') }}</span>
+          <span class="field-label">{{ t('settings.encryptionPassword', 'Password (min. 8 characters)') }}</span>
           <input
             v-model="exportPassphrase"
             type="password"
@@ -705,7 +705,7 @@ async function executeReset() {
         <AppButton
           block
           variant="filled"
-          :disabled="!exportPassphrase || exportPassphrase.length < 4"
+          :disabled="!exportPassphrase || exportPassphrase.length < 8"
           @click="executeEncryptedExport"
         >
           {{ t('settings.exportEncryptedConfirm', 'Export Encrypted File (.enc)') }}

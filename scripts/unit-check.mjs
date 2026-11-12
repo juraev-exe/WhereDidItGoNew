@@ -709,5 +709,67 @@ eq('web empty entitlements returns false', isWebEntitlementActive({}), false)
 eq('web active entitlement returns true', isWebEntitlementActive({ [ENTITLEMENT_ID]: { isActive: true } }), true)
 eq('web inactive entitlement returns false', isWebEntitlementActive({ [ENTITLEMENT_ID]: { isActive: false } }), false)
 
+console.log('\n— Security Hardening Verification —')
+eq('inactive native entitlement returns false', isProEntitlementActive({ [ENTITLEMENT_ID]: { isActive: false } }), false)
+eq('deep link rejects http scheme with access_token', parseDeepLink('https://evil.example/?access_token=abc&refresh_token=def'), 'unknown')
+eq('deep link rejects arbitrary host even on app scheme with token', parseDeepLink('wherediditgo://other?access_token=abc'), 'unknown')
+eq('deep link accepts wherediditgo auth-callback', parseDeepLink('wherediditgo://auth-callback?code=pkce_123'), 'auth')
+
+let shortPassRejected = false
+try {
+  await encryptBackup(mockBackupToEncrypt, '1234')
+} catch {
+  shortPassRejected = true
+}
+eq('encryptBackup rejects passphrase shorter than 8 chars', shortPassRejected, true)
+
+let lowIterRejected = false
+try {
+  await decryptBackup({ ...encEnvelope, iterations: 1 }, 'super-secret-pass-2026')
+} catch {
+  lowIterRejected = true
+}
+eq('decryptBackup rejects tampered low iterations', lowIterRejected, true)
+
+let highIterRejected = false
+try {
+  await decryptBackup({ ...encEnvelope, iterations: 999_999_999 }, 'super-secret-pass-2026')
+} catch {
+  highIterRejected = true
+}
+eq('decryptBackup rejects excessive iterations DoS', highIterRejected, true)
+
+const formulaCsv = generateAnalyticsReportCsv({
+  transactions: [
+    {
+      id: 'tx_inj',
+      type: 'expense',
+      amount: 5000,
+      accountId: 'acc_1',
+      categoryId: 'cat_1',
+      note: '=CMD("calc")',
+      date: '2026-10-15',
+      createdAt: '2026-10-15T10:00:00Z',
+      updatedAt: '2026-10-15T10:00:00Z',
+    },
+  ],
+  categories: [{ id: 'cat_1', name: '+SUM(1,2)', kind: 'expense', icon: 'tag', color: '#000', sortOrder: 0 }],
+  accounts: [{ id: 'acc_1', name: 'Checking', type: 'checking', balance: -5000, currency: 'USD', color: '#000', archived: false, createdAt: '2026-10-01T00:00:00Z' }],
+  range: { start: '2026-10-01', end: '2026-10-31' },
+  rangeLabel: 'Oct 2026',
+  period: 'this_month',
+  kpis: {
+    savingsRate: { pct: -100, tone: 'warn' },
+    dailyBurn: { currentDaily: 5000, priorDaily: 0, deltaPct: null },
+    projectedSpend: { projectedAmount: 5000, daysRemaining: 10 },
+    essentialRatio: { essentialPct: 0, discretionaryPct: 100, essentialAmount: 0, discretionaryAmount: 5000 },
+  },
+  detailedCategories: [],
+  currency: 'USD',
+})
+eq('csv neutralizes = formula in note', formulaCsv.includes('"\'=CMD(""calc"")"'), true)
+eq('csv neutralizes + formula in category', formulaCsv.includes('"\'+SUM(1,2)"'), true)
+eq('csv preserves valid negative numeric amount', formulaCsv.includes('"-50.00"'), true)
+
 console.log(failures ? `\n${failures} FAILURES` : '\nAll unit checks passed.')
 process.exit(failures ? 1 : 0)

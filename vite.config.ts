@@ -40,15 +40,12 @@ export default defineConfig({
     },
   },
   server: {
-    host: true, // Listen on all network interfaces (localhost, 127.0.0.1, LAN IP)
+    host: 'localhost',
     port: 5173,
     strictPort: false,
-    cors: true,
-    allowedHosts: true,
   },
   preview: {
-    host: true,
+    host: 'localhost',
     port: 4173,
-    allowedHosts: true,
   },
 })

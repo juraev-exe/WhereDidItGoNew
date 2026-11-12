@@ -6,16 +6,16 @@ import {
   updateUserSchema,
   getUserByIdSchema,
 } from '../validators/user.validator.js';
-import { requireAuth } from '../middleware/auth.middleware.js';
+import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
-// Public routes
-router.get('/', userController.listUsers);
-router.get('/:id', validateRequest(getUserByIdSchema), userController.getUserById);
-router.post('/', validateRequest(createUserSchema), userController.createUser);
+// Admin-only routes
+router.get('/', requireAuth, requireRole('admin'), userController.listUsers);
+router.post('/', requireAuth, requireRole('admin'), validateRequest(createUserSchema), userController.createUser);
 
-// Protected routes (require auth token)
+// Self-or-admin protected routes (ownership enforced in controller)
+router.get('/:id', requireAuth, validateRequest(getUserByIdSchema), userController.getUserById);
 router.put('/:id', requireAuth, validateRequest(updateUserSchema), userController.updateUser);
 router.delete('/:id', requireAuth, validateRequest(getUserByIdSchema), userController.deleteUser);
 

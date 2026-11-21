@@ -626,7 +626,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: var(--space-3);
   animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
-  animation-delay: 180ms;
+  animation-delay: 40ms;
 }
 
 
@@ -672,10 +672,10 @@ onUnmounted(() => {
   animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
 }
 
-.chip:nth-child(1) { animation-delay: 220ms; }
-.chip:nth-child(2) { animation-delay: 280ms; }
-.chip:nth-child(3) { animation-delay: 340ms; }
-.chip:nth-child(4) { animation-delay: 400ms; }
+.chip:nth-child(1) { animation-delay: 40ms; }
+.chip:nth-child(2) { animation-delay: 70ms; }
+.chip:nth-child(3) { animation-delay: 100ms; }
+.chip:nth-child(n+4) { animation-delay: 130ms; }
 
 .chip:hover {
   transform: translateY(-1px);

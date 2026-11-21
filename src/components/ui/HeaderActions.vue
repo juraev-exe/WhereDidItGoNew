@@ -93,7 +93,7 @@ async function toggleTheme() {
     background var(--duration-fast) var(--ease-standard),
     border-color var(--duration-fast) var(--ease-standard),
     transform var(--duration-fast) var(--ease-standard);
-  animation: fadeSlideUp 0.35s var(--ease-emphasized) both;
+  animation: fadeSlideUp 0.25s var(--ease-emphasized) both;
 }
 
 .streak-flame {
@@ -171,19 +171,19 @@ async function toggleTheme() {
 }
 
 .icon-spinning {
-  animation: iconSpin 0.4s var(--ease-spring) both;
+  animation: iconSpin 0.3s var(--ease-spring) both;
 }
 
 .header-actions .icon-btn:nth-child(2) {
-  animation: fadeSlideUp 0.35s var(--ease-emphasized) both;
-  animation-delay: 50ms;
+  animation: fadeSlideUp 0.25s var(--ease-emphasized) both;
+  animation-delay: 30ms;
 }
 .header-actions .icon-btn:nth-child(3) {
-  animation: fadeSlideUp 0.35s var(--ease-emphasized) both;
-  animation-delay: 100ms;
+  animation: fadeSlideUp 0.25s var(--ease-emphasized) both;
+  animation-delay: 60ms;
 }
 .header-actions .icon-btn:nth-child(4) {
-  animation: fadeSlideUp 0.35s var(--ease-emphasized) both;
-  animation-delay: 150ms;
+  animation: fadeSlideUp 0.25s var(--ease-emphasized) both;
+  animation-delay: 90ms;
 }
 </style>

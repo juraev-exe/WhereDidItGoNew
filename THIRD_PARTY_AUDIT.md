@@ -1,52 +1,30 @@
 # Third-Party SDK & Dependency Audit
 
-**Audit Date**: October 1, 2026  
-**Application**: WhereDidItGo (`com.wherediditgo.app`)  
-**Version**: 1.1.0  
-**Auditor**: Project Security & Privacy Compliance  
+**Audit Date**: November 13, 2026  
+**Application**: WhereDidItGo (`com.wherediditgo.app`) — v1.1.5  
+**Repository**: https://github.com/juraev-exe/WhereDidItGoNew  
 
-This audit evaluates all external libraries, native plugins, and frontend packages integrated into WhereDidItGo to ensure full compliance with Google Play, Apple App Store, GDPR, and COPPA data minimization standards.
+This technical audit inventories all runtime libraries, Capacitor native plugins, and network-capable SDKs shipped in WhereDidItGo across Web, Desktop (Electron), Android, and iOS.
 
----
+## Architecture and Network Scope
 
-## 1. Executive Summary
+By default, WhereDidItGo runs offline and stores all ledger data locally in IndexedDB via `dexie`. No financial records leave the device unless the user explicitly signs into an account in **Settings -> Cloud Vault**, which activates two-way HTTPS synchronization with Supabase (`@supabase/supabase-js`) under PostgreSQL Row-Level Security (`user_id` isolation).
 
-* **Personal Financial Data Transmission**: **NONE (0%)**. No financial numbers, notes, categories, accounts, or budgets leave the client device under any circumstance.
-* **Advertising / Tracking SDKs**: **NONE (0%)**. No AdMob, Meta, Firebase, AppsFlyer, or other advertising/tracking SDKs are present.
-* **Telemetry / Profiling**: **NONE**. No behavioral fingerprinting or user session profiling.
+Entitlement checks and optional Pro purchases (`Lifetime`, `Annual`, and `Monthly`) are handled by `@revenuecat/purchases-capacitor`, `@revenuecat/purchases-capacitor-ui`, and `@revenuecat/purchases-js`, which communicate over TLS with RevenueCat and Google Play Billing, Apple In-App Purchase, or Stripe without exposing payment card credentials to the application. Free-tier native mobile builds include Google AdMob (`@capacitor-community/admob`) gated on production unit IDs; upgrading to Pro disables all ad requests, and Web and Desktop builds include zero ad network scripts.
 
----
+## Runtime Package Inventory
 
-## 2. In-Depth SDK & Plugin Breakdown
+| Package / SDK | Role in Application | Network Traffic | Data Transmitted |
+|---|---|---|---|
+| `dexie` | Local IndexedDB database engine | None | None |
+| `@supabase/supabase-js` | Optional opt-in Cloud Vault sync | TLS HTTPS to Supabase when signed in | Account email + RLS-scoped ledger rows |
+| `@revenuecat/purchases-capacitor`, `purchases-capacitor-ui`, `@revenuecat/purchases-js` | Store and Web Pro entitlement validation | TLS HTTPS to RevenueCat / Stripe | Anonymous or linked Supabase UUID + store receipt token |
+| `@capacitor-community/admob` | Free-tier native mobile ads | TLS HTTPS to Google AdMob on free mobile tier | Advertising ID (`AD_ID`) and ad request context |
+| `tesseract.js` | On-device Receipt OCR (`eng+rus`) | First-run CDN fetch for static `.traineddata.gz` | None (receipt photos stay in local memory) |
+| `@aparajita/capacitor-biometric-auth` | Native fingerprint / Face ID verification for PIN lock | None | None (OS keystore / biometric prompt only) |
+| `@capawesome/capacitor-haptics`, `@capacitor/status-bar`, `@capacitor/splash-screen`, `@capacitor/preferences`, `@capacitor/filesystem`, `@capacitor/local-notifications`, `@capacitor/share`, `@capacitor/app` | Native OS UI, haptics, file export, and local reminders | None | None |
+| `vue`, `pinia`, `vue-i18n`, `vue-router`, `papaparse`, `date-fns`, `@lucide/vue`, `@number-flow/vue`, `qrcode`, `vue-sonner` | Frontend UI, state, CSV parsing, date math, and QR codes | None | None |
 
-| Package / SDK | Source | Purpose | Network Activity? | Data Transmitted | Privacy Assessment |
-|---|---|---|---|---|---|
-| `@revenuecat/purchases-capacitor` | RevenueCat | In-app purchase receipt verification for Pro unlock. | Yes (TLS HTTPS to RevenueCat API) | Anonymous randomized App User ID & Google Play / Apple receipt token. | ✅ Compliant. No financial records, category names, or notes sent. |
-| `@capawesome/capacitor-haptics` | Capawesome | Native haptic feedback during numeric keypad tapping. | No | None. Executes locally on device vibrator. | ✅ Compliant. Zero network code. |
-| `@capacitor/status-bar` | Ionic / Capacitor | Configures mobile status bar color and dark/light mode overlay. | No | None. Native window styling only. | ✅ Compliant. |
-| `@capacitor/splash-screen` | Ionic / Capacitor | Shows and hides initial application launch splash screen. | No | None. Native splash handler only. | ✅ Compliant. |
-| `@capacitor/preferences` | Ionic / Capacitor | Persists simple user settings (e.g. active currency, language, theme). | No | None. Stored in Android `SharedPreferences` / iOS `UserDefaults`. | ✅ Compliant. |
-| `@capacitor/filesystem` | Ionic / Capacitor | Writes user-initiated backup files (.json / .csv) to device cache/downloads. | No | None. Scoped strictly to local storage. | ✅ Compliant. |
-| `@capacitor/local-notifications` | Ionic / Capacitor | Dispatches local daily/weekly budget reminder notifications if scheduled by user. | No | None. Scheduled locally via Android `AlarmManager`. | ✅ Compliant. |
-| `dexie` | Dexie.js | IndexedDB wrapper for transaction and budget storage. | No | None. Runs 100% inside client browser sandbox. | ✅ Compliant. |
-| `@number-flow/vue` | NumberFlow | Smooth micro-animations for balance updates. | No | None. Visual presentation layer only. | ✅ Compliant. |
-| `@lucide/vue` | Lucide | Clean, accessible SVG iconography. | No | None. Static UI assets. | ✅ Compliant. |
-| `date-fns` | Date-fns | Local date formatting and monthly period calculations. | No | None. Pure mathematical utility. | ✅ Compliant. |
-| `papaparse` | PapaParse | Client-side CSV parser for user-initiated spreadsheet import/export. | No | None. In-memory data parsing only. | ✅ Compliant. |
-| `vue`, `pinia`, `vue-i18n`, `vue-router` | Vue Core Team | Application architecture, state management, and multi-language routing. | No | None. Client-side application framework. | ✅ Compliant. |
+## Android Manifest Permissions (`android/app/src/main/AndroidManifest.xml`)
 
----
-
-## 3. Native Android Permissions Verification
-
-Audited in `android/app/src/main/AndroidManifest.xml`:
-* `android.permission.INTERNET`: Required solely for Google Play Billing validation.
-* `android.permission.VIBRATE`: Required for keypad haptics.
-* `android.permission.POST_NOTIFICATIONS`: Declared by notification plugin; strictly requested only when the user explicitly schedules budget alerts.
-* **Declined / Forbidden Permissions**: No `ACCESS_FINE_LOCATION`, `READ_CONTACTS`, `CAMERA`, `READ_PHONE_STATE`, or `RECORD_AUDIO`.
-
----
-
-## 4. Conclusion
-
-WhereDidItGo complies with the highest standards of data minimization. The app contains zero tracking SDKs, zero hidden background collectors, and zero unnecessary device permissions.
+The Android manifest declares `android.permission.INTERNET` (used for RevenueCat billing verification, opt-in Supabase sync, free-tier AdMob ads, and initial OCR language data), `com.google.android.gms.permission.AD_ID` (required by Google Play for AdMob on the free tier), and `android.permission.USE_BIOMETRIC` / `android.permission.USE_FINGERPRINT` (for optional biometric PIN unlock). Camera capture (`CAMERA`), local notifications (`POST_NOTIFICATIONS`), and keypad haptics (`VIBRATE`) are invoked only when triggered by the user. Location (`ACCESS_FINE_LOCATION`), contacts (`READ_CONTACTS`), and microphone (`RECORD_AUDIO`) permissions are never requested.

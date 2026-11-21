@@ -141,7 +141,7 @@ function toggleAdd() {
   border: 1px solid color-mix(in srgb, var(--color-outline-variant) 90%, transparent);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   padding: 4px 8px;
-  transition: opacity 0.28s var(--ease-standard), transform 0.32s var(--ease-emphasized), visibility 0.32s;
+  transition: opacity 0.2s var(--ease-standard), transform 0.25s var(--ease-emphasized), visibility 0.25s;
 }
 
 .nav--hidden {
@@ -254,7 +254,14 @@ function toggleAdd() {
 }
 
 .tab--active svg {
-  animation: tabPop 0.35s var(--ease-spring) both;
+  /* Frequency of use: tab switches happen constantly, so the pop is short and subtle. */
+  animation: navTabPop 180ms var(--ease-spring) both;
+}
+
+@keyframes navTabPop {
+  0% { transform: scale(0.94); }
+  60% { transform: scale(1.06); }
+  100% { transform: scale(1); }
 }
 
 /* Icon-only nav style: tabs shrink to circular hit targets and the whole
@@ -284,8 +291,8 @@ function toggleAdd() {
               box-shadow var(--duration-fast) var(--ease-standard);
   cursor: pointer;
   border: none;
-  animation: popIn 0.45s var(--ease-spring) both;
-  animation-delay: 350ms;
+  /* Fitts + Doherty: the primary action is visible immediately, no entrance delay. */
+  animation: popIn 260ms var(--ease-spring) both;
 }
 
 .fab:hover {

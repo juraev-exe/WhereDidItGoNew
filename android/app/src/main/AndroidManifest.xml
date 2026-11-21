@@ -99,16 +99,16 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_budget_info" />
         </receiver>
-        <!-- Google AdMob Application ID (Official test ID for development, replace with real AdMob App ID in release) -->
+        <!-- Google AdMob Application ID (resolved from ADMOB_APP_ID / keystore.properties admobAppId, defaulting to Google's test ID in local dev) -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="${admobAppId}" />
     </application>
 
     <!--
         Permissions audit (cross-referenced against installed Capacitor plugins in package.json):
-        - INTERNET: required by src/services/ai.ts and Supabase sync / AdMob ads
-        - AD_ID: required by Google Play for Google Mobile Ads (AdMob)
+        - INTERNET: required by RevenueCat billing, optional Supabase Cloud Vault sync, AdMob, and initial OCR language data
+        - AD_ID: required by Google Play for Google Mobile Ads (AdMob) on the free tier
     -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />

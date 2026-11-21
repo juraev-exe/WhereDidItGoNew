@@ -1,24 +1,37 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
-import { Check, Crown, PlayCircle, RefreshCw, Sparkles, Star, X } from '@lucide/vue'
+import { Check, Crown, Info, PlayCircle, RefreshCw, Sparkles, X } from '@lucide/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import { usePremiumStore } from '@/stores/premium'
+import { useSupabaseStore } from '@/stores/supabase'
 import { tickFeedback } from '@/services/native/haptics'
-import { PremiumManager, findPackageForPlan, type SubscriptionPlanId } from '@/services/native/billing'
+import {
+  PremiumManager,
+  findPackageForPlan,
+  getPackagePriceAmount,
+  getPackagePriceString,
+  isBillingConfigured,
+  sanitizeBillingError,
+  type SubscriptionPlanId,
+} from '@/services/native/billing'
+import { isRewardedAdsConfigured } from '@/services/native/ads'
 import { isNative } from '@/lib/platform'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const premium = usePremiumStore()
+const supabaseStore = useSupabaseStore()
 
+const checkoutSuspended = ref(false)
 const open = computed({
   get: () => premium.paywallOpen,
   set: (val) => {
     if (!val) premium.closePaywall()
   },
 })
+const sheetOpen = computed(() => open.value && !checkoutSuspended.value)
 
 type PlanId = SubscriptionPlanId
 const selectedPlan = ref<PlanId>('lifetime')
@@ -26,23 +39,81 @@ const selectedPlan = ref<PlanId>('lifetime')
 const lifetimePrice = ref('$26.97')
 const annualPrice = ref('$9.29')
 const monthlyPrice = ref('$1.09')
+const annualAmount = ref<{ amount: number; currency: string } | null>(null)
+const monthlyAmount = ref<{ amount: number; currency: string } | null>(null)
 
-onMounted(async () => {
+const billingAvailable = computed(() => isBillingConfigured())
+const showRewardedOption = computed(() => isRewardedAdsConfigured())
+
+function formatCurrencyAmount(amount: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat(locale.value || undefined, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)
+  } catch {
+    return `$${amount.toFixed(2)}`
+  }
+}
+
+const annualWeeklyText = computed(() => {
+  if (!annualAmount.value || annualAmount.value.amount <= 0) {
+    return t('premium.billedAnnually', 'Billed annually')
+  }
+  const perWeek = formatCurrencyAmount(annualAmount.value.amount / 52, annualAmount.value.currency)
+  return t('premium.perWeek', { price: perWeek })
+})
+
+const monthlyWeeklyText = computed(() => {
+  if (!monthlyAmount.value || monthlyAmount.value.amount <= 0) {
+    return t('premium.billedMonthly', 'Billed monthly')
+  }
+  const perWeek = formatCurrencyAmount(monthlyAmount.value.amount / 4.33, monthlyAmount.value.currency)
+  return t('premium.perWeek', { price: perWeek })
+})
+
+const annualSavingsPct = computed(() => {
+  if (!annualAmount.value || !monthlyAmount.value) return 0
+  if (annualAmount.value.currency !== monthlyAmount.value.currency) return 0
+  const yearAtMonthly = monthlyAmount.value.amount * 12
+  if (yearAtMonthly <= annualAmount.value.amount) return 0
+  return Math.round(((yearAtMonthly - annualAmount.value.amount) / yearAtMonthly) * 100)
+})
+
+let offeringsLoaded = false
+async function loadOfferings() {
+  if (offeringsLoaded || !billingAvailable.value) return
   try {
     const offerings = await PremiumManager.getOfferings()
     if (offerings?.current) {
+      offeringsLoaded = true
       const lifePkg = findPackageForPlan(offerings.current, 'lifetime')
-      if (lifePkg?.product?.priceString) lifetimePrice.value = lifePkg.product.priceString
+      const lifePriceStr = getPackagePriceString(lifePkg)
+      if (lifePriceStr) lifetimePrice.value = lifePriceStr
 
       const annualPkg = findPackageForPlan(offerings.current, 'annual')
-      if (annualPkg?.product?.priceString) annualPrice.value = annualPkg.product.priceString
+      const annualPriceStr = getPackagePriceString(annualPkg)
+      if (annualPriceStr) annualPrice.value = annualPriceStr
+      annualAmount.value = getPackagePriceAmount(annualPkg)
 
       const monthPkg = findPackageForPlan(offerings.current, 'monthly')
-      if (monthPkg?.product?.priceString) monthlyPrice.value = monthPkg.product.priceString
+      const monthPriceStr = getPackagePriceString(monthPkg)
+      if (monthPriceStr) monthlyPrice.value = monthPriceStr
+      monthlyAmount.value = getPackagePriceAmount(monthPkg)
     }
-  } catch (e) {
-    // Graceful fallback to default prices
+  } catch {
+    // Graceful fallback when offerings are temporarily unreachable
   }
+}
+
+onMounted(() => {
+  void loadOfferings()
+})
+
+watch(open, (isOpen) => {
+  if (isOpen) void loadOfferings()
 })
 
 function selectPlan(plan: PlanId) {
@@ -62,12 +133,37 @@ const features = computed(() => [
 ])
 
 async function onBuy() {
-  const result = await premium.buyPro(selectedPlan.value)
-  if (result.success) {
-    toast.success(t('premium.purchaseSuccess', 'WhereDidItGo Pro unlocked! Welcome aboard.'))
-  } else if (!result.cancelled) {
-    const errorMsg = result.error?.message || t('premium.purchaseFailed', "Purchase didn't go through — try again in a moment.")
-    toast.error(errorMsg)
+  if (!billingAvailable.value) {
+    toast.info(
+      t(
+        'premium.webBillingUnavailable',
+        'Online checkout is not active on web yet. You can unlock Pro in the Android app via Google Play.',
+      ),
+    )
+    return
+  }
+
+  const suspendSheetForWebCheckout = !isNative()
+  if (suspendSheetForWebCheckout) {
+    checkoutSuspended.value = true
+  }
+
+  try {
+    const result = await premium.buyPro(selectedPlan.value, {
+      customerEmail: supabaseStore.userEmail || undefined,
+      selectedLocale: locale.value === 'ru' ? 'ru' : 'en',
+    })
+    if (result.success) {
+      toast.success(t('premium.purchaseSuccess', 'WhereDidItGo Pro unlocked! Welcome aboard.'))
+    } else if (!result.cancelled) {
+      const safeErr = sanitizeBillingError(
+        result.error,
+        t('premium.purchaseFailed', "Purchase didn't go through — try again in a moment."),
+      )
+      toast.error(safeErr.message)
+    }
+  } finally {
+    checkoutSuspended.value = false
   }
 }
 
@@ -76,7 +172,11 @@ async function onNativePaywall() {
   if (result.success) {
     toast.success(t('premium.purchaseSuccess', 'WhereDidItGo Pro unlocked! Welcome aboard.'))
   } else if (result.error) {
-    toast.error(result.error.message || 'RevenueCat paywall could not open. Please add packages to your offering.')
+    const safeErr = sanitizeBillingError(
+      result.error,
+      t('premium.purchaseFailed', "Purchase didn't go through — try again in a moment."),
+    )
+    toast.error(safeErr.message)
   }
 }
 
@@ -100,7 +200,7 @@ async function onWatchAd() {
 </script>
 
 <template>
-  <BottomSheet :open="open" title="" @close="open = false">
+  <BottomSheet :open="sheetOpen" title="" @close="open = false">
     <div class="paywall-container">
       <button type="button" class="close-btn" :aria-label="t('common.close')" @click="open = false">
         <X :size="20" />
@@ -153,11 +253,11 @@ async function onWatchAd() {
             <div class="plan-header">
               <div class="name-with-badge">
                 <span class="plan-name">{{ t('premium.annually', 'Annually') }}</span>
-                <span class="discount-pill">-28%</span>
+                <span v-if="annualSavingsPct > 0" class="discount-pill">-{{ annualSavingsPct }}%</span>
               </div>
               <span class="plan-price">{{ annualPrice }}</span>
             </div>
-            <span class="plan-sub-calc">(Per week: $0.18)</span>
+            <span class="plan-sub-calc">{{ annualWeeklyText }}</span>
           </div>
         </button>
 
@@ -176,7 +276,7 @@ async function onWatchAd() {
               <span class="plan-name">{{ t('premium.monthly', 'Monthly') }}</span>
               <span class="plan-price">{{ monthlyPrice }}</span>
             </div>
-            <span class="plan-sub-calc">(Per week: $0.28)</span>
+            <span class="plan-sub-calc">{{ monthlyWeeklyText }}</span>
           </div>
         </button>
       </div>
@@ -189,24 +289,41 @@ async function onWatchAd() {
         </div>
       </div>
 
-      <!-- Social Proof Card -->
-      <div class="review-card">
-        <div class="stars-row">
-          <Star v-for="s in 5" :key="s" :size="16" class="star-icon" />
-        </div>
-        <p class="review-quote">
-          “{{ t('premium.reviewQuote', "I've tried so many budget apps and none of them did it for me. This one exceeded my expectations — clean, fast, and private.") }}”
-        </p>
+      <div v-if="!billingAvailable" class="billing-notice" role="status">
+        <Info :size="18" class="billing-notice-icon" />
+        <span>
+          {{
+            t(
+              'premium.webBillingUnavailable',
+              'Online checkout is not active on web yet. You can unlock Pro in the Android app via Google Play.',
+            )
+          }}
+        </span>
       </div>
 
       <!-- Sticky Action -->
       <div class="actions">
-        <AppButton block size="lg" variant="filled" class="continue-btn" :loading="premium.loading" :disabled="premium.loading" @click="onBuy">
-          <Sparkles v-if="!premium.loading" :size="20" />
-          {{ premium.loading ? t('common.loading') : t('premium.continue', 'Continue') }}
+        <AppButton
+          block
+          size="lg"
+          variant="filled"
+          class="continue-btn"
+          :loading="premium.loading"
+          :disabled="premium.loading || !billingAvailable"
+          @click="onBuy"
+        >
+          <Sparkles v-if="!premium.loading && billingAvailable" :size="20" />
+          {{
+            premium.loading
+              ? t('common.loading')
+              : billingAvailable
+                ? t('premium.continue', 'Continue')
+                : t('premium.unavailableCta', 'Available in Android App')
+          }}
         </AppButton>
 
         <button
+          v-if="showRewardedOption"
           type="button"
           class="rewarded-ad-btn"
           :disabled="premium.loading"
@@ -227,7 +344,13 @@ async function onWatchAd() {
           {{ t('premium.openNativePaywall', 'Open RevenueCat Paywall') }}
         </button>
 
-        <button type="button" class="restore-btn" :disabled="premium.loading" @click="onRestore">
+        <button
+          v-if="billingAvailable"
+          type="button"
+          class="restore-btn"
+          :disabled="premium.loading"
+          @click="onRestore"
+        >
           <RefreshCw :size="14" />
           {{ t('premium.restorePurchases', 'Restore Purchases') }}
         </button>
@@ -428,34 +551,24 @@ async function onWatchAd() {
   line-height: 1.35;
 }
 
-/* Review Card */
-.review-card {
+/* Billing Unavailable Notice */
+.billing-notice {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
   gap: var(--space-2);
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface-container);
-  border: 1px solid var(--color-outline-variant);
-}
-
-.stars-row {
-  display: flex;
-  gap: 3px;
-}
-
-.star-icon {
-  color: #ff9500;
-  fill: #ff9500;
-}
-
-.review-quote {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface-container));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, transparent);
   font-size: 0.84rem;
-  color: var(--color-on-surface);
+  color: var(--color-on-surface-variant);
   line-height: 1.4;
-  font-style: italic;
+}
+
+.billing-notice-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 /* Action Buttons */

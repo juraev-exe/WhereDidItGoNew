@@ -34,3 +34,4 @@ public class PrivacyScreenPlugin extends Plugin {
         });
     }
 }
+

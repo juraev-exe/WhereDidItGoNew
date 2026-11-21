@@ -28,6 +28,7 @@ public class MainActivity extends BridgeActivity {
     private void refreshAllWidgets() {
         refreshProvider(BalanceWidgetProvider.class);
         refreshProvider(StreakWidgetProvider.class);
+        refreshProvider(BudgetWidgetProvider.class);
     }
 
     private void refreshProvider(Class<?> providerClass) {

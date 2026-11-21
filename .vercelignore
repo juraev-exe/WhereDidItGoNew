@@ -20,4 +20,5 @@ scratch
 *.jks
 *.aab
 *.apk
+!public/wherediditgo.apk
 *.log

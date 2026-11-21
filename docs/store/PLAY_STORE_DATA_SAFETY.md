@@ -1,34 +1,23 @@
 # Google Play Console — Data Safety Form Answers
 
-This document contains exact answers to copy and paste into the **Data Safety** section in Google Play Console for **WhereDidItGo**.
+Use the values below when completing the **Data Safety** questionnaire in Google Play Console for **WhereDidItGo** (`com.wherediditgo.app`, v1.1.5).
 
----
+## 1. General Data Collection, Encryption, and Deletion Answers
 
-## Section 1: Data Collection & Sharing Overview
+In the top-level overview questions, answer **Yes** to data collection (because optional Cloud Vault sync collects an email address and synced ledger rows when a user signs in, and RevenueCat validates purchase history; free-tier AdMob `AD_ID` is stripped in `releaseNoAds` builds until live AdMob IDs are configured). Answer **Yes** to encryption in transit (all Supabase and RevenueCat / Play Billing traffic uses HTTPS/TLS).
 
-* **Does your app collect or share any of the required user data types?**  
-  👉 **No** (If running fully local without telemetry) OR **Yes** (If basic crash reporting is active).
+For data deletion, answer **Yes** and provide `https://moneytracker-vert-nu.vercel.app/legal/data-deletion.html`. Users can wipe all local IndexedDB records immediately via **Settings -> Danger Zone -> Reset all local data** (or by uninstalling the app), and users who opt into Cloud Vault sync can request permanent deletion of their Supabase account and synced database rows by emailing `support@wherediditgo.app`.
 
-* **Is all of the user data collected by your app encrypted in transit?**  
-  👉 **Yes** (All Play Billing network communications use HTTPS/TLS).
+## 2. Disclosed Data Types Matrix
 
-* **Do you provide a way for users to request that their data be deleted?**  
-  👉 **Yes** (Users can delete all local data inside **Settings → Reset Data** or by uninstalling the app).
+| Category | Data Type | Collected / Shared | Purpose and User Control |
+|---|---|---|---|
+| **Financial info** | Purchase history | Collected; shared with Google Play / RevenueCat | App functionality — verifies `wherediditgo_pro` entitlement without accessing payment card numbers |
+| **Financial info** | Other financial info (ledger entries, splits, budgets, debts) | Collected (Optional); not shared with third parties | App functionality — stays in local IndexedDB unless the user signs into optional Supabase Cloud Vault sync (RLS isolated) |
+| **Personal info** | Email address | Collected (Optional); not shared with third parties | Account management and App functionality — used only when the user registers for optional Cloud Vault sync |
+| **Device or other IDs** | Advertising ID (`AD_ID`) & app instance ID | Not collected / Not shared while AdMob is unset (`releaseNoAds`); enable if live AdMob IDs are configured | Used for free-tier mobile ads only when live AdMob IDs are configured |
+| **Photos and videos** | Receipt images (camera / photo picker) | Not collected / Not shared | Processed 100% on-device in local memory via Tesseract.js OCR; receipt photos are never uploaded |
 
----
+## 3. Financial Features Declaration Note
 
-## Section 2: Data Types Breakdown
-
-| Data Category | Data Type | Collected? | Shared? | Processing Purpose | Ephemeral / Stored |
-|---|---|---|---|---|---|
-| **Financial Info** | User payment info | No | No | N/A (Processed by Google Play) | N/A |
-| **Financial Info** | Financial records | **No (Stays local)** | **No** | Local Storage Only | Stored Locally |
-| **Personal Info** | Name / Email | No | No | N/A | N/A |
-| **App Info & Perf** | Crash logs / Diagnostics | Yes (Optional) | No | App Functionality & Analytics | Ephemeral |
-| **Device IDs** | Device identifiers | No | No | N/A | N/A |
-
----
-
-## Section 3: Financial Scrutiny Declaration (Manual Tracker)
-
-> "WhereDidItGo is a local-first manual expense and budget tracking application. It does not connect to bank accounts, aggregate banking credentials, process real money transfers, or perform financial transactions."
+In the Play Console Financial Features form, declare WhereDidItGo as a manual expense and budget tracker with optional user-initiated cloud backup: the app does not link to banking institutions, aggregate bank credentials, issue credit, or transfer money.

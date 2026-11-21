@@ -6,7 +6,7 @@
     <title>Refund Policy · WhereDidItGo</title>
     <meta
       name="description"
-      content="Refund Policy for WhereDidItGo. Step-by-step instructions for Google Play and Apple App Store in-app purchase refunds."
+      content="Refund Policy for WhereDidItGo. Instructions for Google Play, Apple App Store, and Stripe / RevenueCat Web Pro purchases."
     />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,15 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
-    <script>
-      (function () {
-        try {
-          var saved = localStorage.getItem('wdg-theme')
-          var dark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)
-          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-        } catch (e) {}
-      })()
-    </script>
+    <script src="./legal-ui.js"></script>
   </head>
   <body>
     <a class="skip" href="#content">Skip to content</a>
@@ -54,16 +46,16 @@
           <p class="eyebrow">Legal & Compliance</p>
           <h1>Refund Policy</h1>
           <div class="legal-meta">
-            <span><strong>Effective Date:</strong> October 1, 2026</span>
+            <span><strong>Effective Date:</strong> November 13, 2026</span>
             <span><strong>Developer:</strong> WhereDidItGo (Juraev.exe)</span>
             <span><strong>Support Desk:</strong> <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></span>
           </div>
         </header>
 
         <section class="legal-section">
-          <h2>1. Pricing Transparency & No Hidden Fees</h2>
+          <h2>1. Pricing Transparency &amp; Plan Options</h2>
           <p>
-            WhereDidItGo Pro is sold with complete transparency. There are no surprise renewal charges, stealth subscription fees, or unannounced recurring debits.
+            WhereDidItGo Pro is offered as a one-time <strong>Lifetime</strong> unlock or optional auto-renewing <strong>Annual</strong> / <strong>Monthly</strong> plans. The exact price and billing interval are shown before confirmation, and subscriptions can be canceled before renewal with zero hidden fees.
           </p>
         </section>
 
@@ -74,7 +66,7 @@
           </p>
           <ul>
             <li><strong>Within 48 hours of purchase:</strong> You can submit an automated refund request directly through Google Play by visiting your <a href="https://play.google.com/store/account/orderhistory" target="_blank" rel="noopener">Google Play Order History</a>. Select WhereDidItGo Pro → <strong>Request a refund</strong>. Google usually processes decisions within 1 business day.</li>
-            <li><strong>After 48 hours:</strong> If you run into technical issues or purchase discrepancies after the 48-hour window, contact our developer support team at <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a> with your Google Play Order Number (formatted as <code>GPA.XXXX-XXXX-XXXX-XXXXX</code>). We assess developer refund exceptions fairly and expeditiously.</li>
+            <li><strong>After 48 hours:</strong> If you run into technical issues or purchase discrepancies after the 48-hour window, contact our developer support team at <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a> with your Google Play Order Number (formatted as <code>GPA.XXXX-XXXX-XXXX-XXXXX</code>). We assess developer refund exceptions fairly and promptly.</li>
           </ul>
         </section>
 
@@ -84,20 +76,31 @@
             If you purchased WhereDidItGo Pro on an iPhone or iPad:
           </p>
           <ul>
-            <li>Apple manages all payment transactions, billing, and refunds directly. Developers do not possess access to Apple customer billing records or unilateral refund triggers.</li>
+            <li>Apple manages all payment transactions, billing, and refunds directly. Developers do not have access to Apple customer billing records or unilateral refund triggers.</li>
             <li>To request a refund from Apple, navigate to <a href="https://reportaproblem.apple.com/" target="_blank" rel="noopener">reportaproblem.apple.com</a>, log in with your Apple ID, select <strong>"Request a refund"</strong>, and choose WhereDidItGo.</li>
           </ul>
         </section>
 
         <section class="legal-section">
-          <h2>4. European Union & UK Statutory Rights</h2>
+          <h2>4. Web Billing Refunds (Stripe / RevenueCat Web)</h2>
+          <p>
+            If you purchased WhereDidItGo Pro through our Web app checkout (processed by Stripe / RevenueCat Web Billing):
+          </p>
+          <ul>
+            <li><strong>14-Day Refund Request:</strong> Email <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a> within 14 days of purchase with your checkout email address and receipt/invoice number, and we will issue a refund promptly via Stripe.</li>
+            <li><strong>Cancel Renewal:</strong> You can cancel Annual or Monthly web renewals at any time from your Web billing customer portal link or by contacting support prior to the next billing date.</li>
+          </ul>
+        </section>
+
+        <section class="legal-section">
+          <h2>5. European Union &amp; UK Statutory Rights</h2>
           <p>
             Residents of the European Union and the United Kingdom enjoy statutory consumer withdrawal rights in accordance with EU Consumer Rights Directive regulations, subject to digital goods activation terms.
           </p>
         </section>
 
         <section class="legal-section">
-          <h2>5. Customer Support & Assistance</h2>
+          <h2>6. Customer Support &amp; Assistance</h2>
           <p>
             Encountering an issue with your Pro unlock or have a billing question? We are here to help:
           </p>
@@ -119,7 +122,7 @@
             <li><a href="./refund.html">Refund Policy</a></li>
             <li><a href="./cookies.html">Cookie Policy</a></li>
             <li><a href="./data-deletion.html">Data Deletion</a></li>
-            <li><a href="https://github.com/juraev-exe/wherediditgo">Source Code</a></li>
+            <li><a href="https://github.com/juraev-exe/WhereDidItGoNew">Source Code</a></li>
           </ul>
         </div>
         <div class="footer-bottom">
@@ -128,19 +131,5 @@
         </div>
       </div>
     </footer>
-
-    <script>
-      (function () {
-        var root = document.documentElement
-        var toggle = document.getElementById('theme-toggle')
-        function isDark() { return root.dataset.theme === 'dark' }
-        function applyTheme(dark) {
-          root.dataset.theme = dark ? 'dark' : 'light'
-          toggle.setAttribute('aria-pressed', dark ? 'true' : 'false')
-          try { localStorage.setItem('wdg-theme', dark ? 'dark' : 'light') } catch (e) {}
-        }
-        toggle.addEventListener('click', function () { applyTheme(!isDark()) })
-      })()
-    </script>
   </body>
 </html>

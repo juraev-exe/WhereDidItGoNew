@@ -129,6 +129,7 @@ export interface Database {
           subcategory_id: string | null
           note: string
           date: string
+          splits: Json | null
           created_at: string
           updated_at: string
         }
@@ -143,6 +144,7 @@ export interface Database {
           subcategory_id?: string | null
           note?: string
           date: string
+          splits?: Json | null
           created_at?: string
           updated_at?: string
         }

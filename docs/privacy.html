@@ -6,7 +6,7 @@
     <title>Privacy Policy · WhereDidItGo</title>
     <meta
       name="description"
-      content="Privacy Policy for WhereDidItGo. Discover our 100% local-first data architecture, zero financial data transmission, GDPR/CCPA compliance, and user rights."
+      content="Privacy Policy for WhereDidItGo. Learn about local-first IndexedDB storage, optional Cloud Vault sync, on-device OCR, Pro billing, free mobile ads, and user rights."
     />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,15 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
-    <script>
-      (function () {
-        try {
-          var saved = localStorage.getItem('wdg-theme')
-          var dark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)
-          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-        } catch (e) {}
-      })()
-    </script>
+    <script src="./legal-ui.js"></script>
   </head>
   <body>
     <a class="skip" href="#content">Skip to content</a>
@@ -54,76 +46,76 @@
           <p class="eyebrow">Legal & Compliance</p>
           <h1>Privacy Policy</h1>
           <div class="legal-meta">
-            <span><strong>Effective Date:</strong> October 1, 2026</span>
+            <span><strong>Effective Date:</strong> November 13, 2026</span>
             <span><strong>Developer:</strong> WhereDidItGo (Juraev.exe)</span>
             <span><strong>Contact:</strong> <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></span>
           </div>
         </header>
 
         <section class="legal-section">
-          <h2>1. 100% Local-First Data Storage</h2>
+          <h2>1. Local-First Storage &amp; Optional Cloud Vault Sync</h2>
           <p>
-            WhereDidItGo ("we", "our", or "us") operates on a foundational <strong>local-first</strong> architectural model.
-            Your financial records are strictly yours:
+            WhereDidItGo ("we", "our", or "us") operates on a <strong>local-first</strong> architectural model.
+            Your financial records stay on your device by default:
           </p>
           <ul>
-            <li><strong>On-Device Records:</strong> All transaction records, income logs, expenses, category budgets, debts, savings goals, and transaction notes are stored exclusively in your device's isolated IndexedDB local storage sandbox.</li>
-            <li><strong>Zero Server Transmission:</strong> We do not operate or maintain remote financial databases. We never transmit, upload, inspect, or process your personal bookkeeping records on external cloud servers.</li>
-            <li><strong>No Account Required:</strong> You do not need to register, create a username, or link an email address to use the application.</li>
+            <li><strong>On-Device Records:</strong> All transaction records, income logs, expenses, category budgets, debts, savings goals, and transaction notes are stored in your device's isolated IndexedDB local storage sandbox.</li>
+            <li><strong>No Account Required by Default:</strong> You do not need to register, create a username, or provide an email address to use the application offline.</li>
+            <li><strong>Optional Cloud Vault Sync (Opt-In):</strong> If you explicitly choose to create an account and enable Cloud Vault sync, your authentication session and backed-up ledger records (accounts, categories, budgets, debts, recurring items, and transactions) are encrypted in transit and stored in a Row-Level Security (RLS) isolated Supabase database tied strictly to your account ID.</li>
           </ul>
         </section>
 
         <section class="legal-section">
-          <h2>2. No Unnecessary Data & Permissions (Data Minimization)</h2>
-          <p>We respect the principle of data minimization and request only the bare minimum operating system capabilities:</p>
+          <h2>2. Permissions &amp; On-Device Processing (Data Minimization)</h2>
+          <p>We request only the operating system capabilities required for the features you invoke:</p>
           <ul>
-            <li><strong>No Location Data:</strong> We never track, request, or record GPS or network locations.</li>
-            <li><strong>No Contacts / Address Book:</strong> We do not inspect or upload your contacts.</li>
-            <li><strong>No Camera / Media Access:</strong> The app does not access your camera, microphone, or photo gallery.</li>
+            <li><strong>No Location or Contacts Access:</strong> We never track, request, or record GPS locations, contacts, or microphone audio.</li>
+            <li><strong>On-Device Receipt Scanning (OCR):</strong> When you use the optional Receipt Scanner, camera frames or chosen photos stay <strong>on your device</strong> and are processed locally by Tesseract.js. Receipt images are never uploaded to our servers. On first use, static OCR language packs (<code>eng</code> / <code>rus</code>) may be downloaded from jsDelivr / Project Naptha CDN without sending personal data.</li>
             <li><strong>Permitted OS Features:</strong>
               <ul>
-                <li><code>VIBRATE</code> — provides subtle haptic clicks during numeric keypad logging.</li>
-                <li><code>POST_NOTIFICATIONS</code> — allows you to receive optional local budget reminders if you choose to set them.</li>
-                <li><code>INTERNET</code> — utilized strictly for Google Play / Apple App Store in-app billing verification.</li>
+                <li><code>CAMERA</code> — accessed only when you choose to scan a paper receipt.</li>
+                <li><code>VIBRATE</code> — provides subtle haptic clicks during keypad and action interactions.</li>
+                <li><code>POST_NOTIFICATIONS</code> — allows optional local budget and recurring bill reminders.</li>
+                <li><code>INTERNET</code> — used for Pro store/web billing verification, optional user-initiated Cloud Vault sync, free-tier mobile ads, and first-time OCR language pack download.</li>
+                <li><code>AD_ID</code> (Android) — Google Play advertising identifier used solely on free-tier native mobile builds when displaying ads.</li>
               </ul>
             </li>
           </ul>
         </section>
 
         <section class="legal-section">
-          <h2>3. In-App Purchases, Billing & No Hidden Fees</h2>
+          <h2>3. In-App Purchases, Web Billing &amp; No Hidden Fees</h2>
           <p>
-            WhereDidItGo offers an optional upgrade ("WhereDidItGo Pro") to unlock advanced tools.
-            All purchases are processed with complete transparency:
+            WhereDidItGo offers an optional upgrade ("WhereDidItGo Pro") on Lifetime, Annual, and Monthly plans:
           </p>
           <ul>
-            <li>Payments are executed directly through the official <strong>Google Play Store</strong> (Google Play Billing) or <strong>Apple App Store</strong>.</li>
-            <li>We never receive or store your credit card credentials, debit card numbers, or billing addresses.</li>
-            <li>We utilize <strong>RevenueCat</strong> solely to validate store purchase receipts. RevenueCat receives an anonymous, randomly generated application user ID and the receipt token. No financial amounts or expense details are ever transmitted.</li>
-            <li><strong>No Hidden Fees:</strong> Pro licenses are clearly displayed with upfront pricing. There are no sneaky renewal charges, surprise fees, or dark patterns.</li>
+            <li>Purchases are processed directly through the <strong>Google Play Store</strong> (Android), <strong>Apple App Store</strong> (iOS), or <strong>RevenueCat Web Billing / Stripe</strong> (Web).</li>
+            <li>We never see, collect, or store your full payment card numbers, CVV codes, or banking credentials.</li>
+            <li>We use <strong>RevenueCat</strong> solely to validate purchase receipts and Pro entitlement status. Offline users receive an anonymous RevenueCat ID; users who sign into Cloud Vault sync have their Supabase account ID associated in RevenueCat so Pro unlocks follow across signed-in devices.</li>
+            <li><strong>Transparent Pricing:</strong> Plan pricing and billing intervals are shown clearly before confirmation. Auto-renewing Annual or Monthly plans can be canceled anytime through Google Play, Apple ID, or your Web billing receipt link.</li>
           </ul>
         </section>
 
         <section class="legal-section">
-          <h2>4. Third-Party SDK Audit</h2>
-          <p>We routinely audit all software libraries to ensure user safety and compliance:</p>
+          <h2>4. Third-Party SDKs &amp; Free-Tier Ads</h2>
+          <p>We audit our dependencies regularly to keep data collection minimal:</p>
           <ul>
-            <li><strong>No Ad Networks:</strong> We contain zero ad network SDKs (no AdMob, Meta, Unity Ads, etc.).</li>
-            <li><strong>No Tracking / Profiling SDKs:</strong> We do not integrate Firebase Analytics, AppsFlyer, or behavioral tracking trackers.</li>
-            <li>Review our complete <a href="https://github.com/juraev-exe/wherediditgo/blob/main/THIRD_PARTY_AUDIT.md">Third-Party SDK Audit</a> for itemized technical breakdowns.</li>
+            <li><strong>Free-Tier Native Mobile Ads:</strong> Free native mobile builds integrate Google AdMob (<code>@capacitor-community/admob</code>). Purchasing WhereDidItGo Pro disables all ad requests permanently. Web and Desktop builds include zero ad network SDKs.</li>
+            <li><strong>No Behavioral Profiling or Data Brokers:</strong> We do not embed Firebase Analytics, Meta Pixel, AppsFlyer, or sell user financial records to data brokers.</li>
+            <li>Review our complete <a href="https://github.com/juraev-exe/WhereDidItGoNew/blob/main/THIRD_PARTY_AUDIT.md">Third-Party SDK Audit</a> for itemized technical breakdowns.</li>
           </ul>
         </section>
 
         <section class="legal-section">
-          <h2>5. Age Consent & Children's Privacy (COPPA / GDPR-K)</h2>
+          <h2>5. Age Consent &amp; Children's Privacy (COPPA / GDPR-K)</h2>
           <p>
             WhereDidItGo is designed for general audiences aged 18 and older. We do not knowingly solicit, collect, or process personal information from children under the age of 13 (or under 16 in the European Economic Area).
-            Because the application operates without remote user accounts or data scraping, no identities or profiles of children are compiled.
+            Because the application operates without mandatory accounts or behavioral profiling, no profiles of children are intentionally compiled.
           </p>
         </section>
 
         <section class="legal-section">
-          <h2>6. Email Communications & Anti-Spam (Unsubscribe Guarantee)</h2>
+          <h2>6. Email Communications &amp; Anti-Spam (Unsubscribe Guarantee)</h2>
           <p>
             We respect your inbox:
           </p>
@@ -135,10 +127,11 @@
         </section>
 
         <section class="legal-section">
-          <h2>7. Data Deletion & Your Legal Rights (GDPR & CCPA)</h2>
+          <h2>7. Data Deletion &amp; Your Legal Rights (GDPR &amp; CCPA)</h2>
           <p>You have full autonomy over your data under GDPR (Articles 15–22) and CCPA:</p>
           <ul>
-            <li><strong>Instant Self-Service Erasure:</strong> Inside the app, go to <strong>Settings → Danger Zone → Reset all local data</strong> to permanently wipe all financial records immediately.</li>
+            <li><strong>Instant Self-Service Local Erasure:</strong> Inside the app, go to <strong>Settings → Danger Zone → Reset all local data</strong> to permanently wipe all on-device IndexedDB records immediately.</li>
+            <li><strong>Optional Cloud Vault Erasure:</strong> If you signed into Cloud Vault sync, consult our <a href="./data-deletion.html">Data Deletion Guide</a> to request permanent removal of your Supabase authentication account and synced cloud backup rows.</li>
             <li><strong>Uninstalling the App:</strong> Deleting the app from your device automatically destroys the application's isolated local database.</li>
             <li><strong>Data Export:</strong> You can export full JSON backups or CSV files at any time.</li>
             <li><strong>Correspondence Erasure:</strong> To request deletion of any support email correspondence, consult our <a href="./data-deletion.html">Data Deletion Guide</a> or email <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a>.</li>
@@ -146,21 +139,20 @@
         </section>
 
         <section class="legal-section">
-          <h2>8. Cookies & Web Local Storage</h2>
+          <h2>8. Cookies &amp; Web Local Storage</h2>
           <p>
-            Our website does not use third-party advertising or tracking cookies. We store only strictly necessary local preferences:
-            theme (<code>wdg-theme</code>), language (<code>wdg-locale</code>), and cookie banner state (<code>wdg-cookie-consent</code>).
+            Our website does not use third-party advertising or cross-site tracking cookies. We store strictly necessary local preferences — theme (<code>wdg-theme</code>), language (<code>wdg-locale</code>), cookie notice state (<code>wdg-cookie-consent</code>) — plus your Supabase authentication token only if you explicitly sign in to Cloud Vault sync.
             For more information, see our <a href="./cookies.html">Cookie Policy</a>.
           </p>
         </section>
 
         <section class="legal-section">
-          <h2>9. Contact & Business Details</h2>
+          <h2>9. Contact &amp; Business Details</h2>
           <p>For questions, formal data requests, or privacy concerns:</p>
           <ul>
             <li><strong>Legal Entity / Developer:</strong> WhereDidItGo Project (Juraev.exe)</li>
             <li><strong>Support Email:</strong> <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></li>
-            <li><strong>Open Source Repository:</strong> <a href="https://github.com/juraev-exe/wherediditgo">github.com/juraev-exe/wherediditgo</a></li>
+            <li><strong>Open Source Repository:</strong> <a href="https://github.com/juraev-exe/WhereDidItGoNew">github.com/juraev-exe/WhereDidItGoNew</a></li>
           </ul>
         </section>
       </article>
@@ -176,7 +168,7 @@
             <li><a href="./refund.html">Refund Policy</a></li>
             <li><a href="./cookies.html">Cookie Policy</a></li>
             <li><a href="./data-deletion.html">Data Deletion</a></li>
-            <li><a href="https://github.com/juraev-exe/wherediditgo">Source Code</a></li>
+            <li><a href="https://github.com/juraev-exe/WhereDidItGoNew">Source Code</a></li>
           </ul>
         </div>
         <div class="footer-bottom">
@@ -185,19 +177,5 @@
         </div>
       </div>
     </footer>
-
-    <script>
-      (function () {
-        var root = document.documentElement
-        var toggle = document.getElementById('theme-toggle')
-        function isDark() { return root.dataset.theme === 'dark' }
-        function applyTheme(dark) {
-          root.dataset.theme = dark ? 'dark' : 'light'
-          toggle.setAttribute('aria-pressed', dark ? 'true' : 'false')
-          try { localStorage.setItem('wdg-theme', dark ? 'dark' : 'light') } catch (e) {}
-        }
-        toggle.addEventListener('click', function () { applyTheme(!isDark()) })
-      })()
-    </script>
   </body>
 </html>

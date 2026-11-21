@@ -165,3 +165,120 @@ export async function ensureSeeded(currency = 'USD', locale: AppLocale = 'en'): 
     })
   }
 }
+
+export async function seedDemoData(): Promise<void> {
+  await ensureSeeded('USD', 'en')
+  const categories = await db.categories.toArray()
+  const findCat = (key: string) =>
+    categories.find((c) => c.icon.includes(key) || c.name.toLowerCase().includes(key))?.id || categories[0]?.id
+
+  const foodId = findCat('utensils')
+  const transportId = findCat('car')
+  const housingId = findCat('home')
+  const shoppingId = findCat('shopping')
+  const billsId = findCat('receipt')
+  const entertainmentId = findCat('clapperboard')
+  const healthId = findCat('heart')
+  const salaryId = findCat('briefcase')
+
+  const checkingId = 'acc_checking'
+  const cashId = 'acc_cash'
+  const savingsId = 'acc_savings'
+  const creditId = 'acc_credit'
+
+  const demoAccounts: Account[] = [
+    {
+      id: checkingId,
+      name: 'Checking Account',
+      type: 'checking',
+      balance: 342000,
+      currency: 'USD',
+      color: '#118ab2',
+      archived: false,
+      createdAt: '2026-11-01T00:00:00.000Z',
+    },
+    {
+      id: cashId,
+      name: 'Cash Wallet',
+      type: 'cash',
+      balance: 28000,
+      currency: 'USD',
+      color: '#81b29a',
+      archived: false,
+      createdAt: '2026-11-01T00:00:00.000Z',
+    },
+    {
+      id: savingsId,
+      name: 'High-Yield Savings',
+      type: 'savings',
+      balance: 1250000,
+      currency: 'USD',
+      color: '#e07a5f',
+      archived: false,
+      createdAt: '2026-11-01T00:00:00.000Z',
+    },
+    {
+      id: creditId,
+      name: 'Sapphire Credit Card',
+      type: 'credit',
+      balance: 45000,
+      currency: 'USD',
+      color: '#9b5de5',
+      archived: false,
+      createdAt: '2026-11-01T00:00:00.000Z',
+    },
+  ]
+
+  for (const acc of demoAccounts) {
+    await db.accounts.put(acc)
+  }
+
+  const demoTransactions = [
+    { id: 'tx_demo_1', type: 'income' as const, amount: 450000, accountId: checkingId, categoryId: salaryId, note: 'Monthly Salary Deposit', date: '2026-11-01', createdAt: '2026-11-01T09:00:00.000Z', updatedAt: '2026-11-01T09:00:00.000Z' },
+    { id: 'tx_demo_2', type: 'income' as const, amount: 85000, accountId: checkingId, categoryId: salaryId, note: 'Freelance UI Design Milestone', date: '2026-11-05', createdAt: '2026-11-05T14:30:00.000Z', updatedAt: '2026-11-05T14:30:00.000Z' },
+    { id: 'tx_demo_3', type: 'expense' as const, amount: 165000, accountId: checkingId, categoryId: housingId, note: 'Apartment Rent (Nov)', date: '2026-11-01', createdAt: '2026-11-01T10:00:00.000Z', updatedAt: '2026-11-01T10:00:00.000Z' },
+    { id: 'tx_demo_4', type: 'expense' as const, amount: 14250, accountId: checkingId, categoryId: foodId, note: 'Whole Foods Groceries', date: '2026-11-03', createdAt: '2026-11-03T18:15:00.000Z', updatedAt: '2026-11-03T18:15:00.000Z' },
+    { id: 'tx_demo_5', type: 'expense' as const, amount: 1420, accountId: cashId, categoryId: foodId, note: 'Blue Bottle Coffee & Croissant', date: '2026-11-04', createdAt: '2026-11-04T08:45:00.000Z', updatedAt: '2026-11-04T08:45:00.000Z' },
+    { id: 'tx_demo_6', type: 'expense' as const, amount: 9000, accountId: checkingId, categoryId: transportId, note: 'Metro Monthly Pass', date: '2026-11-02', createdAt: '2026-11-02T11:00:00.000Z', updatedAt: '2026-11-02T11:00:00.000Z' },
+    { id: 'tx_demo_7', type: 'expense' as const, amount: 3850, accountId: creditId, categoryId: transportId, note: 'Uber Ride to Airport', date: '2026-11-07', createdAt: '2026-11-07T16:20:00.000Z', updatedAt: '2026-11-07T16:20:00.000Z' },
+    { id: 'tx_demo_8', type: 'expense' as const, amount: 12000, accountId: checkingId, categoryId: billsId, note: 'Electric & Fiber Internet', date: '2026-11-08', createdAt: '2026-11-08T12:00:00.000Z', updatedAt: '2026-11-08T12:00:00.000Z' },
+    { id: 'tx_demo_9', type: 'expense' as const, amount: 2898, accountId: creditId, categoryId: entertainmentId, note: 'Netflix 4K & Spotify Family', date: '2026-11-10', createdAt: '2026-11-10T09:00:00.000Z', updatedAt: '2026-11-10T09:00:00.000Z' },
+    { id: 'tx_demo_10', type: 'expense' as const, amount: 8640, accountId: creditId, categoryId: foodId, note: 'Dinner with Team at Bistro', date: '2026-11-12', createdAt: '2026-11-12T20:30:00.000Z', updatedAt: '2026-11-12T20:30:00.000Z' },
+    { id: 'tx_demo_11', type: 'expense' as const, amount: 12999, accountId: creditId, categoryId: shoppingId, note: 'Running Shoes & Sports Gear', date: '2026-11-14', createdAt: '2026-11-14T15:10:00.000Z', updatedAt: '2026-11-14T15:10:00.000Z' },
+    { id: 'tx_demo_12', type: 'expense' as const, amount: 4560, accountId: checkingId, categoryId: healthId, note: 'Pharmacy Vitamins & Skincare', date: '2026-11-15', createdAt: '2026-11-15T13:40:00.000Z', updatedAt: '2026-11-15T13:40:00.000Z' },
+    { id: 'tx_demo_13', type: 'expense' as const, amount: 11830, accountId: checkingId, categoryId: foodId, note: 'Trader Joe Weekly Restock', date: '2026-11-16', createdAt: '2026-11-16T17:50:00.000Z', updatedAt: '2026-11-16T17:50:00.000Z' },
+    { id: 'tx_demo_14', type: 'expense' as const, amount: 3200, accountId: cashId, categoryId: shoppingId, note: 'Hardcover Design Books', date: '2026-11-17', createdAt: '2026-11-17T11:20:00.000Z', updatedAt: '2026-11-17T11:20:00.000Z' },
+  ]
+
+  for (const tx of demoTransactions) {
+    await db.transactions.put(tx)
+  }
+
+  const demoBudgets = [
+    { id: 'b_food_nov', categoryId: foodId, month: '2026-11', limitAmount: 60000, rollover: false },
+    { id: 'b_trans_nov', categoryId: transportId, month: '2026-11', limitAmount: 20000, rollover: false },
+    { id: 'b_ent_nov', categoryId: entertainmentId, month: '2026-11', limitAmount: 15000, rollover: false },
+    { id: 'b_shop_nov', categoryId: shoppingId, month: '2026-11', limitAmount: 25000, rollover: false },
+  ]
+  for (const b of demoBudgets) {
+    await db.budgets.put(b)
+  }
+
+  const demoGoals = [
+    { id: 'goal_tokyo', name: 'Tokyo Vacation Trip', targetAmount: 300000, currentAmount: 185000, deadline: '2027-04-15', color: '#3d5a80', icon: 'plane', createdAt: '2026-11-01T00:00:00.000Z' },
+    { id: 'goal_emergency', name: 'Emergency Rainy Day Fund', targetAmount: 1000000, currentAmount: 750000, color: '#2a9d8f', icon: 'shield-check', createdAt: '2026-11-01T00:00:00.000Z' },
+  ]
+  for (const g of demoGoals) {
+    await db.goals.put(g)
+  }
+
+  const demoDebts = [
+    { id: 'debt_david', personName: 'David Miller', type: 'lent' as const, amount: 12000, paidAmount: 4000, status: 'active' as const, note: 'Concert tickets upfront', createdAt: '2026-11-06T12:00:00.000Z', updatedAt: '2026-11-06T12:00:00.000Z' },
+    { id: 'debt_elena', personName: 'Elena Rostova', type: 'borrowed' as const, amount: 5000, paidAmount: 0, status: 'active' as const, note: 'Shared cab split', createdAt: '2026-11-11T18:00:00.000Z', updatedAt: '2026-11-11T18:00:00.000Z' },
+  ]
+  for (const d of demoDebts) {
+    await db.debts.put(d)
+  }
+
+  await db.meta.put({ key: 'onboardingDone', value: 'true' })
+}

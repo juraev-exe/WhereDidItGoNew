@@ -408,6 +408,52 @@ if (!(await page.locator('.cycle-span').count())) {
 await shot('26-cycle-home')
 await setMeta('startOfMonth', '1')
 
+// ── paywall & static legal / OCR assets ──────────────────────────────────────
+state.stage = '27-paywall-and-legal'
+await page.goto(`${BASE}/settings`, { waitUntil: 'domcontentloaded' })
+await page.waitForTimeout(900)
+const proBanner = page.locator('.pro-banner').first()
+if (await proBanner.count()) {
+  await proBanner.click()
+  await page.waitForTimeout(500)
+  const paywallCheck = await page.evaluate(() => ({
+    hasReviewCard: Boolean(document.querySelector('.review-card')),
+    text: document.querySelector('.paywall-container')?.textContent || '',
+  }))
+  if (paywallCheck.hasReviewCard) {
+    problems.push('[27-paywall-and-legal] fake .review-card still rendered in PaywallModal')
+  }
+  if (paywallCheck.text.includes('-28%') || paywallCheck.text.includes('$0.18')) {
+    problems.push('[27-paywall-and-legal] hardcoded fallback discount/weekly price rendered without live offerings')
+  }
+  await page.locator('.paywall-container .close-btn').first().click()
+  await page.waitForTimeout(300)
+}
+const legalRow = page.locator('button:has-text("Legal")').first()
+if (await legalRow.count()) {
+  await legalRow.click()
+  await page.waitForTimeout(400)
+  const legalText = await page.evaluate(() => document.body.innerText)
+  if (/zero server transmission/i.test(legalText)) {
+    problems.push('[27-paywall-and-legal] stale "zero server transmission" copy still present in LegalSettings')
+  }
+}
+for (const assetPath of [
+  '/legal/privacy.html',
+  '/legal/terms.html',
+  '/legal/refund.html',
+  '/legal/cookies.html',
+  '/legal/data-deletion.html',
+  '/legal/legal-ui.js',
+  '/tesseract/worker.min.js',
+  '/tesseract/tesseract-core-lstm.wasm.js',
+]) {
+  const res = await fetch(`${BASE}${assetPath}`)
+  if (res.status !== 200) {
+    problems.push(`[27-paywall-and-legal] expected 200 for ${assetPath}, got ${res.status}`)
+  }
+}
+
 await browser.close()
 
 const report_text = problems.length

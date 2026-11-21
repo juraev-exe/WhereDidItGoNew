@@ -1,43 +1,22 @@
 # Cookie & Local Storage Policy for WhereDidItGo
 
-**Effective Date**: October 1, 2026  
-**Developer**: WhereDidItGo (Juraev.exe)  
-**Support Email**: support@wherediditgo.app  
-**Website**: https://juraev-exe.github.io/wherediditgo/  
+**Effective Date**: November 13, 2026  
+**Developer**: WhereDidItGo (Juraev.exe) — support@wherediditgo.app  
+**Website**: https://juraev-exe.github.io/WhereDidItGoNew/  
 
-This Cookie & Local Storage Policy explains how WhereDidItGo uses cookies and browser local storage on our promotional website and web application.
+WhereDidItGo does not use third-party advertising cookies, cross-site tracking pixels (such as Meta Pixel, Google Ads, or TikTok Pixel), or behavioral analytics scripts on either the promotional website or the web application. Visitor browsing activity is never sold, rented, or shared with data brokers.
 
----
+## Browser Local Storage and IndexedDB Keys
 
-## 1. Strictly No Third-Party Tracking or Advertising Cookies
+Instead of tracking cookies, the website and web application rely on standard client-side `localStorage` and IndexedDB (`wherediditgo`) to store your interface settings and local financial ledger on your device. When you initiate an optional Web Pro purchase, Stripe loads strictly necessary fraud-prevention and checkout session state during the payment flow.
 
-* WhereDidItGo does **NOT** use tracking cookies, behavioral profiling cookies, advertising pixels (e.g. Meta Pixel, Google Ads, TikTok Pixel), or third-party marketing tags.
-* We do not sell, rent, or trade any website visitor browsing data to data brokers or advertising exchanges.
-
----
-
-## 2. Essential Local Storage Usage
-
-Rather than storing tracking cookies, our website and web application use standard client-side browser storage (`localStorage`) strictly to operate essential user preferences:
-
-| Storage Key | Purpose | Type | Expiration |
+| Storage Key | Purpose | Category | Retention |
 |---|---|---|---|
-| `wdg-theme` | Remembers your preference between Light Mode, Dark Mode, or System Default. | Strictly Necessary / Functional | Persistent until cleared by user |
-| `wdg-locale` | Remembers your preferred interface language (English, Russian, Tajik). | Strictly Necessary / Functional | Persistent until cleared by user |
-| `wdg-cookie-consent` | Remembers whether you have acknowledged our privacy and cookie disclosure banner. | Strictly Necessary / Compliance | Persistent until cleared by user |
+| `wdg-theme` | Saves your Light, Dark, or OLED appearance setting | Strictly Necessary | Until cleared by user |
+| `wdg-locale` | Saves your selected language (`en`, `ru`, or `tj`) | Strictly Necessary | Until cleared by user |
+| `wdg-cookie-consent` | Records dismissal of the informational storage banner | Strictly Necessary | Until cleared by user |
+| `sb-*-auth-token` | Holds your Supabase session token only if you sign into Cloud Vault | Strictly Necessary (Opt-In) | Until sign-out or clear |
 
----
+## Managing or Clearing Browser Storage
 
-## 3. How You Can Control and Delete Local Storage
-
-You maintain complete control over data stored in your browser:
-* **Browser Settings**: You can clear all cookies and site data through your browser settings (Chrome, Firefox, Safari, Edge) under "Privacy and Security" → "Clear browsing data".
-* **Private / Incognito Browsing**: When using private browsing mode, local storage keys are automatically discarded when you close the session.
-
----
-
-## 4. Updates & Inquiries
-
-We may periodically revise this policy to reflect platform updates. If you have any questions, reach out to us at:
-* **Email**: support@wherediditgo.app
-* **Website**: https://juraev-exe.github.io/wherediditgo/
+You can inspect or delete stored keys at any time through your browser's "Clear browsing data" settings, by running the in-app **Settings -> Danger Zone -> Reset all local data** command, or by using a Private / Incognito browser window so all storage is discarded when the tab closes. Direct any questions about browser storage to `support@wherediditgo.app`.

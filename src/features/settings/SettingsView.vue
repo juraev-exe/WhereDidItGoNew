@@ -38,7 +38,7 @@ import pkg from '../../../package.json'
 type Subpage = 'root' | 'formatting' | 'appearance' | 'navigation' | 'securityPrivacy' | 'backups' | 'legal'
 
 const APP_VERSION = pkg.version
-const REPO_URL = 'https://github.com/juraev-exe/wherediditgo'
+const REPO_URL = 'https://github.com/juraev-exe/WhereDidItGoNew'
 const isDev = import.meta.env.DEV
 
 const { t } = useI18n()

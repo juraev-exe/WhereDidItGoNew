@@ -1,5 +1,4 @@
-import { registerPlugin } from '@capacitor/core'
-import { StatusBar, Style } from '@capacitor/status-bar'
+import { registerPlugin, SystemBars, SystemBarsStyle } from '@capacitor/core'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { isNative } from '@/lib/platform'
 
@@ -20,10 +19,7 @@ export async function applyStatusBar(theme: 'light' | 'dark' | 'oled'): Promise<
   if (!isNative()) return
   try {
     const isDark = theme === 'dark' || theme === 'oled'
-    await StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light })
-    await StatusBar.setBackgroundColor({
-      color: theme === 'oled' ? '#000000' : theme === 'dark' ? '#121413' : '#f3f0ea',
-    })
+    await SystemBars.setStyle({ style: isDark ? SystemBarsStyle.Dark : SystemBarsStyle.Light })
   } catch {
     // ignore
   }

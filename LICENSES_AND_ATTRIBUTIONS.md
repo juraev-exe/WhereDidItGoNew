@@ -2,7 +2,7 @@
 
 **Application & Website**: WhereDidItGo  
 **Author**: Juraev.exe  
-**Code License**: ISC License  
+**Code License**: MIT License  
 
 This document inventories all typography, icon libraries, and visual assets used in WhereDidItGo along with their respective intellectual property licenses.
 

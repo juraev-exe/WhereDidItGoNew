@@ -1,76 +1,58 @@
-# Google Play Store Listing Copy & Graphical Assets Guide
+# Google Play Store Listing Copy & Assets Guide
 
-Use this copy when creating your store listing in Google Play Console.
+This document contains the store listing text and screenshot plan for **WhereDidItGo** (`com.wherediditgo.app`, v1.1.5) in Google Play Console.
 
----
+## Short and Full Store Descriptions
 
-## 📝 Short Description (Max 80 Characters)
+**Short Description** (72 / 80 characters):
 
 ```text
-Private, local-first budget & expense tracker. No ads, 100% offline control.
+Local-first budget & expense tracker with optional encrypted cloud sync.
 ```
 
----
-
-## 📄 Full Description (Max 4000 Characters)
+**Full Description** (under 4000 characters):
 
 ```text
-Take complete control of your personal finances with WhereDidItGo — the elegant, local-first income and expense tracker built for maximum privacy and effortless money management.
+Take control of your personal finances with WhereDidItGo — a fast, local-first expense and budget tracker designed for offline privacy with optional cross-device Cloud Vault sync.
 
-WhereDidItGo requires no account creation, no subscriptions, and never sends your sensitive financial data to cloud servers. Everything stays 100% on your device under your complete ownership.
+Core budgeting works completely offline on your device without creating an account. Whenever you want sync across phone and web, sign into your private Cloud Vault backup on your terms.
 
 Key Features:
 
-🔒 100% PRIVACY FIRST & LOCAL-FIRST
-Your financial life is nobody else’s business. All transactions, account balances, savings goals, and notes remain saved strictly in your private local device storage without external cloud servers.
+LOCAL-FIRST PRIVACY + OPTIONAL CLOUD SYNC
+All transactions, balances, savings goals, and notes live in isolated on-device IndexedDB storage and work in airplane mode. Opt into encrypted-in-transit Cloud Vault sync (Supabase RLS) whenever you want cross-device backup.
 
-⚡ FAST & INTUITIVE EXPENSE ENTRY
-Log expenses, income, and account transfers in seconds with our optimized amount-first keypad and smart category suggestions.
+FAST EXPENSE ENTRY & SPLIT TRANSACTIONS
+Log expenses, income, and transfers in seconds with an amount-first keypad, customizable categories, subcategories, and split transactions across multiple categories.
 
-📊 POWERFUL INSIGHTS & BUDGETING
+ON-DEVICE RECEIPT SCANNING (OCR)
+Capture paper receipts right inside the app — receipt images are processed locally on your device without being uploaded to our servers.
+
+INSIGHTS, HEATMAPS & CATEGORY BUDGETS
 - Real-time monthly spending breakdowns by category
-- Visual progress bars for category budgets with "left to spend" indicators
-- Net worth and live account balance updates
-- Month-over-month spending trend analysis
+- Cycle-aware month start dates and budget caps with remaining balance bars
+- Activity calendar heatmap and month-over-month comparisons
+- Net worth and multi-account balance tracking
 
-🤝 DEBTS & LOANS MANAGEMENT
-Keep track of money lent to friends or borrowed from family, log partial repayments, and mark balances as settled without cluttering your daily expense reports.
+DEBTS & LOANS MANAGEMENT
+Track money lent to friends or borrowed from family, log partial repayments, and settle debts without skewing daily expense totals.
 
-🌐 MULTI-CURRENCY & MULTI-LANGUAGE
-Full support for major world currencies and multi-language support in English, Russian (Русский), and Tajik (Тоҷикӣ).
+MULTI-CURRENCY & MULTI-LANGUAGE
+Works across major world currencies with full English, Russian (Русский), and Tajik (Тоҷикӣ) localization.
 
-🔐 PIN & BIOMETRIC LOCK
-Protect app access with a 4-digit PIN security lock and biometric fingerprint unlock options.
+PIN LOCK, BIOMETRICS & BACKUPS
+Protect access with a 4-digit security PIN, fingerprint/Face ID unlock, and portable JSON/CSV exports.
 
-📦 EASY BACKUP & CSV EXPORTS
-Export complete JSON backups to transfer data across devices, or generate CSV spreadsheets anytime for deep financial analysis.
-
-Why Choose WhereDidItGo?
-- No invasiveness or annoying pop-up ads
-- Fully offline functional (works on airplane mode)
-- Material 3 Expressive UI with translucent Liquid Glass design
-
-Download WhereDidItGo today and discover where your money actually goes!
+FREE TIER & PRO UPGRADE
+Core tracking works free offline. Upgrade to WhereDidItGo Pro (Lifetime, Annual, or Monthly) for unlimited accounts/categories, Receipt OCR, Split Transactions, and Cloud Sync.
 ```
 
----
+## Screenshot Lineup (`1080x1920` or `1440x3120`, 16:9 vertical)
 
-## 📸 Store Listing Screenshots Checklist
-
-Prepare screenshots in standard 16:9 vertical format (e.g. 1080x1920 or 1440x3120):
-
-1. **Screenshot 1: Home Dashboard**:
-   * *Headline*: "Take Control of Your Money"
-   * *Content*: Hero balance card, quick accounts overview, recent activity list.
-2. **Screenshot 2: Amount-First Keypad**:
-   * *Headline*: "Log Expenses in Seconds"
-   * *Content*: Clean numeric keypad with category chips and quick transaction entry.
-3. **Screenshot 3: Category Budgets**:
-   * *Headline*: "Smart Budget Limits"
-   * *Content*: Monthly category budget progress bars showing remaining balance.
-4. **Screenshot 4: Insights & Analytics**:
-   * *Headline*: "Visual Expense Breakdowns"
-   * *Content*: Donut chart & monthly category comparison graph.
-5. **Screenshot 5: Debts & Loans**:
-   * *Headline*: "Track Lent & Borrowed Money"
-   * *Content*: Debt management list with paid amounts and settled statuses.
+| Slot | Screen | Headline & Focus |
+|---|---|---|
+| 1 | Home Dashboard | "Take Control of Your Money" — hero balance card, wallets overview, and recent transactions |
+| 2 | Quick Add & Splits | "Log & Split Expenses in Seconds" — numeric keypad, category chips, receipt scan button, and multi-category splits |
+| 3 | Category Budgets | "Smart Budget Limits & Runway" — monthly category progress bars and remaining balance gauges |
+| 4 | Insights & Heatmap | "Visual Expense Breakdowns" — category share donut chart and yearly activity heatmap |
+| 5 | Debts & Loans | "Track Lent & Borrowed Money" — partial repayments, remaining balances, and settled statuses |

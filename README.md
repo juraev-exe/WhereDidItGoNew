@@ -4,17 +4,17 @@
 
   # WhereDidItGo
 
-  **A modern, local-first personal finance tracker built for Web & Android.**  
-  *Data stays 100% on your device. Beautiful Material 3 Expressive UI with Liquid Glass translucency.*
+  **A local-first personal finance tracker built for Web, Desktop & Mobile.**  
+  *On-device IndexedDB storage by default with optional encrypted Cloud Vault sync. Material 3 & Liquid Glass UI.*
 
   [![Vue 3](https://img.shields.io/badge/Vue-3.5-4fc08d?style=for-the-badge&logo=vuedotjs&logoColor=white)](https://vuejs.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![Vite](https://img.shields.io/badge/Vite-7.3-646cff?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
   [![Capacitor](https://img.shields.io/badge/Capacitor-8.5-119eee?style=for-the-badge&logo=capacitor&logoColor=white)](https://capacitorjs.com/)
   [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
-  [![License](https://img.shields.io/badge/License-MIT-blue.style=for-the-badge)](#license)
+  [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](#license)
 
-  [**Live Web Demo**](https://wherediditgo.vercel.app) • [**Features**](#-features) • [**Tech Stack**](#-tech-stack) • [**Getting Started**](#-getting-started) • [**Deployment**](#-deployment)
+  [**Website & Policies**](https://juraev-exe.github.io/WhereDidItGoNew/) • [**Features**](#-highlights) • [**Tech Stack**](#-tech-stack) • [**Getting Started**](#-getting-started) • [**Deployment**](#-deployment--installation)
 
 </div>
 
@@ -22,14 +22,15 @@
 
 ## ✨ Highlights
 
-* 🔒 **100% Local-First Privacy**: All transactions, accounts, and financial data are stored strictly on your device using Dexie IndexedDB. Zero cloud telemetry or external servers.
-* 🎨 **Material 3 Expressive & Translucent Glass**: Designed with vibrant dynamic color roles, accessible touch targets, and Liquid Glass backdrop blur overlays.
-* ⚡ **Lightning Fast & Offline-First**: Works seamlessly without network access with built-in offline status banners and instant reactive queries.
-* 📊 **Smart Financial Insights**: Visual breakdown of spending rhythm, category share, month-over-month comparisons, and savings pace.
-* 💸 **Debts & Loans Management**: Track money lent or borrowed, partial payments, and settled statuses separately from daily budgets.
-* 🌐 **Multi-Language Support (i18n)**: Full localization in **English**, **Русский**, and **Тоҷикӣ**.
-* 🔐 **PIN Lock & Biometric Security**: Safeguard app access with a 4-digit security PIN and native fingerprint/Face ID shortcuts.
-* 📦 **Full Backup & Export**: Export/Import complete JSON backups and export transactions as CSV files anytime.
+* 🔒 **Local-First by Default + Optional Cloud Sync**: Transactions, accounts, budgets, and debts live in IndexedDB (Dexie) on your device and work offline without an account. Sign into optional **Cloud Vault** (Supabase RLS) whenever you want cross-device sync.
+* 🧾 **On-Device Receipt OCR & Split Transactions**: Scan paper receipts locally in the browser/device via self-hosted Tesseract.js (`eng+rus`) and split a single purchase across multiple categories.
+* 🎨 **Material 3 & Translucent Glass**: Dynamic theme accents, accessible touch targets, and Light/Dark modes.
+* ⚡ **Fast Offline-First Ledger**: Works cleanly offline with reactive monthly totals, recurring bills, and cycle-aware start-of-month dates.
+* 📊 **Financial Insights**: Activity calendar heatmap, category breakdowns, month-over-month pacing, and savings goals.
+* 💸 **Debts & Loans Management**: Track lent and borrowed money, partial repayments, and settled status separately from daily spending.
+* 🌐 **Multi-Language Support (i18n)**: Localized in **English**, **Русский**, and **Тоҷикӣ**.
+* 🔐 **PIN Lock & Biometric Security**: Protect access with a hashed 4-digit PIN and optional native biometric unlock.
+* 📦 **Full Backup & Export**: Export/import full JSON snapshots and CSV spreadsheets anytime.
 
 ---
 
@@ -58,8 +59,8 @@
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/juraev-exe/wherediditgo.git
-   cd wherediditgo
+   git clone https://github.com/juraev-exe/WhereDidItGoNew.git
+   cd WhereDidItGoNew
    ```
 
 2. **Install dependencies**:
@@ -73,9 +74,9 @@
    ```
    Open `http://localhost:5173` in your browser.
 
-4. **Run TypeScript typecheck**:
+4. **Run verification checks**:
    ```bash
-   npm run typecheck
+   npm run check
    ```
 
 5. **Build for production**:
@@ -89,9 +90,9 @@
 
 ### 🌐 Deploy on Vercel
 
-This repository includes a pre-configured [`vercel.json`](file:///c:/Users/JA/Documents/Projects_2026/wherediditgo/vercel.json) for 1-click single-page application deployment:
+This repository includes a pre-configured [`vercel.json`](./vercel.json) for single-page application deployment with CSP headers and self-hosted OCR/legal static routes:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjuraev-exe%2Fwherediditgo)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjuraev-exe%2FWhereDidItGoNew)
 
 ### 📲 Install as a PWA (Web App)
 
@@ -140,11 +141,11 @@ wherediditgo/
 
 ## 🔒 Privacy & Security
 
-WhereDidItGo was built with a strict **Privacy-First** philosophy:
-* **No Telemetry**: No tracking scripts, analytics, or external API dependencies.
-* **Local Storage**: All data remains on the user's physical device in IndexedDB.
-* **Encrypted Security**: App locking with PIN hash and optional biometric authentication.
-* **Full Data Ownership**: Export your entire dataset anytime as JSON or CSV.
+WhereDidItGo uses a **local-first** model with user-controlled cloud options:
+* **Local-First Storage**: Transactions, balances, budgets, and debts live on-device in IndexedDB and work completely offline.
+* **Optional Cloud Vault**: Explicitly opt into Supabase Cloud Vault sync (RLS-isolated per user) when you want multi-device backups.
+* **App Security**: Optional 4-digit hashed PIN lock with native biometric unlock.
+* **Full Data Ownership**: Export your dataset anytime as JSON or CSV. See [PRIVACY_POLICY.md](./PRIVACY_POLICY.md) and [THIRD_PARTY_AUDIT.md](./THIRD_PARTY_AUDIT.md).
 
 ---
 

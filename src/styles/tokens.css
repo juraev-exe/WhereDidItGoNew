@@ -100,8 +100,9 @@
   --duration-instant: 100ms;
   --duration-fast: 150ms;
   --duration-normal: 250ms;
-  --duration-slow: 400ms;
-  --duration-entrance: 500ms;
+  /* Snappy timing: UI motion stays under 300ms (see motion-and-ux-laws skill). */
+  --duration-slow: 300ms;
+  --duration-entrance: 280ms;
 
   /* Layout */
   --touch-min: 44px;
@@ -109,10 +110,10 @@
   --fab-size: 56px;
   --content-max: 720px;
 
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --safe-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --safe-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+  --safe-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
 
   /* Soft accent-colored glow behind the page, derived from whichever color
      scheme is active — follows --color-primary automatically, no per-scheme

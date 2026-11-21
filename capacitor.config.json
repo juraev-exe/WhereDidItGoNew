@@ -7,8 +7,8 @@
       "launchAutoHide": false,
       "backgroundColor": "#f3f0ea"  
     },
-    "StatusBar": {
-      "style": "LIGHT"
+    "SystemBars": {
+      "insetsHandling": "css"
     }
   }
 }

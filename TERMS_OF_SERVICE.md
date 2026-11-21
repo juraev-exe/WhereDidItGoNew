@@ -1,80 +1,27 @@
 # Terms of Service for WhereDidItGo
 
-**Effective Date**: October 1, 2026  
-**Developer / Business**: WhereDidItGo (Juraev.exe)  
-**Contact Email**: support@wherediditgo.app  
-**Website**: https://juraev-exe.github.io/wherediditgo/  
+**Effective Date**: November 13, 2026  
+**Developer**: WhereDidItGo (Juraev.exe) — support@wherediditgo.app  
+**Website**: https://juraev-exe.github.io/WhereDidItGoNew/  
 
-Please review these Terms of Service ("Terms") carefully before using the WhereDidItGo application ("App") or our website ("Site"). By installing, accessing, or using WhereDidItGo, you agree to be bound by these Terms.
+By downloading, installing, or using the WhereDidItGo application ("App") or website ("Site"), you agree to these Terms of Service ("Terms"). If you do not agree to these Terms, do not install or use WhereDidItGo.
 
----
+## Financial Tracking Scope and No-Advice Disclaimer
 
-## 1. Description of the Service & Financial Disclaimer
+WhereDidItGo is a manual personal bookkeeping and budgeting utility for recording income, expenses, split transactions, category budgets, savings goals, and debts. The software does not connect to banks, execute money transfers, or provide certified accounting, tax, legal, or investment advice. You are solely responsible for verifying the accuracy of your financial entries, tax filings, and personal financial decisions.
 
-WhereDidItGo is a local-first personal financial tracking and budgeting utility designed to help users manually record and analyze their personal expenditures and savings goals.
+## Local Data Ownership and Backup Responsibility
 
-**IMPORTANT FINANCIAL NOTICE**:
-* WhereDidItGo is a personal bookkeeping and informational tool only.
-* We do **not** provide certified financial planning, tax advice, investment counseling, or banking services.
-* You remain solely responsible for validating your account balances, tax calculations, and personal financial decisions.
+By default, your financial records are stored locally inside your device's IndexedDB database. Unless you explicitly create an account and enable optional Cloud Vault synchronization (powered by Supabase with Row-Level Security) or export regular JSON/CSV backups via **Settings -> Export Backup**, your records exist only on your device. We cannot recover unsynced local data lost due to device theft, hardware damage, browser storage clearing, operating system resets, or app uninstallation.
 
----
+## Pro Plans, Billing, and Refunds
 
-## 2. Local-First Data Storage & User Backup Responsibility
+WhereDidItGo offers optional paid upgrades ("WhereDidItGo Pro") on Lifetime (one-time payment), Annual, and Monthly plans through Google Play Billing (Android), Apple In-App Purchase (iOS), and RevenueCat Web Billing / Stripe (Web). Plan prices and billing cycles are displayed before purchase confirmation. Annual and Monthly subscriptions renew automatically unless canceled at least 24 hours before the end of the current billing period in your Google Play account, Apple ID settings, or Stripe customer portal link.
 
-* **Sole Possession**: All transaction notes, balances, and budgets are saved locally on your physical device. We do not maintain cloud backups of your personal financial records.
-* **Backup Responsibility**: You are exclusively responsible for creating periodic backups (via the in-app **Export Backup** feature). We cannot recover lost data caused by device theft, physical damage, OS resets, or application uninstallation.
+Refund requests follow the rules of the platform where the purchase occurred: within 48 hours via Google Play Order History on Android (or by emailing `support@wherediditgo.app` with your `GPA.` order ID afterward), via `reportaproblem.apple.com` on iOS, or within 14 days by emailing `support@wherediditgo.app` for Web Stripe purchases. Step-by-step instructions are published in our [Refund Policy](https://juraev-exe.github.io/WhereDidItGoNew/refund.html).
 
----
+## Acceptable Use, Open-Source License, and Liability
 
-## 3. In-App Purchases & Transparent Pricing (No Hidden Fees)
+You agree not to use WhereDidItGo for unlawful or fraudulent activity or attempt to bypass local security locks, entitlement validation, or API access controls. The WhereDidItGo application source code at https://github.com/juraev-exe/WhereDidItGoNew is licensed under the **MIT License**, while the WhereDidItGo name, logo, and store graphics remain the property of Juraev.exe unless otherwise noted in [LICENSES_AND_ATTRIBUTIONS.md](./LICENSES_AND_ATTRIBUTIONS.md).
 
-* **Pro Upgrade**: An optional upgrade ("WhereDidItGo Pro") may be offered to unlock advanced features.
-* **Clear Pricing**: Prices are clearly presented before purchase in your local currency through Google Play Billing or the Apple App Store. There are no surprise renewal charges or hidden fees.
-* **Platform Terms**: All transactions are processed through Google Play or Apple App Store, subject to their respective terms and conditions.
-
----
-
-## 4. Refund Policy Summary
-
-Refunds for in-app purchases are administered through the store where the purchase was completed:
-* **Google Play**: You may request a refund through your Google Play Order History within 48 hours of purchase.
-* **Apple App Store**: You may request a refund via Apple's [Report a Problem](https://reportaproblem.apple.com/) portal.
-* For full details, please review our standalone [Refund Policy](https://juraev-exe.github.io/wherediditgo/refund.html).
-
----
-
-## 5. Acceptable Use & Conduct
-
-You agree not to:
-* Reverse engineer, decompile, or disassemble proprietary portions of the native build beyond permitted open-source boundaries.
-* Use the App for unlawful, fraudulent, or manipulative activities.
-* Attempt to bypass security locks, purchase validation systems, or licensing mechanisms.
-
----
-
-## 6. Intellectual Property & Open Source
-
-* The core WhereDidItGo web application source code is released under the **ISC License**.
-* WhereDidItGo trademarks, branding logos, visual artwork, and promotional assets remain the property of Juraev.exe.
-
----
-
-## 7. Disclaimer of Warranties & Limitation of Liability
-
-WhereDidItGo is provided on an **"AS IS"** and **"AS AVAILABLE"** basis without warranties of any kind, whether express or implied. Under no circumstances shall the developer or contributors be liable for any direct, indirect, incidental, or consequential damages resulting from data loss, mathematical discrepancies in user records, or device malfunction.
-
----
-
-## 8. Governing Law & Dispute Resolution
-
-These Terms shall be governed and construed in accordance with standard international commercial law principles. Before initiating formal dispute proceedings, you agree to contact us at `support@wherediditgo.app` to resolve issues informally.
-
----
-
-## 9. Contact Information
-
-If you have questions regarding these Terms:
-* **Business / Developer**: WhereDidItGo (Juraev.exe)
-* **Email**: support@wherediditgo.app
-* **Website**: https://juraev-exe.github.io/wherediditgo/
+WhereDidItGo is provided on an **"AS IS"** and **"AS AVAILABLE"** basis without warranties of any kind, express or implied. To the maximum extent permitted by applicable law, Juraev.exe and project contributors shall not be liable for indirect, incidental, punitive, or consequential damages arising from data loss, calculation errors, third-party service interruptions, or device malfunction. Questions or informal dispute notices may be sent to `support@wherediditgo.app`.

@@ -16,15 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
-    <script>
-      (function () {
-        try {
-          var saved = localStorage.getItem('wdg-theme')
-          var dark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)
-          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-        } catch (e) {}
-      })()
-    </script>
+    <script src="./legal-ui.js"></script>
   </head>
   <body>
     <a class="skip" href="#content">Skip to content</a>
@@ -54,7 +46,7 @@
           <p class="eyebrow">Legal & Compliance</p>
           <h1>Cookie & Local Storage Policy</h1>
           <div class="legal-meta">
-            <span><strong>Effective Date:</strong> October 1, 2026</span>
+            <span><strong>Effective Date:</strong> November 13, 2026</span>
             <span><strong>Developer:</strong> WhereDidItGo (Juraev.exe)</span>
             <span><strong>Contact:</strong> <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></span>
           </div>
@@ -72,7 +64,7 @@
         <section class="legal-section">
           <h2>2. What We Store: Strictly Essential Local Storage</h2>
           <p>
-            Instead of tracking cookies, our website utilizes standard browser <code>localStorage</code> purely to remember your chosen interface settings:
+            Instead of tracking cookies, our website and web app use browser <code>localStorage</code> and IndexedDB purely for your interface preferences and local ledger, plus an auth session token only if you opt into Cloud Vault sync (and Stripe fraud-prevention cookies only during Web Pro checkout):
           </p>
 
           <div class="legal-table-wrap">
@@ -104,6 +96,12 @@
                   <td>Remembers that you have dismissed the cookie and privacy disclosure notice.</td>
                   <td>Persistent until cleared</td>
                 </tr>
+                <tr>
+                  <td><code>sb-*-auth-token</code> (Opt-In)</td>
+                  <td>Strictly Necessary (When Signed In)</td>
+                  <td>Maintains your Supabase Cloud Vault session only when you sign in for optional cloud backup sync.</td>
+                  <td>Until sign out / cleared</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -112,16 +110,16 @@
         <section class="legal-section">
           <h2>3. Managing and Deleting Your Storage</h2>
           <p>
-            You are always in total control of what is stored on your device:
+            You are always in control of what is stored on your device:
           </p>
           <ul>
             <li><strong>Browser Settings:</strong> You can wipe all local storage keys anytime through your browser's "Clear Browsing Data" menu.</li>
-            <li><strong>Incognito / Private Mode:</strong> Browsing our website in Private mode ensures all storage is automatically cleared when you close the tab.</li>
+            <li><strong>Incognito / Private Mode:</strong> Browsing our website in Private mode ensures all temporary browser storage is cleared when you close the session.</li>
           </ul>
         </section>
 
         <section class="legal-section">
-          <h2>4. Inquiries & Feedback</h2>
+          <h2>4. Inquiries &amp; Feedback</h2>
           <p>
             Questions regarding our cookie practices can be directed to our support team at <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a>.
           </p>
@@ -139,7 +137,7 @@
             <li><a href="./refund.html">Refund Policy</a></li>
             <li><a href="./cookies.html">Cookie Policy</a></li>
             <li><a href="./data-deletion.html">Data Deletion</a></li>
-            <li><a href="https://github.com/juraev-exe/wherediditgo">Source Code</a></li>
+            <li><a href="https://github.com/juraev-exe/WhereDidItGoNew">Source Code</a></li>
           </ul>
         </div>
         <div class="footer-bottom">
@@ -148,19 +146,5 @@
         </div>
       </div>
     </footer>
-
-    <script>
-      (function () {
-        var root = document.documentElement
-        var toggle = document.getElementById('theme-toggle')
-        function isDark() { return root.dataset.theme === 'dark' }
-        function applyTheme(dark) {
-          root.dataset.theme = dark ? 'dark' : 'light'
-          toggle.setAttribute('aria-pressed', dark ? 'true' : 'false')
-          try { localStorage.setItem('wdg-theme', dark ? 'dark' : 'light') } catch (e) {}
-        }
-        toggle.addEventListener('click', function () { applyTheme(!isDark()) })
-      })()
-    </script>
   </body>
 </html>

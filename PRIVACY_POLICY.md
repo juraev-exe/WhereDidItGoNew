@@ -1,90 +1,32 @@
 # Privacy Policy for WhereDidItGo
 
-**Last Updated & Effective Date**: October 1, 2026  
-**Developer / Business**: WhereDidItGo (Juraev.exe)  
-**Contact Email**: support@wherediditgo.app  
-**Website**: https://juraev-exe.github.io/wherediditgo/  
+**Effective Date**: November 13, 2026  
+**Developer**: WhereDidItGo (Juraev.exe) — support@wherediditgo.app  
+**Website**: https://juraev-exe.github.io/WhereDidItGoNew/  
+**Repository**: https://github.com/juraev-exe/WhereDidItGoNew  
 
-WhereDidItGo ("we", "our", or "us") is dedicated to protecting your personal financial privacy. This Privacy Policy explains how our mobile application ("App") and website ("Site") treat user data, how we adhere to strict global privacy frameworks (including GDPR, CCPA, and COPPA), and how you retain 100% control over your financial records.
+WhereDidItGo ("we", "our", or "us") is a personal finance application for Web, Desktop, Android, and iOS. This policy describes how the app and website store financial records, which operating system permissions are requested, when optional cloud synchronization or billing services are contacted, and how you can export or erase your data under GDPR, CCPA, and store rules.
 
----
+## Local-First Storage and Optional Cloud Vault
 
-## 1. 100% Local-First Data Storage
+By default, WhereDidItGo stores every account balance, income or expense entry, split transaction, budget allocation, savings goal, recurring bill, and debt record inside your device's isolated IndexedDB database via Dexie. You do not need to register an account, pick a username, or supply an email address to run the application offline.
 
-WhereDidItGo is engineered as a **local-first, offline-capable application**:
-* **Financial Records**: All income records, expenses, category allocations, monthly budgets, savings goals, debts/loans, account balances, and transaction notes are stored exclusively in your device's private sandboxed IndexedDB storage.
-* **No Remote Financial Servers**: We do not operate or maintain remote backend databases that collect, store, or process your financial information. Your financial records never leave your physical device.
-* **No Account Required**: You are not required to create an account, register, or provide personal credentials (name, email, phone number) to use the App.
+If you explicitly sign up or sign in to the optional Cloud Vault feature, your authentication session and ledger tables (`accounts`, `categories`, `budgets`, `goals`, `debts`, `recurring`, and `transactions`) are transmitted over TLS and stored in a Supabase PostgreSQL database protected by Row-Level Security (`user_id` isolation). Offline users never connect to or upload financial records to Supabase.
 
----
+## Device Permissions and On-Device Receipt OCR
 
-## 2. No Unnecessary Data & Permissions
+WhereDidItGo never requests access to GPS location, contacts, or microphone audio. When you open the Receipt Scanner, photos captured with your camera (`CAMERA`) or selected from your device stay in local memory and are recognized on-device using self-hosted Tesseract.js WebAssembly workers (`eng+rus`). Receipt images are never uploaded to our servers; on first scan, static OCR training files (`*.traineddata.gz`) are fetched over HTTPS from jsDelivr / Project Naptha CDN without attaching personal data.
 
-We believe in strict data minimization:
-* **No Location Data**: We do not access or track GPS or network location.
-* **No Contact List Access**: We do not read or upload your address book or contacts.
-* **No Camera or Microphone Access**: The App does not access your camera, microphone, or media files.
-* **Device Permissions**: The only device permissions utilized are:
-  * `VIBRATE` (local haptic feedback during keypad entry).
-  * `POST_NOTIFICATIONS` (optional local scheduled budget alerts configured by you).
-  * `INTERNET` (used strictly for Google Play / App Store in-app billing verification).
+Other Android and iOS capabilities are limited to `VIBRATE` for keypad haptics, `POST_NOTIFICATIONS` when you schedule local budget reminders, `USE_BIOMETRIC` / `USE_FINGERPRINT` when you enable biometric unlock for the local 4-digit PIN lock, `INTERNET` for store/web billing, optional Cloud Vault sync, and free-tier mobile ads, and `com.google.android.gms.permission.AD_ID` for Google AdMob on free-tier native mobile builds.
 
----
+## Pro Purchases, Subscriptions, and Free-Tier Mobile Ads
 
-## 3. In-App Purchases, Billing & No Hidden Fees
+Optional WhereDidItGo Pro plans (Lifetime one-time unlock, Annual subscription, and Monthly subscription) are billed through Google Play Billing on Android, Apple In-App Purchase on iOS, or RevenueCat Web Billing / Stripe on the Web. We never receive or store payment card numbers, CVV codes, or bank account credentials. Upfront prices and renewal intervals are shown before checkout, and auto-renewing plans can be canceled anytime through Google Play, Apple ID settings, or your Stripe billing receipt link.
 
-If you choose to purchase WhereDidItGo Pro:
-* Payments are processed directly through the **Google Play Store** (Google Play Billing) or **Apple App Store**.
-* We do not collect, process, or store credit card numbers, banking details, or billing addresses.
-* WhereDidItGo Pro is sold as a transparent, one-time lifetime license (or explicitly displayed subscription without hidden renewal fees or surprise charges).
-* We utilize **RevenueCat** solely to validate in-app purchase receipts. RevenueCat receives an anonymous, randomly generated app user identifier to confirm receipt status. No financial transaction amounts, account names, or expense records are ever shared with RevenueCat.
+We use RevenueCat to verify store receipts and active `wherediditgo_pro` entitlements. Offline users are assigned an anonymous RevenueCat app user ID, whereas users signed into Cloud Vault have their Supabase account UUID linked in RevenueCat so Pro access carries across signed-in devices. Free native mobile builds integrate Google AdMob (`@capacitor-community/admob`); upgrading to Pro disables all ad requests permanently, and Web and Desktop builds contain no ad SDKs. Full package details are listed in [THIRD_PARTY_AUDIT.md](./THIRD_PARTY_AUDIT.md).
 
----
+## Children's Privacy, Cookies, and Data Deletion Rights
 
-## 4. Third-Party SDK Audit
+WhereDidItGo is intended for adults aged 18 and older and does not knowingly collect personal information from children under 13 (or under 16 in the EEA). Our website and web app do not use third-party advertising or cross-site tracking cookies; browser `localStorage` holds only interface state (`wdg-theme`, `wdg-locale`, `wdg-cookie-consent`) plus a Supabase session token (`sb-*-auth-token`) if you sign into Cloud Vault, as documented in our [Cookie Policy](https://juraev-exe.github.io/WhereDidItGoNew/cookies.html).
 
-We audit all libraries and SDKs integrated into WhereDidItGo:
-* **Capacitor Plugins**: Native device bridge utilities (haptics, status bar, local preferences) running locally on your device.
-* **Dexie / IndexedDB**: High-performance local database engine running entirely in your device runtime.
-* **No Ad Networks or Trackers**: We do not embed Google AdMob, Meta Audience Network, Firebase Analytics, or any third-party behavioral advertising SDKs.
-
----
-
-## 5. Age Consent & Children's Privacy (COPPA / GDPR-K)
-
-WhereDidItGo is intended for general audiences aged 18 and older. We do not knowingly collect, solicit, or maintain personal information from children under the age of 13 (or under 16 in the European Economic Area). Because the App operates without server-side user registration or tracking, no identity profiles of any users or children are compiled.
-
----
-
-## 6. Email Communications & Anti-Spam (Unsubscribe Policy)
-
-* We do not engage in unsolicited promotional emails or email marketing lists.
-* When you contact our support desk at `support@wherediditgo.app`, we use your email address exclusively to respond to your inquiry.
-* If any announcement or optional newsletter is ever offered, each email will feature an immediate, clear, one-click **Unsubscribe** link complying with the CAN-SPAM Act and GDPR Article 7.
-
----
-
-## 7. Data Deletion & User Rights (GDPR & CCPA)
-
-Under GDPR (Articles 15-22) and CCPA, you have the right to access, export, and delete your data:
-* **Instant In-App Deletion**: You can permanently purge all stored financial records at any moment by navigating to **Settings → Danger Zone → Reset all local data**.
-* **Device Uninstall**: Uninstalling WhereDidItGo from your operating system immediately wipes the application's isolated sandboxed storage, removing 100% of stored records from your device.
-* **Export Portability**: You can export your full data snapshot at any time in standard JSON or CSV format.
-* **Support Inquiries**: To request deletion of any support email correspondence, contact `support@wherediditgo.app`. Requests are fulfilled within 30 days.
-
----
-
-## 8. Cookies & Website Local Storage
-
-Our landing page (https://juraev-exe.github.io/wherediditgo/) does not use third-party tracking, advertising, or profiling cookies:
-* We use only strictly necessary `localStorage` keys to persist your theme preference (`wdg-theme`), language choice (`wdg-locale`), and cookie banner acknowledgment (`wdg-cookie-consent`).
-* For details, review our [Cookie Policy](https://juraev-exe.github.io/wherediditgo/cookies.html).
-
----
-
-## 9. Contact & Business Details
-
-For privacy inquiries, legal requests, or data questions:
-* **Developer**: WhereDidItGo Project / Juraev.exe
-* **Support Email**: support@wherediditgo.app
-* **Project Repository**: https://github.com/juraev-exe/wherediditgo
+Under GDPR (Articles 15–22) and CCPA, you can export your full ledger as JSON or CSV at any time, or wipe all on-device data immediately via **Settings -> Danger Zone -> Reset all local data** (or by uninstalling the app). If you enabled Cloud Vault sync or emailed support, you can request permanent deletion of your Supabase account, synced cloud rows, and support correspondence by emailing `support@wherediditgo.app` with subject `Cloud Vault Account Deletion` or `Data Deletion Request`; requests are completed within 30 calendar days as detailed in [DATA_DELETION.md](./DATA_DELETION.md).

@@ -1,6 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { PremiumManager, PRO_PRODUCT, type ProductDetails, type SubscriptionPlanId } from '@/services/native/billing'
+import {
+  PremiumManager,
+  PRO_PRODUCT,
+  type ProductDetails,
+  type PurchaseOptions,
+  type SubscriptionPlanId,
+} from '@/services/native/billing'
 import { hasActiveRewardedPass, showRewardedAd, getRewardedPassHoursRemaining } from '@/services/native/ads'
 import { useAccountsStore } from '@/stores/accounts'
 import { useCategoriesStore } from '@/stores/categories'
@@ -32,8 +38,8 @@ export const usePremiumStore = defineStore('premium', () => {
     }
   }
 
-  async function load() {
-    const isPurchased = await PremiumManager.checkStatus()
+  async function load(force = false) {
+    const isPurchased = await PremiumManager.checkStatus(force)
     isRewardedPassActive.value = hasActiveRewardedPass()
     isPremiumUser.value = isPurchased || isRewardedPassActive.value
   }
@@ -52,10 +58,13 @@ export const usePremiumStore = defineStore('premium', () => {
     }
   }
 
-  async function buyPro(plan: SubscriptionPlanId = 'lifetime'): Promise<{ success: boolean; cancelled: boolean; error?: any }> {
+  async function buyPro(
+    plan: SubscriptionPlanId = 'lifetime',
+    options?: PurchaseOptions,
+  ): Promise<{ success: boolean; cancelled: boolean; error?: any }> {
     loading.value = true
     try {
-      const res = await PremiumManager.purchasePlan(plan)
+      const res = await PremiumManager.purchasePlan(plan, options)
       if (res.success) {
         isPremiumUser.value = true
         await executePendingAction()

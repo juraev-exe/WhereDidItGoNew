@@ -438,13 +438,11 @@ h1 {
   animation: scaleSpring var(--duration-entrance) var(--ease-emphasized) both;
 }
 
-.cat-card:nth-child(1) { animation-delay: 60ms; }
-.cat-card:nth-child(2) { animation-delay: 110ms; }
-.cat-card:nth-child(3) { animation-delay: 160ms; }
-.cat-card:nth-child(4) { animation-delay: 210ms; }
-.cat-card:nth-child(5) { animation-delay: 260ms; }
-.cat-card:nth-child(6) { animation-delay: 310ms; }
-.cat-card:nth-child(n+7) { animation-delay: 360ms; }
+.cat-card:nth-child(2) { animation-delay: 30ms; }
+.cat-card:nth-child(3) { animation-delay: 60ms; }
+.cat-card:nth-child(4) { animation-delay: 90ms; }
+.cat-card:nth-child(5) { animation-delay: 120ms; }
+.cat-card:nth-child(n+6) { animation-delay: 150ms; }
 
 @media (hover: hover) and (pointer: fine) {
   .cat-card:hover {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Check,
@@ -14,6 +14,7 @@ import {
 import MoneyText from '@/components/ui/MoneyText.vue'
 import { useDraftsStore } from '@/stores/drafts'
 import { useCategoriesStore } from '@/stores/categories'
+import { useUiStore } from '@/stores/ui'
 import { parseBankNotification } from '@/services/smsParser'
 import { tickFeedback, successFeedback, warningFeedback } from '@/services/native/haptics'
 import type { DraftTransaction } from '@/types/finance'
@@ -21,12 +22,24 @@ import type { DraftTransaction } from '@/types/finance'
 const { t } = useI18n()
 const draftsStore = useDraftsStore()
 const categories = useCategoriesStore()
+const ui = useUiStore()
 
 const isExpanded = ref(true)
 const pasteModalOpen = ref(false)
 const rawInput = ref('')
 const senderInput = ref('')
 const pasteError = ref('')
+
+watch(pasteModalOpen, (isOpen, wasOpen) => {
+  if (isOpen && !wasOpen) ui.registerModalOpen()
+  else if (!isOpen && wasOpen) ui.registerModalClose()
+})
+
+onUnmounted(() => {
+  if (pasteModalOpen.value) {
+    ui.registerModalClose()
+  }
+})
 
 onMounted(async () => {
   if (!draftsStore.loaded) {
@@ -104,9 +117,9 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
 </script>
 
 <template>
-  <section v-if="pendingCount > 0 || pasteModalOpen" class="drafts-inbox-section">
+  <section v-if="pendingCount > 0" class="drafts-inbox-section">
     <!-- Main Inbox Card -->
-    <div v-if="pendingCount > 0" class="drafts-card surface-glass">
+    <div class="drafts-card surface-glass">
       <div class="drafts-header" @click="isExpanded = !isExpanded; tickFeedback()">
         <div class="header-left">
           <div class="inbox-icon-wrap">
@@ -194,66 +207,6 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
         </div>
       </div>
     </div>
-
-    <!-- Paste / Ingest Modal -->
-    <Teleport to="body">
-      <div v-if="pasteModalOpen" class="modal-backdrop" @click="closePasteModal">
-        <div class="modal-card surface-glass" @click.stop>
-          <div class="modal-head">
-            <div class="head-title">
-              <Sparkles :size="20" class="sparkle-icon" />
-              <h4>{{ t('home.pasteBankSms') || 'Ingest Bank SMS / Notification' }}</h4>
-            </div>
-            <button type="button" class="close-btn" @click="closePasteModal">
-              <X :size="18" />
-            </button>
-          </div>
-
-          <p class="modal-desc">
-            {{ t('home.pasteBankDesc', 'Paste raw text copied from your bank push or SMS. WhereDidItGo parses the amount, merchant, and category locally on your device.') }}
-          </p>
-
-          <div class="sample-pills">
-            <span class="sample-label">{{ t('home.trySample', 'Try sample:') }}</span>
-            <button type="button" class="sample-btn" @click="loadSample('alif')">Alif Bank (TJS)</button>
-            <button type="button" class="sample-btn" @click="loadSample('chase')">Chase ($ USD)</button>
-            <button type="button" class="sample-btn" @click="loadSample('tinkoff')">T-Bank (₽ RUB)</button>
-          </div>
-
-          <div class="input-group">
-            <label>{{ t('home.senderLabel', 'Sender / Bank Name (Optional)') }}</label>
-            <input
-              v-model="senderInput"
-              type="text"
-              placeholder="e.g. Alif Bank, Chase, Eskhata"
-              class="text-input"
-            />
-          </div>
-
-          <div class="input-group">
-            <label>{{ t('home.smsBodyLabel', 'Notification / SMS Body') }}</label>
-            <textarea
-              v-model="rawInput"
-              rows="3"
-              placeholder="e.g. Pokupka: 45.00 TJS v 'Paykar'. Balans: 120 TJS"
-              class="textarea-input"
-            />
-          </div>
-
-          <p v-if="pasteError" class="error-msg">{{ pasteError }}</p>
-
-          <div class="modal-foot">
-            <button type="button" class="btn-secondary" @click="closePasteModal">
-              {{ t('common.cancel') || 'Cancel' }}
-            </button>
-            <button type="button" class="btn-primary" @click="parseAndAdd">
-              <Sparkles :size="16" />
-              {{ t('home.parseAndDraft') || 'Parse & Add to Inbox' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </section>
 
   <!-- Compact Paste SMS trigger button when no drafts pending -->
@@ -263,11 +216,71 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
       <span>{{ t('home.pasteBankSms') || 'Ingest Bank SMS / Push' }}</span>
     </button>
   </div>
+
+  <!-- Paste / Ingest Modal -->
+  <Teleport to="body">
+    <div v-if="pasteModalOpen" class="modal-backdrop" @click="closePasteModal">
+      <div class="modal-card surface-glass" @click.stop>
+        <div class="modal-head">
+          <div class="head-title">
+            <Sparkles :size="20" class="sparkle-icon" />
+            <h4>{{ t('home.pasteBankSms') || 'Ingest Bank SMS / Notification' }}</h4>
+          </div>
+          <button type="button" class="close-btn" @click="closePasteModal">
+            <X :size="18" />
+          </button>
+        </div>
+
+        <p class="modal-desc">
+          {{ t('home.pasteBankDesc', 'Paste raw text copied from your bank push or SMS. WhereDidItGo parses the amount, merchant, and category locally on your device.') }}
+        </p>
+
+        <div class="sample-pills">
+          <span class="sample-label">{{ t('home.trySample', 'Try sample:') }}</span>
+          <button type="button" class="sample-btn" @click="loadSample('alif')">Alif Bank (TJS)</button>
+          <button type="button" class="sample-btn" @click="loadSample('chase')">Chase ($ USD)</button>
+          <button type="button" class="sample-btn" @click="loadSample('tinkoff')">T-Bank (₽ RUB)</button>
+        </div>
+
+        <div class="input-group">
+          <label>{{ t('home.senderLabel', 'Sender / Bank Name (Optional)') }}</label>
+          <input
+            v-model="senderInput"
+            type="text"
+            placeholder="e.g. Alif Bank, Chase, Eskhata"
+            class="text-input"
+          />
+        </div>
+
+        <div class="input-group">
+          <label>{{ t('home.smsBodyLabel', 'Notification / SMS Body') }}</label>
+          <textarea
+            v-model="rawInput"
+            rows="3"
+            placeholder="e.g. Pokupka: 45.00 TJS v 'Paykar'. Balans: 120 TJS"
+            class="textarea-input"
+          />
+        </div>
+
+        <p v-if="pasteError" class="error-msg">{{ pasteError }}</p>
+
+        <div class="modal-foot">
+          <button type="button" class="btn-secondary" @click="closePasteModal">
+            {{ t('common.cancel') || 'Cancel' }}
+          </button>
+          <button type="button" class="btn-primary" @click="parseAndAdd">
+            <Sparkles :size="16" />
+            {{ t('home.parseAndDraft') || 'Parse & Add to Inbox' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
 .drafts-inbox-section {
-  margin-bottom: var(--space-4, 1rem);
+  margin: 0;
 }
 
 .drafts-card {
@@ -501,7 +514,6 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
 .compact-inbox-trigger {
   display: flex;
   justify-content: center;
-  margin-bottom: 0.75rem;
 }
 
 .ingest-trigger-btn {
@@ -520,7 +532,7 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
 
 .ingest-trigger-btn:hover {
   background: var(--color-surface-variant, rgba(255, 255, 255, 0.1));
-  color: #fff;
+  color: var(--color-on-surface);
 }
 
 .sparkle-icon {
@@ -567,19 +579,19 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
   font-size: 1rem;
   font-weight: 600;
   margin: 0;
-  color: #fff;
+  color: var(--color-on-surface);
 }
 
 .close-btn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-on-surface-variant);
   cursor: pointer;
 }
 
 .modal-desc {
   font-size: 0.8rem;
-  color: var(--color-on-surface-variant, rgba(255, 255, 255, 0.65));
+  color: var(--color-on-surface-variant);
   line-height: 1.4;
   margin-bottom: 0.75rem;
 }
@@ -594,15 +606,15 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
 
 .sample-label {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-muted);
 }
 
 .sample-btn {
   font-size: 0.7rem;
   padding: 0.2rem 0.5rem;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline-variant);
   color: var(--color-primary, #60a5fa);
   cursor: pointer;
 }
@@ -616,7 +628,7 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
 
 .input-group label {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-on-surface-variant);
 }
 
 .text-input,
@@ -624,9 +636,9 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
   width: 100%;
   padding: 0.6rem;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #fff;
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline-variant);
+  color: var(--color-on-surface);
   font-size: 0.85rem;
   outline: none;
   box-sizing: border-box;
@@ -638,7 +650,7 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
 }
 
 .error-msg {
-  color: #ef4444;
+  color: var(--color-error, #ef4444);
   font-size: 0.75rem;
   margin-bottom: 0.5rem;
 }
@@ -655,8 +667,8 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
   padding: 0.5rem 0.85rem;
   border-radius: 8px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--color-outline-variant);
+  color: var(--color-on-surface-variant);
   font-size: 0.8rem;
   cursor: pointer;
 }
@@ -669,7 +681,7 @@ function loadSample(sampleType: 'alif' | 'chase' | 'tinkoff') {
   border-radius: 8px;
   background: var(--color-primary, #3b82f6);
   border: none;
-  color: #fff;
+  color: var(--color-on-primary, #fff);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;

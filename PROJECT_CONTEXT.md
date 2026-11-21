@@ -5,8 +5,8 @@
 
 - **Developer / Author**: Juraev.exe
 - **Repository**: [https://github.com/juraev-exe/WhereDidItGoNew](https://github.com/juraev-exe/WhereDidItGoNew)
-- **Version**: 1.1.0
-- **License**: ISC
+- **Version**: 1.1.5
+- **License**: MIT
 
 ---
 
@@ -170,8 +170,7 @@ npm run sync
 cd android
 .\gradlew.bat assembleDebug
 ```
-The output APK is generated at:
-`android/app/build/outputs/apk/debug/app-debug.apk` (copied to root as `WhereDidItGo-v1.1.0.apk`).
+The output APK is generated at `android/app/build/outputs/apk/debug/app-debug.apk` (and Play release bundles via `./gradlew bundleRelease`).
 
 ---
 
@@ -186,7 +185,7 @@ The output APK is generated at:
 
 ## 🔒 Data & Persistence Model
 
-- **Local Storage**: IndexedDB via Dexie (`db.ts`). No backend or remote server dependency required.
+- **Local Storage**: IndexedDB via Dexie (`src/db/index.ts`). Works offline with zero backend dependency required; optional opt-in Cloud Vault sync via Supabase (`src/services/supabaseSync.ts`).
 - **Data Export & Import**: JSON backup export & restore available in **Settings -> Backups & Data**.
 
 ### Money units

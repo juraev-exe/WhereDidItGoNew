@@ -21,13 +21,24 @@ const TEST_IDS = {
   },
 }
 
-// Configurable Ad Unit IDs (read from environment or fallback to official Google test IDs)
+// Configurable Ad Unit IDs (read from environment in production; Google test IDs in dev only)
 function getAdUnitId(type: 'interstitial' | 'rewarded'): string {
   const currentPlatform = platform() === 'ios' ? 'ios' : 'android'
   if (type === 'interstitial') {
-    return import.meta.env.VITE_ADMOB_INTERSTITIAL_ID || TEST_IDS[currentPlatform].interstitial
+    return (
+      import.meta.env.VITE_ADMOB_INTERSTITIAL_ID ||
+      (isDev ? TEST_IDS[currentPlatform].interstitial : '')
+    )
   }
-  return import.meta.env.VITE_ADMOB_REWARDED_ID || TEST_IDS[currentPlatform].rewarded
+  return (
+    import.meta.env.VITE_ADMOB_REWARDED_ID ||
+    (isDev ? TEST_IDS[currentPlatform].rewarded : '')
+  )
+}
+
+export function isRewardedAdsConfigured(): boolean {
+  if (!isNative()) return false
+  return Boolean(getAdUnitId('rewarded'))
 }
 
 let isInitialized = false
@@ -45,6 +56,7 @@ const PASS_DURATION_MS = 24 * 60 * 60 * 1000
  */
 export async function initializeAds(): Promise<void> {
   if (!isNative() || isInitialized) return
+  if (!isDev && !getAdUnitId('interstitial') && !getAdUnitId('rewarded')) return
 
   try {
     await AdMob.initialize({
@@ -80,8 +92,9 @@ export async function initializeAds(): Promise<void> {
  */
 export async function prepareInterstitial(): Promise<void> {
   if (!isNative()) return
+  const adId = getAdUnitId('interstitial')
+  if (!adId) return
   try {
-    const adId = getAdUnitId('interstitial')
     const options: AdOptions = {
       adId,
       isTesting: isDev,
@@ -98,7 +111,7 @@ export async function prepareInterstitial(): Promise<void> {
  * Display Interstitial Ad if ready and interval has elapsed
  */
 export async function showInterstitialAd(): Promise<boolean> {
-  if (!isNative()) return false
+  if (!isNative() || !getAdUnitId('interstitial')) return false
 
   const now = Date.now()
   if (now - lastInterstitialShowTime < MIN_INTERSTITIAL_INTERVAL_MS) {
@@ -128,8 +141,9 @@ export async function showInterstitialAd(): Promise<boolean> {
  */
 export async function prepareRewarded(): Promise<void> {
   if (!isNative()) return
+  const adId = getAdUnitId('rewarded')
+  if (!adId) return
   try {
-    const adId = getAdUnitId('rewarded')
     const options: AdOptions = {
       adId,
       isTesting: isDev,
@@ -154,6 +168,8 @@ export async function showRewardedAd(): Promise<boolean> {
     grant24HourProPass()
     return true
   }
+
+  if (!getAdUnitId('rewarded')) return false
 
   try {
     if (!rewardedReady) {

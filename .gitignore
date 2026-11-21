@@ -98,4 +98,5 @@ Thumbs.db
 audit-out/
 scratch/
 .vercel
-.env*
+public/tesseract/
+public/legal/

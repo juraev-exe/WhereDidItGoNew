@@ -14,6 +14,7 @@ import {
   Trash2,
 } from '@lucide/vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
+import { isNative } from '@/lib/platform'
 import { tickFeedback } from '@/services/native/haptics'
 
 const emit = defineEmits<{
@@ -25,11 +26,14 @@ const { t } = useI18n()
 
 const licensesOpen = ref(false)
 
-const BASE_URL = 'https://juraev-exe.github.io/wherediditgo'
+const PUBLIC_SITE_URL = (
+  import.meta.env.VITE_PUBLIC_SITE_URL || 'https://moneytracker-vert-nu.vercel.app/legal'
+).replace(/\/$/, '')
 
 function openUrl(path: string) {
   void tickFeedback()
-  window.open(`${BASE_URL}/${path}`, '_blank', 'noopener,noreferrer')
+  const target = isNative() ? `${PUBLIC_SITE_URL}/${path}` : `/legal/${path}`
+  window.open(target, '_blank', 'noopener,noreferrer')
 }
 
 function onOpenLicenses() {
@@ -58,9 +62,14 @@ function onOpenReset() {
         <ShieldCheck :size="24" class="text-primary" />
       </div>
       <div class="compliance-copy">
-        <span class="compliance-title">100% Local-First & Zero Tracking</span>
+        <span class="compliance-title">{{ t('settings.complianceTitle', 'Local-First Privacy Control') }}</span>
         <span class="compliance-sub">
-          All financial data is stored on this physical device. We operate no cloud databases, collect no telemetry on your money, and show zero ads.
+          {{
+            t(
+              'settings.complianceSub',
+              'Your financial records are stored on this device by default. Cloud Vault sync (Supabase) and camera receipt OCR are strictly opt-in, and Pro removes all mobile ads.',
+            )
+          }}
         </span>
       </div>
     </div>
@@ -75,7 +84,7 @@ function onOpenReset() {
           </div>
           <div class="row-label">
             <span class="title">{{ t('settings.privacyPolicy', 'Privacy Policy') }}</span>
-            <span class="subtitle">{{ t('settings.privacyPolicyDesc', '100% local-first data, zero server transmission') }}</span>
+            <span class="subtitle">{{ t('settings.privacyPolicyDesc', 'Local-first storage, opt-in cloud sync, camera OCR & data rights') }}</span>
           </div>
         </div>
         <div class="row-right">
@@ -111,7 +120,7 @@ function onOpenReset() {
           </div>
           <div class="row-label">
             <span class="title">{{ t('settings.refundPolicy', 'Refund Policy') }}</span>
-            <span class="subtitle">{{ t('settings.refundPolicyDesc', 'Google Play & Apple refund rules, transparent pricing') }}</span>
+            <span class="subtitle">{{ t('settings.refundPolicyDesc', 'Google Play, Apple & Web refund rules, transparent pricing') }}</span>
           </div>
         </div>
         <div class="row-right">
@@ -168,7 +177,7 @@ function onOpenReset() {
           </div>
           <div class="row-label">
             <span class="title">{{ t('settings.dataDeletion', 'Data Deletion & Rights') }}</span>
-            <span class="subtitle">{{ t('settings.dataDeletionDesc', 'Instant local reset and correspondence erasure') }}</span>
+            <span class="subtitle">{{ t('settings.dataDeletionDesc', 'Instant local reset, Cloud Vault removal & correspondence erasure') }}</span>
           </div>
         </div>
         <div class="row-right">
@@ -219,20 +228,20 @@ function onOpenReset() {
     <BottomSheet :open="licensesOpen" :title="t('settings.licensesAttributions')" @close="licensesOpen = false">
       <div class="sheet-content">
         <div class="license-block">
-          <strong>Application Codebase</strong>
-          <p>Licensed under the ISC License. © 2026 Juraev.exe.</p>
+          <strong>{{ t('settings.licenseAppTitle', 'Application Codebase') }}</strong>
+          <p>{{ t('settings.licenseAppDesc', 'Licensed under the MIT License. © 2026 Juraev.exe.') }}</p>
         </div>
         <div class="license-block">
-          <strong>Open Fonts</strong>
-          <p>Outfit, Fraunces, Signika, DM Sans — Licensed under the SIL Open Font License 1.1 (OFL).</p>
+          <strong>{{ t('settings.licenseFontsTitle', 'Open Fonts') }}</strong>
+          <p>{{ t('settings.licenseFontsDesc', 'Outfit, Fraunces, Signika, DM Sans — Licensed under the SIL Open Font License 1.1 (OFL).') }}</p>
         </div>
         <div class="license-block">
-          <strong>Iconography</strong>
-          <p>Lucide Icons — Licensed under the ISC License. © Lucide Contributors.</p>
+          <strong>{{ t('settings.licenseIconsTitle', 'Iconography') }}</strong>
+          <p>{{ t('settings.licenseIconsDesc', 'Lucide Icons — Licensed under the ISC License. © Lucide Contributors.') }}</p>
         </div>
         <div class="license-block">
-          <strong>Ghost Illustration</strong>
-          <p>Created by @xubohuah / Saad Shaikh — Licensed under the MIT License.</p>
+          <strong>{{ t('settings.licenseGhostTitle', 'Ghost Illustration') }}</strong>
+          <p>{{ t('settings.licenseGhostDesc', 'Created by @xubohuah / Saad Shaikh — Licensed under the MIT License.') }}</p>
         </div>
       </div>
     </BottomSheet>

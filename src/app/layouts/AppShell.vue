@@ -124,6 +124,12 @@ watch(
         </Transition>
       </RouterView>
     </main>
+    <div
+      v-if="showNav"
+      class="nav-bottom-scrim"
+      :class="{ 'nav-bottom-scrim--hidden': ui.isAnyModalOpen }"
+      aria-hidden="true"
+    />
     <Transition name="nav-slide">
       <MobileBottomNav v-if="showNav" />
     </Transition>
@@ -227,6 +233,28 @@ watch(
 .offline-banner-leave-to {
   opacity: 0;
   transform: translateY(-100%);
+}
+
+.nav-bottom-scrim {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--nav-height) * 0.55 + var(--space-3) + var(--safe-bottom));
+  background: linear-gradient(
+    to top,
+    var(--color-background) 42%,
+    color-mix(in srgb, var(--color-background) 85%, transparent) 72%,
+    transparent
+  );
+  pointer-events: none;
+  z-index: 39;
+  transition: opacity 0.2s var(--ease-standard), visibility 0.25s;
+}
+
+.nav-bottom-scrim--hidden {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .nav-slide-enter-active,

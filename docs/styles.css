@@ -49,6 +49,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
@@ -301,6 +302,22 @@ html[lang='tg'] h3 {
   display: grid;
   gap: 40px;
   align-items: center;
+}
+
+.hero-grid > *,
+.bento > *,
+.download-grid > *,
+.stack-grid > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.hero-copy,
+.source-card,
+.code-container,
+.phone-showcase {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .hero-actions {
@@ -1450,6 +1467,63 @@ html[lang='tg'] h3 {
 @media (max-width: 820px) {
   .header-nav > a:not(.btn) {
     display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .header-inner {
+    gap: 8px;
+  }
+
+  .brand {
+    font-size: 0.98rem;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .brand img {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+  }
+
+  .header-nav {
+    gap: 6px;
+    min-width: 0;
+    flex-shrink: 0;
+  }
+
+  .lang {
+    padding: 2px;
+  }
+
+  .lang button {
+    min-width: 28px;
+    height: 26px;
+    padding: 0 4px;
+    font-size: 0.68rem;
+  }
+
+  .theme-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .header-nav .btn--small {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+  }
+
+  .btn--apk-large {
+    width: 100%;
+    max-width: 100%;
+    padding: 12px 16px;
+  }
+
+  .code-container pre {
+    padding: 14px;
+    font-size: 0.78rem;
   }
 }
 

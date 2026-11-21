@@ -19,6 +19,8 @@ import {
   type CloudBackupItem,
 } from '@/services/supabaseSync'
 import { db } from '@/db'
+import { PremiumManager } from '@/services/native/billing'
+import { usePremiumStore } from '@/stores/premium'
 
 export const useSupabaseStore = defineStore('supabase', () => {
   const user = ref<User | null>(null)
@@ -55,6 +57,8 @@ export const useSupabaseStore = defineStore('supabase', () => {
       autoSyncEnabled.value = autoSyncMeta?.value === 'true'
 
       if (user.value) {
+        await PremiumManager.identifyUser(user.value.id)
+        await usePremiumStore().load(true)
         await refreshSnapshots()
       }
 
@@ -62,11 +66,15 @@ export const useSupabaseStore = defineStore('supabase', () => {
         session.value = newSession
         user.value = newSession?.user || null
         if (newSession?.user) {
+          await PremiumManager.identifyUser(newSession.user.id)
+          await usePremiumStore().load(true)
           await refreshSnapshots()
           if (autoSyncEnabled.value) {
             triggerSyncSilent()
           }
         } else {
+          await PremiumManager.resetUser()
+          await usePremiumStore().load(true)
           snapshots.value = []
         }
       })
@@ -84,6 +92,10 @@ export const useSupabaseStore = defineStore('supabase', () => {
       const res = await signInWithEmail(email, pass)
       session.value = res.session
       user.value = res.user
+      if (res.user) {
+        await PremiumManager.identifyUser(res.user.id)
+        await usePremiumStore().load(true)
+      }
       await refreshSnapshots()
       return true
     } catch (e: any) {
@@ -101,6 +113,10 @@ export const useSupabaseStore = defineStore('supabase', () => {
       const res = await signUpWithEmail(email, pass)
       session.value = res.session
       user.value = res.user
+      if (res.user) {
+        await PremiumManager.identifyUser(res.user.id)
+        await usePremiumStore().load(true)
+      }
       return true
     } catch (e: any) {
       error.value = e.message || 'Registration failed'
@@ -128,6 +144,8 @@ export const useSupabaseStore = defineStore('supabase', () => {
     isLoading.value = true
     try {
       await signOutUser()
+      await PremiumManager.resetUser()
+      await usePremiumStore().load(true)
       user.value = null
       session.value = null
       snapshots.value = []

@@ -1,11 +1,24 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
+import { syncStaticAssets } from './scripts/sync-static-assets.mjs'
+
+function staticAssetsSyncPlugin() {
+  return {
+    name: 'wdg-sync-static-assets',
+    buildStart() {
+      syncStaticAssets()
+    },
+    configureServer() {
+      syncStaticAssets()
+    },
+  }
+}
 
 export default defineConfig({
   root: './src',
   publicDir: '../public',
-  plugins: [vue()],
+  plugins: [vue(), staticAssetsSyncPlugin()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

@@ -11,8 +11,10 @@
     "finance"
   ],
   "scripts": {
-    "start": "vite",
+    "start": "vite --host 127.0.0.1",
     "dev": "vite",
+    "predev": "node scripts/sync-static-assets.mjs",
+    "prebuild": "node scripts/sync-static-assets.mjs",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "sync": "npm run build && npx cap sync android",
@@ -45,7 +47,6 @@
     "@capacitor/preferences": "^8.0.1",
     "@capacitor/share": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.0",
-    "@capacitor/status-bar": "^8.0.3",
     "@capawesome/capacitor-haptics": "^0.1.1",
     "@lucide/vue": "^1.31.0",
     "@number-flow/vue": "^0.5.2",
@@ -79,7 +80,7 @@
     "vite": "^7.3.1",
     "vue-tsc": "^3.3.9"
   },
-  "license": "ISC",
+  "license": "MIT",
   "build": {
     "appId": "com.wherediditgo.app",
     "productName": "WhereDidItGo",

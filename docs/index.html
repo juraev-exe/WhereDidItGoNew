@@ -11,18 +11,18 @@
     <meta name="theme-color" content="#f3f0ea" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="canonical" href="https://juraev-exe.github.io/wherediditgo/" />
-    <link rel="alternate" hreflang="en" href="https://juraev-exe.github.io/wherediditgo/?lang=en" />
-    <link rel="alternate" hreflang="ru" href="https://juraev-exe.github.io/wherediditgo/?lang=ru" />
-    <link rel="alternate" hreflang="tg" href="https://juraev-exe.github.io/wherediditgo/?lang=tj" />
+    <link rel="canonical" href="https://juraev-exe.github.io/WhereDidItGoNew/" />
+    <link rel="alternate" hreflang="en" href="https://juraev-exe.github.io/WhereDidItGoNew/?lang=en" />
+    <link rel="alternate" hreflang="ru" href="https://juraev-exe.github.io/WhereDidItGoNew/?lang=ru" />
+    <link rel="alternate" hreflang="tg" href="https://juraev-exe.github.io/WhereDidItGoNew/?lang=tj" />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content="WhereDidItGo" />
     <meta
       property="og:description"
-      content="Local-first personal finance for Android. Your data stays on the phone."
+      content="Local-first personal finance for Android & Web. Your data stays on your device unless you opt into sync."
     />
-    <meta property="og:url" content="https://juraev-exe.github.io/wherediditgo/" />
+    <meta property="og:url" content="https://juraev-exe.github.io/WhereDidItGoNew/" />
     <meta name="twitter:card" content="summary" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -31,7 +31,7 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=1.1.0" />
+    <link rel="stylesheet" href="./styles.css?v=1.1.5" />
     <script>
       (function () {
         try {
@@ -77,7 +77,7 @@
             <span class="theme-btn__sun" aria-hidden="true">☀</span>
             <span class="theme-btn__moon" aria-hidden="true">☾</span>
           </button>
-          <a class="btn btn--small" href="https://github.com/juraev-exe/wherediditgo">GitHub</a>
+          <a class="btn btn--small" href="https://github.com/juraev-exe/WhereDidItGoNew">GitHub</a>
         </nav>
       </div>
     </header>
@@ -86,18 +86,18 @@
       <section class="hero">
         <div class="wrap hero-grid">
           <div class="hero-copy">
-            <p class="eyebrow" data-i18n="hero.eyebrow">Android · local-first</p>
+            <p class="eyebrow" data-i18n="hero.eyebrow">Android & Web · local-first</p>
             <h1 data-i18n="hero.title">Know where every dollar went.</h1>
             <p class="lede" data-i18n="hero.lede">
               Log spending in a few taps, keep simple monthly budgets, and watch savings goals fill
-              up. Nothing is uploaded. Backup is a JSON file you own.
+              up. Your records stay on device by default — with JSON/CSV export and optional cloud sync.
             </p>
             <div class="hero-actions">
-              <a class="btn btn--primary" href="./wherediditgo.apk" download="WhereDidItGo-v1.1.0.apk">
+              <a class="btn btn--primary" href="./wherediditgo.apk" download="WhereDidItGo.apk">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span data-i18n="hero.downloadApk">Download APK (v1.1.0)</span>
+                <span data-i18n="hero.downloadApk">Download Android APK</span>
               </a>
-              <a class="btn btn--secondary" href="https://github.com/juraev-exe/wherediditgo" data-i18n="hero.viewSource">
+              <a class="btn btn--secondary" href="https://github.com/juraev-exe/WhereDidItGoNew" data-i18n="hero.viewSource">
                 View source
               </a>
               <a class="btn btn--ghost" href="#download" data-i18n="hero.build">Build it yourself</a>
@@ -180,11 +180,10 @@
 
       <section id="privacy" class="privacy">
         <div class="wrap privacy-inner">
-          <h2 data-i18n="privacy.title">Your money never leaves this phone.</h2>
+          <h2 data-i18n="privacy.title">Your money stays on your device by default.</h2>
           <p data-i18n="privacy.body">
-            Transactions live in a local database on the device. There is no account to create, no
-            cloud sync, and no analytics. Switch phones with a full JSON backup — or export
-            transactions as CSV.
+            Transactions live in a local IndexedDB database on your phone with zero tracking or telemetry.
+            Export full JSON backups or CSV anytime, or opt into encrypted Supabase cloud sync when you want multi-device backup.
           </p>
         </div>
       </section>
@@ -467,7 +466,7 @@
               </p>
               
               <div class="apk-actions">
-                <a class="btn btn--primary btn--apk-large" href="./wherediditgo.apk" download="WhereDidItGo-v1.1.0.apk">
+                <a class="btn btn--primary btn--apk-large" href="./wherediditgo.apk" download="WhereDidItGo.apk">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                     <polyline points="7 10 12 15 17 10"/>
@@ -475,7 +474,7 @@
                   </svg>
                   <div class="btn__text-stack">
                     <span class="btn__title" data-i18n="download.btn">Download Android APK</span>
-                    <span class="btn__subtitle" data-i18n="download.meta">v1.1.0 · ~9.6 MB · Android 8.0+ · SHA-256 Verified</span>
+                    <span class="btn__subtitle" data-i18n="download.meta">Android 8.0+ · Universal APK · Free + Optional Pro</span>
                   </div>
                 </a>
               </div>
@@ -484,7 +483,7 @@
                 <span class="spec-pill">✓ Android 8.0+</span>
                 <span class="spec-pill">✓ Universal APK</span>
                 <span class="spec-pill">✓ Offline Dexie</span>
-                <span class="spec-pill">✓ 0% Cloud / Ads</span>
+                <span class="spec-pill">✓ Local-First + Opt Sync</span>
               </div>
             </div>
 
@@ -504,22 +503,22 @@
               <p class="eyebrow" data-i18n="source.eyebrow">Open source</p>
               <h2 data-i18n="source.title">Clone it, run it, ship it to your phone.</h2>
               <div class="code-container">
-                <pre><code id="git-clone-code">git clone https://github.com/juraev-exe/wherediditgo.git
-cd wherediditgo
+                <pre><code id="git-clone-code">git clone https://github.com/juraev-exe/WhereDidItGoNew.git
+cd WhereDidItGoNew
 npm install
 npm run dev
 npm run sync</code></pre>
                 <button type="button" class="copy-code-btn" id="copy-code-btn" aria-label="Copy terminal commands">Copy</button>
               </div>
               <p data-i18n="source.body" data-i18n-html>
-                Open the <code>android/</code> folder in Android Studio to install on a device. ISC
+                Open the <code>android/</code> folder in Android Studio to install on a device. MIT
                 licensed.
               </p>
             </div>
             <div class="dev-actions">
-              <a class="btn btn--secondary" href="https://github.com/juraev-exe/wherediditgo" target="_blank" rel="noopener">
+              <a class="btn btn--secondary" href="https://github.com/juraev-exe/WhereDidItGoNew" target="_blank" rel="noopener">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                <span>github.com/juraev-exe/wherediditgo</span>
+                <span>github.com/juraev-exe/WhereDidItGoNew</span>
               </a>
             </div>
           </div>
@@ -540,11 +539,11 @@ npm run sync</code></pre>
             <li><a href="./refund.html">Refund Policy</a></li>
             <li><a href="./cookies.html">Cookie Policy</a></li>
             <li><a href="./data-deletion.html">Data Deletion</a></li>
-            <li><a href="https://github.com/juraev-exe/wherediditgo" data-i18n="footer.source">Source</a></li>
+            <li><a href="https://github.com/juraev-exe/WhereDidItGoNew" data-i18n="footer.source">Source</a></li>
           </ul>
         </div>
         <div class="footer-bottom">
-          <span>© 2026 WhereDidItGo by Juraev.exe. Open source under ISC License.</span>
+          <span>© 2026 WhereDidItGo by Juraev.exe. Open source under MIT License.</span>
           <span>Contact & Inquiries: <a href="mailto:support@wherediditgo.app">support@wherediditgo.app</a></span>
         </div>
       </div>
@@ -561,7 +560,7 @@ npm run sync</code></pre>
       </div>
     </div>
 
-    <script src="./i18n.js?v=1.1.0"></script>
+    <script src="./i18n.js?v=1.1.5"></script>
     <script>
       (function () {
         var root = document.documentElement

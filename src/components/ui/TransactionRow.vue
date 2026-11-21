@@ -154,11 +154,11 @@ const iconBg = computed(() => {
   animation: fadeSlideUp var(--duration-entrance) var(--ease-emphasized) both;
 }
 
-.row:nth-child(1) { animation-delay: 60ms; }
-.row:nth-child(2) { animation-delay: 120ms; }
-.row:nth-child(3) { animation-delay: 180ms; }
-.row:nth-child(4) { animation-delay: 240ms; }
-.row:nth-child(5) { animation-delay: 300ms; }
+/* Frequency of use: rows render constantly, so keep the stagger tight. */
+.row:nth-child(2) { animation-delay: 30ms; }
+.row:nth-child(3) { animation-delay: 60ms; }
+.row:nth-child(4) { animation-delay: 90ms; }
+.row:nth-child(n+5) { animation-delay: 120ms; }
 
 .row:hover {
   background: color-mix(in srgb, var(--color-surface-container) 60%, transparent);

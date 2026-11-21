@@ -1,7 +1,17 @@
 import { supabase, isSupabaseConfigured, getCurrentUser } from './supabase'
 import { buildBackup, mergeFromBackup, replaceFromBackup } from './backup'
 import { db } from '@/db'
-import type { BackupPayload, Account, Category, Budget, Goal, Transaction, Recurring, Debt } from '@/types/finance'
+import type {
+  BackupPayload,
+  Account,
+  Category,
+  Budget,
+  Goal,
+  Transaction,
+  TransactionSplit,
+  Recurring,
+  Debt,
+} from '@/types/finance'
 import type { Database, SyncStats, Json } from '@/types/supabase'
 
 export interface CloudBackupItem {
@@ -350,6 +360,7 @@ export async function syncTwoWay(): Promise<SyncStats> {
       subcategory_id: t.subcategoryId || null,
       note: t.note || '',
       date: t.date,
+      splits: t.splits && t.splits.length > 0 ? (t.splits as unknown as Json) : null,
       created_at: t.createdAt || now,
       updated_at: t.updatedAt || now,
     }))
@@ -364,6 +375,9 @@ export async function syncTwoWay(): Promise<SyncStats> {
     for (const r of remoteTxs.data) {
       const local = localMap.get(r.id)
       if (!local || new Date(r.updated_at) > new Date(local.updatedAt)) {
+        const splits = Array.isArray(r.splits) && r.splits.length > 0
+          ? (r.splits as unknown as TransactionSplit[])
+          : undefined
         incoming.push({
           id: r.id,
           type: r.type,
@@ -374,6 +388,7 @@ export async function syncTwoWay(): Promise<SyncStats> {
           subcategoryId: r.subcategory_id || undefined,
           note: r.note || '',
           date: r.date,
+          ...(splits ? { splits } : {}),
           createdAt: r.created_at,
           updatedAt: r.updated_at,
         })

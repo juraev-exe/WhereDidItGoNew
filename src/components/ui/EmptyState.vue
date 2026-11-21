@@ -35,7 +35,7 @@ const hasIcon = () => Boolean(slots.icon)
   align-items: center;
   text-align: center;
   gap: var(--space-3);
-  padding: var(--space-10) var(--space-6);
+  padding: var(--space-8) var(--space-6);
   color: var(--color-on-surface-variant);
 }
 

@@ -8,12 +8,14 @@ const DIST_DIR = path.resolve(__dirname, '..', 'dist')
 const MIME_TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',
+  '.mjs': 'text/javascript',
   '.css': 'text/css',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.ico': 'image/x-icon',
   '.json': 'application/json',
   '.woff2': 'font/woff2',
+  '.wasm': 'application/wasm',
 }
 
 /**
@@ -32,7 +34,7 @@ function createStaticServer() {
       res.end('Bad Request')
       return
     }
-    const filePath = path.resolve(DIST_DIR, reqPath.replace(/^\/+/, ''))
+    let filePath = path.resolve(DIST_DIR, reqPath.replace(/^\/+/, ''))
 
     if (filePath !== DIST_DIR && !filePath.startsWith(DIST_DIR + path.sep)) {
       res.writeHead(403)

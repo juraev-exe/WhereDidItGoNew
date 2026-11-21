@@ -94,8 +94,13 @@ export async function scanReceiptImage(
   const preprocessedDataUrl = await preprocessReceiptImage(imageBlob)
 
   onProgress?.({ status: 'initializing', progress: 0.25 })
-  // Multi-language recognition: English + Russian covers Latin and Cyrillic receipts (EN, RU, TJ)
+  const origin =
+    typeof window !== 'undefined' && window.location?.origin ? window.location.origin : ''
+  // Self-hosted worker & core JS stay within strict script-src 'self' CSP and work offline once cached
   const worker = await createWorker('eng+rus', 1, {
+    workerPath: `${origin}/tesseract/worker.min.js`,
+    corePath: `${origin}/tesseract`,
+    workerBlobURL: false,
     logger: (m) => {
       if (m.status === 'recognizing text') {
         const prog = 0.3 + (m.progress || 0) * 0.65

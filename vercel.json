@@ -29,14 +29,31 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.revenuecat.com https://*.revenuecat.com https://api.stripe.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
+          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://js.stripe.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.revenuecat.com https://*.revenuecat.com https://e.revenue.cat https://api.stripe.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
+        }
+      ]
+    },
+    {
+      "source": "/tesseract/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        },
+        {
+          "key": "Vercel-CDN-Cache-Control",
+          "value": "public, max-age=2592000, stale-while-revalidate=86400"
+        },
+        {
+          "key": "Vercel-Cache-Tag",
+          "value": "tesseract-assets"
         }
       ]
     }
   ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!assets/|legal/|tesseract/|favicon\\.svg|manifest\\.json|logo\\.png|logo1\\.png|wherediditgo\\.apk).*)",
       "destination": "/index.html"
     }
   ]

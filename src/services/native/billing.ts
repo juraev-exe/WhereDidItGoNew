@@ -23,9 +23,9 @@ const env = (typeof import.meta !== 'undefined' && import.meta.env ? import.meta
 const REVENUECAT_API_KEY_ANDROID =
   env.VITE_REVENUECAT_ANDROID_KEY || 'goog_jsxFosZXptnMUILBUeVnPlzePQS'
 const REVENUECAT_API_KEY_IOS =
-  env.VITE_REVENUECAT_IOS_KEY || (env.DEV ? 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB' : '')
+  env.VITE_REVENUECAT_IOS_KEY || 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
 const REVENUECAT_API_KEY_STRIPE =
-  env.VITE_REVENUECAT_STRIPE_KEY || (env.DEV ? 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB' : '')
+  env.VITE_REVENUECAT_STRIPE_KEY || 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB'
 
 /** Primary Pro Entitlement Identifier in RevenueCat Dashboard */
 export const ENTITLEMENT_ID =
@@ -53,81 +53,11 @@ export interface PurchaseResult {
   error?: any
 }
 
-export interface PurchaseOptions {
-  customerEmail?: string
-  selectedLocale?: string
-  htmlTarget?: HTMLElement
-}
-
-/**
- * Pure configuration validator so production release builds never run with test_ keys
- * on either native stores or Web Billing (Stripe/RevenueCat Web).
- */
-export function isBillingConfiguredForEnv(params: {
-  native: boolean
-  platformName: string
-  androidKey: string
-  iosKey: string
-  stripeKey: string
-  isProd: boolean
-}): boolean {
-  const key = params.native
-    ? params.platformName === 'ios'
-      ? params.iosKey
-      : params.androidKey
-    : params.stripeKey
-  if (!key) return false
-  if (params.isProd && key.startsWith('test_')) return false
-  return true
-}
-
-/** Extract localized formatted price across Native Capacitor & Web JS SDK packages. */
-export function getPackagePriceString(pkg: any): string | null {
-  if (!pkg || typeof pkg !== 'object') return null
-  const nativePrice = pkg.product?.priceString
-  if (typeof nativePrice === 'string' && nativePrice.trim()) return nativePrice
-  const rcWebPrice = pkg.rcBillingProduct?.currentPrice?.formattedPrice
-  if (typeof rcWebPrice === 'string' && rcWebPrice.trim()) return rcWebPrice
-  const altWebPrice = pkg.webBillingProduct?.currentPrice?.formattedPrice
-  if (typeof altWebPrice === 'string' && altWebPrice.trim()) return altWebPrice
-  return null
-}
-
-/** Extract numeric amount & currency code across Native Capacitor & Web JS SDK packages. */
-export function getPackagePriceAmount(pkg: any): { amount: number; currency: string } | null {
-  if (!pkg || typeof pkg !== 'object') return null
-  if (typeof pkg.product?.price === 'number' && Number.isFinite(pkg.product.price)) {
-    return {
-      amount: pkg.product.price,
-      currency: pkg.product.currencyCode || 'USD',
-    }
-  }
-  const webPrice = pkg.rcBillingProduct?.currentPrice ?? pkg.webBillingProduct?.currentPrice
-  if (typeof webPrice?.amountMicros === 'number' && Number.isFinite(webPrice.amountMicros)) {
-    return {
-      amount: webPrice.amountMicros / 1_000_000,
-      currency: webPrice.currency || 'USD',
-    }
-  }
-  return null
-}
-
-/** Strip internal developer/dashboard setup text from user-facing billing errors. */
-export function sanitizeBillingError(
-  err: any,
-  fallbackMessage = 'Could not start checkout right now. Please try again later.',
-): Error {
-  const msg = typeof err === 'string' ? err : String(err?.message || '')
-  if (
-    !msg.trim() ||
-    /RevenueCat dashboard|Product Catalog|Offerings|API key|test_/i.test(msg)
-  ) {
-    return new Error(fallbackMessage)
-  }
-  return err instanceof Error ? err : new Error(msg)
-}
-
 export function isProEntitlementActive(entitlements: Record<string, any> | undefined | null): boolean {
+  if (!entitlements) return false
+  if (entitlements[ENTITLEMENT_ID] !== undefined) return true
+  if (entitlements['pro'] !== undefined || entitlements['premium'] !== undefined) return true
+  return Object.keys(entitlements).length > 0
   if (!entitlements || typeof entitlements !== 'object') return false
   if (entitlements[ENTITLEMENT_ID] && entitlements[ENTITLEMENT_ID].isActive !== false) return true
   if (entitlements['pro'] && entitlements['pro'].isActive !== false) return true
@@ -150,57 +80,44 @@ function currentApiKey(): string {
 }
 
 export function isConfigured(): boolean {
-  return isBillingConfiguredForEnv({
-    native: isNative(),
-    platformName: platform(),
-    androidKey: REVENUECAT_API_KEY_ANDROID,
-    iosKey: REVENUECAT_API_KEY_IOS,
-    stripeKey: REVENUECAT_API_KEY_STRIPE,
-    isProd: Boolean(env.PROD),
-  })
+  if (isNative()) {
+    const key = platform() === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID
+    if (!key) return false
+    // In a native release build, RevenueCat Android SDK will force-close the app if given a test_ key.
+    if (Boolean(env.PROD) && key.startsWith('test_')) {
+      return false
+    }
+    return true
+  }
+  // Web / Electron: configured if any Stripe / Web key is provided
+  const stripeKey = REVENUECAT_API_KEY_STRIPE
+  return Boolean(stripeKey)
 }
 
 export const isBillingConfigured = isConfigured
 
 let configurePromise: Promise<void> | null = null
 let webPurchases: WebPurchases | null = null
-let pendingIdentifiedUserId: string | null = null
-
-function getOrCreateAnonWebUserId(): string {
-  try {
-    let webUserId = localStorage.getItem('wdg_web_uid')
-    if (!webUserId) {
-      webUserId = 'web_' + Math.random().toString(36).substring(2, 15)
-      localStorage.setItem('wdg_web_uid', webUserId)
-    }
-    return webUserId
-  } catch {
-    return 'web_' + Math.random().toString(36).substring(2, 15)
-  }
-}
 
 /** Configures the SDK at most once, lazily on first call. */
 async function ensureConfigured(): Promise<void> {
   if (configurePromise) return configurePromise
 
-  if (!isConfigured()) {
-    console.warn(
-      '[RevenueCat] Billing is not configured with a live key for this platform/build mode.',
-    )
-    configurePromise = Promise.resolve()
-    return configurePromise
-  }
-
   if (isNative()) {
     const key = currentApiKey()
+    // Guard: Prevent RevenueCat native SDK from force-closing the app with an AlertDialog in release builds when using a test key
+    if (!key || (Boolean(env.PROD) && key.startsWith('test_'))) {
+      console.warn(
+        '[RevenueCat] Test API key detected in production build. RevenueCat disabled to prevent app termination. Provide a production Google Play key (goog_...) to enable Play Store billing.',
+      )
+      configurePromise = Promise.resolve()
+      return configurePromise
+    }
 
     configurePromise = (async () => {
       try {
         await NativePurchases.setLogLevel({ level: env.PROD ? LOG_LEVEL.WARN : LOG_LEVEL.DEBUG })
-        await NativePurchases.configure({
-          apiKey: key,
-          ...(pendingIdentifiedUserId ? { appUserID: pendingIdentifiedUserId } : {}),
-        })
+        await NativePurchases.configure({ apiKey: key })
 
         // Real-time listener for customer updates
         await NativePurchases.addCustomerInfoUpdateListener((customerInfo: NativeCustomerInfo) => {
@@ -213,12 +130,20 @@ async function ensureConfigured(): Promise<void> {
     })()
   } else {
     const stripeKey = REVENUECAT_API_KEY_STRIPE
-    const initialUserId = pendingIdentifiedUserId || getOrCreateAnonWebUserId()
+    if (!stripeKey) {
+      configurePromise = Promise.resolve()
+      return configurePromise
+    }
+    // Web fallback for browser preview / Electron
+    let webUserId = localStorage.getItem('wdg_web_uid')
+    if (!webUserId) {
+      webUserId = 'web_' + Math.random().toString(36).substring(2, 15)
+      localStorage.setItem('wdg_web_uid', webUserId)
+    }
     try {
-      webPurchases = WebPurchases.configure(stripeKey, initialUserId)
+      webPurchases = WebPurchases.configure(stripeKey, webUserId)
     } catch (err) {
       console.warn('[RevenueCat] Failed to configure web purchases:', err)
-      webPurchases = null
     }
     configurePromise = Promise.resolve()
   }
@@ -380,10 +305,11 @@ export class PremiumManager {
       await ensureConfigured()
       const offerings = await this.getOfferings()
       if (!offerings?.current || !offerings.current.availablePackages?.length) {
-        console.warn('[RevenueCat] No packages found in default offering.')
         return {
           success: false,
-          error: sanitizeBillingError(null, 'Pro plans are currently unavailable. Please try again later.'),
+          error: new Error(
+            'No packages found in RevenueCat Default Offering. In RevenueCat dashboard, go to Product Catalog → Offerings → default → "+ New Package" and link your Google Play product.',
+          ),
         }
       }
       const { result } = await RevenueCatUI.presentPaywall()
@@ -427,67 +353,13 @@ export class PremiumManager {
     }
   }
 
-  /** Bind RevenueCat customer identity to authenticated Supabase user ID. */
-  static async identifyUser(userId: string): Promise<boolean> {
-    if (!userId) return false
-    pendingIdentifiedUserId = userId
-    if (!isConfigured()) return false
-    try {
-      await ensureConfigured()
-      let active = false
-      if (isNative()) {
-        const res = await NativePurchases.logIn({ appUserID: userId })
-        active = isProEntitlementActive(res.customerInfo.entitlements?.active)
-      } else if (webPurchases) {
-        const info: WebCustomerInfo =
-          webPurchases.getAppUserId() === userId
-            ? await webPurchases.getCustomerInfo()
-            : await webPurchases.changeUser(userId)
-        active = isWebEntitlementActive(info.entitlements?.active)
-      }
-      await this.setPremium(active)
-      return active
-    } catch (e) {
-      console.warn('[RevenueCat] Failed to identify user:', e)
-      return false
-    }
-  }
-
-  /** Return RevenueCat SDK to anonymous identity on sign-out. */
-  static async resetUser(): Promise<void> {
-    pendingIdentifiedUserId = null
-    if (!isConfigured()) return
-    try {
-      await ensureConfigured()
-      if (isNative()) {
-        await NativePurchases.logOut().catch(() => undefined)
-      } else if (webPurchases) {
-        await webPurchases.changeUser(getOrCreateAnonWebUserId())
-      }
-      await this.checkStatus(true)
-    } catch (e) {
-      console.warn('[RevenueCat] Failed to reset billing user:', e)
-    }
-  }
-
   /**
    * Purchase a specific plan ('lifetime' | 'annual' | 'monthly') or specific package.
    */
-  static async purchasePlan(
-    plan: SubscriptionPlanId = 'lifetime',
-    options?: PurchaseOptions,
-  ): Promise<PurchaseResult> {
+  static async purchasePlan(plan: SubscriptionPlanId = 'lifetime'): Promise<PurchaseResult> {
     if (!isConfigured()) {
-      console.warn('[RevenueCat] Billing is not configured for this build.')
-      return {
-        success: false,
-        cancelled: false,
-        error: new Error(
-          isNative()
-            ? 'Store billing is temporarily unavailable. Please try again later.'
-            : 'Online checkout is unavailable right now. Unlock Pro inside the Android app.',
-        ),
-      }
+      console.warn('[RevenueCat] Billing is not configured (no API key set).')
+      return { success: false, cancelled: false, error: new Error('RevenueCat billing is not configured.') }
     }
 
     try {
@@ -496,15 +368,17 @@ export class PremiumManager {
       const pkg = findPackageForPlan(offerings?.current ?? null, plan) || offerings?.current?.availablePackages?.[0]
 
       if (!pkg) {
-        console.warn(`[RevenueCat] No package found for plan "${plan}". Check dashboard offerings.`)
+        console.error(`No package found for plan ${plan}. Check dashboard configuration.`)
         return {
           success: false,
           cancelled: false,
-          error: sanitizeBillingError(null, 'Selected plan is currently unavailable. Please try again later.'),
+          error: new Error(
+            `No package found for "${plan}". In the RevenueCat dashboard, go to Product Catalog → Offerings → default, click "+ New Package", and link your Google Play product to $rc_lifetime.`,
+          ),
         }
       }
 
-      return await this.purchasePackage(pkg, options)
+      return await this.purchasePackage(pkg)
     } catch (e: any) {
       const isCancelled =
         e?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR ||
@@ -513,21 +387,14 @@ export class PremiumManager {
       if (isCancelled) {
         return { success: false, cancelled: true }
       }
-      return { success: false, cancelled: false, error: sanitizeBillingError(e) }
+      return { success: false, cancelled: false, error: e }
     }
   }
 
   /**
    * Purchase a direct PurchasesPackage instance.
    */
-  static async purchasePackage(pkg: PurchasesPackage, options?: PurchaseOptions): Promise<PurchaseResult> {
-    if (!isConfigured()) {
-      return {
-        success: false,
-        cancelled: false,
-        error: new Error('Billing is unavailable in this environment.'),
-      }
-    }
+  static async purchasePackage(pkg: PurchasesPackage): Promise<PurchaseResult> {
     try {
       await ensureConfigured()
       let active = false
@@ -536,20 +403,8 @@ export class PremiumManager {
         const { customerInfo } = await NativePurchases.purchasePackage({ aPackage: pkg })
         active = isProEntitlementActive(customerInfo.entitlements?.active)
       } else if (webPurchases) {
-        const purchaseParams: Record<string, any> = {
-          rcPackage: pkg,
-        }
-        if (options?.customerEmail) purchaseParams.customerEmail = options.customerEmail
-        if (options?.selectedLocale) purchaseParams.selectedLocale = options.selectedLocale
-        if (options?.htmlTarget) purchaseParams.htmlTarget = options.htmlTarget
-        const { customerInfo } = await webPurchases.purchase(purchaseParams as any)
+        const { customerInfo } = await webPurchases.purchasePackage(pkg as any)
         active = isWebEntitlementActive(customerInfo.entitlements?.active)
-      } else {
-        return {
-          success: false,
-          cancelled: false,
-          error: sanitizeBillingError(null, 'Checkout could not be initialized. Please try again later.'),
-        }
       }
 
       await this.setPremium(active)
@@ -563,7 +418,7 @@ export class PremiumManager {
         return { success: false, cancelled: true }
       }
       console.error('Purchase failed:', e)
-      return { success: false, cancelled: false, error: sanitizeBillingError(e) }
+      return { success: false, cancelled: false, error: e }
     }
   }
 
@@ -598,6 +453,7 @@ export class PremiumManager {
     }
   }
 
+  /** Simulate Pro unlock for dev testing */
   /** Simulate Pro unlock for dev testing only */
   static async simulateDevPurchase(): Promise<PurchaseResult> {
     if (!env.DEV) {

@@ -694,7 +694,15 @@ eq('checkBiometricsAvailable returns biometryName string', typeof bioCheck.biome
 eq('checkBiometricsAvailable returns isFace boolean', typeof bioCheck.isFace, 'boolean')
 
 console.log('\n— RevenueCat Purchase & Entitlement Verification Engine —')
-import { isProEntitlementActive, isWebEntitlementActive, ENTITLEMENT_ID } from '../src/services/native/billing'
+import {
+  isProEntitlementActive,
+  isWebEntitlementActive,
+  isBillingConfiguredForEnv,
+  getPackagePriceString,
+  getPackagePriceAmount,
+  sanitizeBillingError,
+  ENTITLEMENT_ID,
+} from '../src/services/native/billing'
 
 eq('null entitlements returns false', isProEntitlementActive(null), false)
 eq('undefined entitlements returns false', isProEntitlementActive(undefined), false)
@@ -708,6 +716,92 @@ eq('web null entitlements returns false', isWebEntitlementActive(null), false)
 eq('web empty entitlements returns false', isWebEntitlementActive({}), false)
 eq('web active entitlement returns true', isWebEntitlementActive({ [ENTITLEMENT_ID]: { isActive: true } }), true)
 eq('web inactive entitlement returns false', isWebEntitlementActive({ [ENTITLEMENT_ID]: { isActive: false } }), false)
+
+eq(
+  'prod web rejects test_ key',
+  isBillingConfiguredForEnv({
+    native: false,
+    platformName: 'web',
+    androidKey: 'goog_abc',
+    iosKey: '',
+    stripeKey: 'test_HZFmnPcmetdUSXxTkyPoKnSRkZB',
+    isProd: true,
+  }),
+  false,
+)
+eq(
+  'prod web rejects empty key',
+  isBillingConfiguredForEnv({
+    native: false,
+    platformName: 'web',
+    androidKey: 'goog_abc',
+    iosKey: '',
+    stripeKey: '',
+    isProd: true,
+  }),
+  false,
+)
+eq(
+  'prod web accepts rcb_ live key',
+  isBillingConfiguredForEnv({
+    native: false,
+    platformName: 'web',
+    androidKey: 'goog_abc',
+    iosKey: '',
+    stripeKey: 'rcb_live_123456',
+    isProd: true,
+  }),
+  true,
+)
+eq(
+  'prod ios rejects test_ key',
+  isBillingConfiguredForEnv({
+    native: true,
+    platformName: 'ios',
+    androidKey: 'goog_abc',
+    iosKey: 'test_123',
+    stripeKey: '',
+    isProd: true,
+  }),
+  false,
+)
+eq(
+  'prod android accepts goog_ key',
+  isBillingConfiguredForEnv({
+    native: true,
+    platformName: 'android',
+    androidKey: 'goog_jsxFosZXptnMUILBUeVnPlzePQS',
+    iosKey: '',
+    stripeKey: '',
+    isProd: true,
+  }),
+  true,
+)
+eq(
+  'native package price extraction works',
+  getPackagePriceString({ product: { priceString: '$26.97' } }),
+  '$26.97',
+)
+eq(
+  'web rcBillingProduct price extraction works',
+  getPackagePriceString({ rcBillingProduct: { currentPrice: { formattedPrice: '$9.29', amountMicros: 9290000, currency: 'USD' } } }),
+  '$9.29',
+)
+eq(
+  'web rcBillingProduct numeric price parses micros',
+  getPackagePriceAmount({ rcBillingProduct: { currentPrice: { formattedPrice: '$9.29', amountMicros: 9290000, currency: 'USD' } } }),
+  { amount: 9.29, currency: 'USD' },
+)
+eq(
+  'sanitizeBillingError hides internal RevenueCat dashboard hints',
+  sanitizeBillingError(new Error('In the RevenueCat dashboard, go to Product Catalog'), 'Friendly fallback').message,
+  'Friendly fallback',
+)
+eq(
+  'sanitizeBillingError preserves clean user-facing error',
+  sanitizeBillingError(new Error('Card declined'), 'Friendly fallback').message,
+  'Card declined',
+)
 
 console.log('\n— Security Hardening Verification —')
 eq('inactive native entitlement returns false', isProEntitlementActive({ [ENTITLEMENT_ID]: { isActive: false } }), false)

@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <title>WhereDidItGo — Local-first personal money tracker</title>
+    <meta
+      name="description"
+      content="Know where every dollar went. Local-first personal finance for Android and web: 2.8s QuickAdd math keypad, bank SMS parser, payday budget cycles, goals, debts, and encrypted backups."
+    />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f2f3f4" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#15181b" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="canonical" href="https://moneytracker-vert-nu.vercel.app/landing" />
+    <link rel="alternate" hreflang="en" href="https://moneytracker-vert-nu.vercel.app/landing?lang=en" />
+    <link rel="alternate" hreflang="ru" href="https://moneytracker-vert-nu.vercel.app/landing?lang=ru" />
+    <link rel="alternate" hreflang="tg" href="https://moneytracker-vert-nu.vercel.app/landing?lang=tj" />
+    <link rel="alternate" hreflang="x-default" href="https://moneytracker-vert-nu.vercel.app/landing" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="WhereDidItGo" />
+    <meta property="og:title" content="WhereDidItGo — Know where every dollar went." />
+    <meta
+      property="og:description"
+      content="100% local-first personal finance for Android & Web: QuickAdd inline math, split receipts, offline bank SMS parser, payday budget cycles, 30-day heatmap, and AES-GCM backups."
+    />
+    <meta property="og:url" content="https://moneytracker-vert-nu.vercel.app/landing" />
+    <meta property="og:image" content="https://moneytracker-vert-nu.vercel.app/screens/01-home.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="WhereDidItGo — Local-first personal money tracker" />
+    <meta
+      name="twitter:description"
+      content="Track spending in 2.8s with inline math, split receipts, bank SMS parsing, and zero mandatory cloud signups."
+    />
+    <meta name="twitter:image" content="https://moneytracker-vert-nu.vercel.app/screens/01-home.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "WhereDidItGo",
+        "operatingSystem": "Android 8.0+, Web, Windows",
+        "applicationCategory": "FinanceApplication",
+        "softwareVersion": "1.1.6",
+        "url": "https://moneytracker-vert-nu.vercel.app/landing",
+        "downloadUrl": "https://moneytracker-vert-nu.vercel.app/wherediditgo.apk",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f2f3f4;
+        color: #16191c;
+      }
+      button, a, [role="button"] {
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      input, textarea, select {
+        font-size: 16px;
+      }
+      /* WDG nav controls (injected into the core nav) */
+      .wdg-nav-holder { display: flex; align-items: center; }
+      .wdg-nav-ctl { display: flex; align-items: center; gap: 6px; }
+      .ttl-root .wdg-iconbtn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        height: 34px; min-width: 34px; padding: 0 9px; border-radius: 999px;
+        border: 1px solid var(--ttl-rule); background: var(--ttl-paper); color: var(--ttl-ink);
+        font: 500 12px/1 'Outfit', system-ui, sans-serif; cursor: pointer;
+        transition: background-color .2s, border-color .2s, color .2s;
+      }
+      .ttl-root .wdg-iconbtn:hover { background: var(--ttl-page); border-color: color-mix(in srgb, var(--ttl-ink) 22%, var(--ttl-rule)); }
+      .wdg-iconbtn:focus-visible, .wdg-watch:focus-visible, .wdg-lang-item:focus-visible,
+      .wdg-seg button:focus-visible, .wdg-sheet-theme:focus-visible, .wdg-sheet-watch:focus-visible,
+      .wdg-film-x:focus-visible, .wdg-film-langs button:focus-visible, .wdg-film-apk:focus-visible {
+        outline: 2px solid var(--ttl-gold); outline-offset: 2px;
+      }
+      .wdg-iconbtn svg { width: 15px; height: 15px; flex: none; }
+      .wdg-lang { position: relative; }
+      .wdg-lang-code { font-weight: 600; letter-spacing: .04em; }
+      .wdg-chev { width: 12px; height: 12px; opacity: .55; margin-left: -2px; }
+      .wdg-lang-menu {
+        position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; min-width: 178px;
+        padding: 6px; border-radius: 14px; background: var(--ttl-paper);
+        border: 1px solid var(--ttl-rule); box-shadow: 0 26px 60px -28px rgba(16, 41, 45, .45);
+        display: flex; flex-direction: column; gap: 2px; animation: wdg-pop .16s ease-out;
+      }
+      @keyframes wdg-pop { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
+      .ttl-root .wdg-lang-item {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        padding: 9px 10px; border-radius: 9px; border: 0; background: transparent;
+        color: var(--ttl-ink); font: 500 13px 'Outfit', system-ui, sans-serif; text-align: left; cursor: pointer;
+      }
+      .ttl-root .wdg-lang-item:hover { background: var(--ttl-page); }
+      .wdg-lang-item[aria-checked="true"] { font-weight: 600; }
+      .wdg-lang-item svg { width: 14px; height: 14px; color: var(--ttl-gold); }
+      .ttl-root .wdg-watch {
+        display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px 0 8px;
+        border-radius: 999px; border: 1px solid color-mix(in srgb, var(--ttl-gold) 52%, var(--ttl-rule));
+        background: color-mix(in srgb, var(--ttl-gold) 8%, transparent); color: var(--ttl-ink);
+        font: 600 12px/1 'Outfit', system-ui, sans-serif; white-space: nowrap; cursor: pointer;
+        transition: background-color .2s, border-color .2s, box-shadow .2s;
+      }
+      .ttl-root .wdg-watch:hover {
+        background: color-mix(in srgb, var(--ttl-gold) 16%, transparent);
+        border-color: var(--ttl-gold);
+        box-shadow: 0 8px 20px -12px color-mix(in srgb, var(--ttl-gold) 70%, transparent);
+      }
+      .wdg-play { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--ttl-gold); color: #fff; flex: none; }
+      .wdg-play svg { width: 9px; height: 9px; margin-left: 1px; }
+      .wdg-sheet-holder { display: block; }
+      .wdg-sheet-ctl { display: flex; flex-direction: column; gap: 10px; padding: 10px 6px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--ttl-rule); }
+      .wdg-sheet-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 6px; }
+      .wdg-sheet-label { font: 600 10.5px/1 'Outfit', system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: color-mix(in srgb, var(--ttl-ink) 52%, transparent); }
+      .wdg-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--ttl-page); border: 1px solid var(--ttl-rule); }
+      .ttl-root .wdg-seg button {
+        padding: 6px 13px; border-radius: 999px; border: 0; background: transparent; color: var(--ttl-ink);
+        font: 500 12px 'Outfit', system-ui, sans-serif; cursor: pointer; transition: background-color .2s, color .2s;
+      }
+      .ttl-root .wdg-seg button[aria-pressed="true"] { background: var(--ttl-accent); color: var(--ttl-accent-ink); font-weight: 600; }
+      .ttl-root .wdg-sheet-theme {
+        display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px;
+        border: 1px solid var(--ttl-rule); background: var(--ttl-paper); color: var(--ttl-ink);
+        font: 500 12.5px 'Outfit', system-ui, sans-serif; cursor: pointer;
+      }
+      .wdg-sheet-theme svg, .wdg-sheet-watch svg { width: 14px; height: 14px; }
+      .ttl-root .wdg-sheet-watch {
+        display: flex; align-items: center; justify-content: center; gap: 9px; padding: 13px;
+        border-radius: 12px; border: 1px solid color-mix(in srgb, var(--ttl-gold) 60%, var(--ttl-rule));
+        background: color-mix(in srgb, var(--ttl-gold) 10%, transparent); color: var(--ttl-ink);
+        font: 600 14px 'Outfit', system-ui, sans-serif; cursor: pointer;
+      }
+      .ttl-root .wdg-sheet-watch:hover { background: color-mix(in srgb, var(--ttl-gold) 18%, transparent); }
+      @media (max-width: 900px) { .wdg-nav-holder { display: none; } }
+      @media (min-width: 901px) and (max-width: 1160px) {
+        .ttl-root .wdg-watch { padding: 0; width: 34px; justify-content: center; }
+        .wdg-watch-label { display: none; }
+      }
+      /* film modal */
+      .wdg-film-backdrop {
+        position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 18px;
+        background: rgba(8, 9, 11, .8); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+        animation: wdg-fade .18s ease-out;
+      }
+      @keyframes wdg-fade { from { opacity: 0; } to { opacity: 1; } }
+      .wdg-film {
+        width: min(980px, 100%); max-height: calc(100dvh - 36px); overflow: auto; border-radius: 22px;
+        background: #0c0e10; border: 1px solid rgba(255, 255, 255, .1);
+        box-shadow: 0 60px 140px -40px rgba(0, 0, 0, .85); color: #f2f3f4;
+        font-family: 'Outfit', system-ui, sans-serif; animation: wdg-rise .26s cubic-bezier(.2, .8, .2, 1);
+      }
+      @keyframes wdg-rise { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+      .wdg-film-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 22px 14px; }
+      .wdg-film-eyebrow { font: 600 10.5px/1.4 'Outfit', system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: #c8a96a; }
+      .wdg-film-title { margin: 6px 0 0; font-family: 'Fraunces', Georgia, serif; font-size: clamp(20px, 2.6vw, 27px); font-weight: 700; letter-spacing: -.02em; }
+      .wdg-film-x {
+        display: inline-grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .06); color: #f2f3f4;
+        cursor: pointer; transition: background-color .2s;
+      }
+      .wdg-film-x:hover { background: rgba(255, 255, 255, .14); }
+      .wdg-film-x svg { width: 15px; height: 15px; }
+      .wdg-film-frame { padding: 0 22px; }
+      .wdg-film-frame video { display: block; width: 100%; aspect-ratio: 16/9; border-radius: 14px; background: #000; border: 1px solid rgba(255, 255, 255, .08); }
+      .wdg-film-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 16px 22px 4px; }
+      .wdg-film-langs { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); }
+      .wdg-film-langs button {
+        padding: 7px 15px; border-radius: 999px; border: 0; background: transparent; color: rgba(242, 243, 244, .75);
+        font: 600 12px 'Outfit', system-ui, sans-serif; cursor: pointer; transition: background-color .2s, color .2s;
+      }
+      .wdg-film-langs button[aria-pressed="true"] { background: #d4b978; color: #141414; }
+      .wdg-film-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+      .wdg-film-apk {
+        padding: 11px 20px; border-radius: 999px; background: #d4b978; color: #141414;
+        font: 600 13px 'Outfit', system-ui, sans-serif; text-decoration: none; transition: background-color .2s;
+      }
+      .wdg-film-apk:hover { background: #e2cb92; }
+      .wdg-film-open { color: rgba(242, 243, 244, .78); font: 500 13px 'Outfit', system-ui, sans-serif; text-decoration: none; }
+      .wdg-film-open:hover { color: #fff; }
+      .wdg-film-note { margin: 6px 0 0; padding: 0 22px 20px; font-size: 11.5px; line-height: 1.5; color: rgba(242, 243, 244, .48); }
+      @media (max-width: 640px) {
+        .wdg-film-backdrop { padding: 10px; }
+        .wdg-film-head { padding: 16px 16px 10px; }
+        .wdg-film-frame { padding: 0 10px; }
+        .wdg-film-foot { padding: 12px 16px 2px; }
+        .wdg-film-note { padding: 4px 16px 16px; }
+        .wdg-film-actions { gap: 12px; }
+        .wdg-film-apk { padding: 10px 16px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .wdg-lang-menu, .wdg-film-backdrop, .wdg-film { animation: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="./vendor/react.min.js"></script>
+    <script src="./vendor/react-dom.min.js"></script>
+    <script src="./vendor/gsap.min.js"></script>
+    <script src="./vendor/ScrollTrigger.min.js"></script>
+    <script src="./vendor/teal-treasury-app.js"></script>
+  </body>
+</html>

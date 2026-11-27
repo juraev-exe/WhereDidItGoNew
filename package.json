@@ -33,7 +33,10 @@
     "screens": "node scripts/screens.mjs",
     "audit:all": "npm run audit && npm run audit:onboarding && npm run audit:backup && npm run audit:migration",
     "verify": "npm run check && start-server-and-test start http://127.0.0.1:5173 audit:all",
-    "audit:onboarding": "node scripts/onboarding-check.mjs"
+    "audit:onboarding": "node scripts/onboarding-check.mjs",
+    "stack": "tsx scripts/stack-viewer.mjs",
+    "build:landing": "node scripts/build-teal-landing.mjs",
+    "build:reel": "node scripts/build-launch-reel.mjs"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",

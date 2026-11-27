@@ -53,7 +53,11 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!assets/|legal/|tesseract/|favicon\\.svg|manifest\\.json|logo\\.png|logo1\\.png|wherediditgo\\.apk).*)",
+      "source": "/landing",
+      "destination": "/landing.html"
+    },
+    {
+      "source": "/((?!assets/|vendor/|screens/|media/|legal/|tesseract/|landing\\.html|stack-viewer\\.html|favicon\\.svg|manifest\\.json|logo\\.png|logo1\\.png|wherediditgo\\.apk).*)",
       "destination": "/index.html"
     }
   ]

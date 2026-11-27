@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Session Stack · Antigravity Stack Viewer</title>
+  <style>
+    :root {
+      --bg: #1e1e1c;
+      --panel: #262624;
+      --row-bg: #3d3d3a;
+      --row-hover: #4a4a46;
+      --orange: #d97757;
+      --orange-soft: rgba(217, 119, 87, 0.14);
+      --ivory: #faf9f5;
+      --gray: #b0aea5;
+      --dim: #87867f;
+      --line: #5e5d59;
+      --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'SF Mono', Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ivory);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.55;
+      min-height: 100vh;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+    }
+    .pane {
+      width: 100%;
+      max-width: 1120px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .header-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.18);
+    }
+    .header-top, .header-sub {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .diamond { color: var(--orange); font-weight: 700; }
+    .title { color: var(--ivory); font-weight: 700; }
+    .version { color: var(--dim); margin-left: 8px; }
+    .where { color: var(--dim); }
+    .totals .active { color: var(--ivory); font-weight: 600; }
+    .totals .shadowed { color: var(--orange); }
+    .totals .shadowed.zero { color: var(--dim); }
+    .totals .off { color: var(--dim); }
+
+    .body-cols {
+      display: grid;
+      grid-template-columns: 235px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 780px) {
+      .body-cols { grid-template-columns: 1fr; }
+    }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      user-select: none;
+    }
+    .sidebar-heading {
+      color: var(--dim);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      padding: 4px 8px 6px;
+    }
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: transparent;
+      border: none;
+      color: var(--dim);
+      font-family: inherit;
+      font-size: 13px;
+      padding: 6px 8px 6px 0;
+      border-radius: 5px;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--ivory);
+    }
+    .nav-btn.selected {
+      color: var(--ivory);
+      background: var(--orange-soft);
+      font-weight: 600;
+    }
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-bar {
+      color: var(--orange);
+      width: 10px;
+      display: inline-block;
+      font-weight: 700;
+    }
+    .nav-count {
+      color: var(--dim);
+      font-variant-numeric: tabular-nums;
+    }
+    .nav-btn.selected .nav-count {
+      color: var(--ivory);
+    }
+
+    .legend {
+      margin-top: 16px;
+      padding: 10px 8px;
+      border-top: 1px solid rgba(94, 93, 89, 0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 12px;
+    }
+    .legend-row { display: flex; gap: 10px; align-items: center; }
+    .legend-name { width: 46px; }
+    .legend-name.active { color: var(--ivory); }
+    .legend-name.shadowed { color: var(--gray); text-decoration: line-through; }
+    .legend-name.off { color: var(--line); }
+    .legend-name.inferred { color: var(--dim); }
+    .legend-desc { color: var(--dim); }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+    .sec-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .sec-title-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .sec-title { color: var(--orange); font-weight: 700; font-size: 15px; }
+    .sec-summary { color: var(--dim); }
+    .sec-rule { color: var(--dim); font-style: italic; }
+    .sec-extra { color: var(--orange); font-size: 12px; }
+
+    .search-input {
+      background: #1a1a18;
+      border: 1px solid var(--line);
+      color: var(--ivory);
+      font-family: inherit;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 5px;
+      width: 220px;
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: var(--orange);
+    }
+
+    .scopes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .scope-block {
+      display: flex;
+      flex-direction: column;
+    }
+    .scope-bar {
+      display: grid;
+      grid-template-columns: 28px 210px 48px 1fr;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      user-select: none;
+    }
+    .scope-bar.filled {
+      background: var(--row-bg);
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    .scope-bar.filled:hover {
+      background: var(--row-hover);
+    }
+    .scope-bar.empty {
+      opacity: 0.72;
+      padding-top: 2px;
+      padding-bottom: 2px;
+    }
+    .scope-rank {
+      text-align: right;
+      font-weight: 700;
+      color: var(--orange);
+    }
+    .scope-bar.empty .scope-rank {
+      color: var(--line);
+      font-weight: 400;
+    }
+    .scope-label {
+      color: var(--ivory);
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .scope-bar.empty .scope-label {
+      color: var(--line);
+      font-weight: 400;
+    }
+    .scope-count {
+      text-align: right;
+      font-weight: 700;
+      color: var(--ivory);
+      font-variant-numeric: tabular-nums;
+    }
+    .scope-bar.empty .scope-count {
+      color: var(--line);
+      font-weight: 400;
+    }
+    .scope-where {
+      color: var(--dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-left: 6px;
+    }
+    .scope-bar.empty .scope-where {
+      color: var(--line);
+    }
+
+    .scope-items {
+      display: flex;
+      flex-direction: column;
+      padding: 4px 10px 6px 44px;
+      gap: 2px;
+    }
+    .item-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 310px) 1fr;
+      gap: 14px;
+      align-items: baseline;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .item-row:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .item-name {
+      word-break: break-all;
+    }
+    .item-name.active { color: var(--ivory); }
+    .item-name.selected { color: var(--orange); font-weight: 700; }
+    .item-name.shadowed { color: var(--gray); text-decoration: line-through; }
+    .item-name.off { color: var(--line); }
+
+    .item-tail {
+      color: var(--dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item-tail.shadowed { color: var(--orange); }
+    .item-tail.off { color: var(--line); }
+
+    .scope-peek {
+      padding: 4px 10px 4px 44px;
+      color: var(--dim);
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .scope-peek .click-hint {
+      color: var(--orange);
+      margin-left: 10px;
+    }
+    .scope-note {
+      padding: 2px 10px 4px 44px;
+      color: var(--dim);
+      font-style: italic;
+    }
+
+    .footer {
+      border-top: 1px solid rgba(94, 93, 89, 0.45);
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      background: var(--row-bg);
+      border: 1px solid var(--line);
+      color: var(--ivory);
+      font-family: inherit;
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease;
+    }
+    .btn:hover {
+      background: var(--row-hover);
+      border-color: var(--orange);
+    }
+    .hint {
+      color: var(--dim);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="pane" id="app"></div>
+  <script>
+    const DATA = {"header":{"version":"Antigravity · Gemini 4 Argon (High)","where":"~/Documents/Projects_2026/wherediditgo"},"sections":[{"kind":"skills","noun":"active","rule":"Enterprise › User › Project on a name clash · plugin skills are namespaced, both load","extra":"285 more over the listing budget, not shown to the model","scopes":[{"id":"managed","where":"managed settings dir","items":[]},{"id":"user","where":"~/.gemini/config/skills · ~/.claude/skills","items":[{"name":"animate","status":"active"},{"name":"animate-expo","status":"active"},{"name":"animation-vocabulary","status":"active"},{"name":"apple-design","status":"active"},{"name":"ask-sonner","status":"active"},{"name":"awesome-llm-apps","status":"active"},{"name":"banner-design","status":"active"},{"name":"brand","status":"active"},{"name":"codebase-memory","status":"active"},{"name":"defuddle","status":"active"},{"name":"design","status":"active"},{"name":"design-system","status":"active"},{"name":"emil-design-eng","status":"active"},{"name":"find-animation-opportunities","status":"active"},{"name":"frontend-design","status":"active"},{"name":"gsd-add-tests","status":"active"},{"name":"gsd-ai-integration-phase","status":"active"},{"name":"gsd-audit-fix","status":"active"},{"name":"gsd-audit-milestone","status":"active"},{"name":"gsd-audit-uat","status":"active"},{"name":"gsd-autonomous","status":"active"},{"name":"gsd-capture","status":"active"},{"name":"gsd-cleanup","status":"active"},{"name":"gsd-code-review","status":"active"},{"name":"gsd-complete-milestone","status":"active"},{"name":"gsd-config","status":"active"},{"name":"gsd-debug","status":"active"},{"name":"gsd-discuss-phase","status":"active"},{"name":"gsd-docs-update","status":"active"},{"name":"gsd-eval-review","status":"active"},{"name":"gsd-execute-phase","status":"active"},{"name":"gsd-explore","status":"active"},{"name":"gsd-extract-learnings","status":"active"},{"name":"gsd-fast","status":"active"},{"name":"gsd-forensics","status":"active"},{"name":"gsd-graphify","status":"active"},{"name":"gsd-health","status":"active"},{"name":"gsd-help","status":"active"},{"name":"gsd-import","status":"active"},{"name":"gsd-inbox","status":"active"},{"name":"gsd-ingest-docs","status":"active"},{"name":"gsd-manager","status":"active"},{"name":"gsd-map-codebase","status":"active"},{"name":"gsd-mempalace-capture","status":"active"},{"name":"gsd-mempalace-recall","status":"active"},{"name":"gsd-milestone-summary","status":"active"},{"name":"gsd-mvp-phase","status":"active"},{"name":"gsd-new-milestone","status":"active"},{"name":"gsd-new-project","status":"active"},{"name":"gsd-next","status":"active"},{"name":"gsd-ns-context","status":"active"},{"name":"gsd-ns-ideate","status":"active"},{"name":"gsd-ns-manage","status":"active"},{"name":"gsd-ns-project","status":"active"},{"name":"gsd-ns-review","status":"active"},{"name":"gsd-ns-workflow","status":"active"},{"name":"gsd-onboard","status":"active"},{"name":"gsd-pause-work","status":"active"},{"name":"gsd-phase","status":"active"},{"name":"gsd-plan-phase","status":"active"},{"name":"gsd-plan-review-convergence","status":"active"},{"name":"gsd-pr-branch","status":"active"},{"name":"gsd-profile-user","status":"active"},{"name":"gsd-progress","status":"active"},{"name":"gsd-quick","status":"active"},{"name":"gsd-quick-batch","status":"active"},{"name":"gsd-resume-work","status":"active"},{"name":"gsd-review","status":"active"},{"name":"gsd-review-backlog","status":"active"},{"name":"gsd-secure-phase","status":"active"},{"name":"gsd-settings","status":"active"},{"name":"gsd-ship","status":"active"},{"name":"gsd-sketch","status":"active"},{"name":"gsd-spec-phase","status":"active"},{"name":"gsd-spike","status":"active"},{"name":"gsd-stats","status":"active"},{"name":"gsd-surface","status":"active"},{"name":"gsd-thread","status":"active"},{"name":"gsd-ui-phase","status":"active"},{"name":"gsd-ui-review","status":"active"},{"name":"gsd-ultraplan-phase","status":"active"},{"name":"gsd-undo","status":"active"},{"name":"gsd-update","status":"active"},{"name":"gsd-validate-phase","status":"active"},{"name":"gsd-verify-work","status":"active"},{"name":"gsd-workspace","status":"active"},{"name":"gsd-workstreams","status":"active"},{"name":"hypit","status":"active"},{"name":"i-have-adhd","status":"active"},{"name":"improve-animations","status":"active"},{"name":"json-canvas","status":"active"},{"name":"knap","status":"active"},{"name":"landing-page-design","status":"active"},{"name":"logo-design","status":"active"},{"name":"mobile-native","status":"active"},{"name":"obsidian-bases","status":"active"},{"name":"obsidian-cli","status":"active"},{"name":"obsidian-markdown","status":"active"},{"name":"perplexity-search","status":"active"},{"name":"pick-ui-library","status":"active"},{"name":"ponytail","status":"active"},{"name":"ponytail-audit","status":"active"},{"name":"ponytail-debt","status":"active"},{"name":"ponytail-gain","status":"active"},{"name":"ponytail-help","status":"active"},{"name":"ponytail-review","status":"active"},{"name":"prototype","status":"active"},{"name":"review-animations","status":"active"},{"name":"slides","status":"active"},{"name":"ui-polish-rules","status":"active"},{"name":"ui-styling","status":"active"},{"name":"ui-ux-pro-max","status":"active"},{"name":"unslop","status":"active"},{"name":"vercel-cli-with-tokens","status":"active"},{"name":"vercel-composition-patterns","status":"active"},{"name":"vercel-optimize","status":"active"},{"name":"vercel-react-best-practices","status":"active"},{"name":"vercel-react-native-skills","status":"active"},{"name":"vercel-react-view-transitions","status":"active"},{"name":"write-swift","status":"active"}]},{"id":"project","where":".agents/skills · .claude/skills","items":[{"name":"accessibility","status":"active"},{"name":"agent-introspection-debugging","status":"active"},{"name":"agent-self-evaluation","status":"active"},{"name":"agent-sort","status":"active"},{"name":"ai-regression-testing","status":"active"},{"name":"android-clean-architecture","status":"active"},{"name":"angular-developer","status":"active"},{"name":"api-design","status":"active"},{"name":"architecture-decision-records","status":"active"},{"name":"backend-patterns","status":"active"},{"name":"browser-qa","status":"active"},{"name":"bun-runtime","status":"active"},{"name":"ck","status":"active"},{"name":"click-path-audit","status":"active"},{"name":"clickhouse-io","status":"active"},{"name":"code-tour","status":"active"},{"name":"codebase-memory","status":"shadowed","by":"user","note":"shadowed by User"},{"name":"codebase-onboarding","status":"active"},{"name":"codehealth-mcp","status":"active"},{"name":"coding-standards","status":"active"},{"name":"compose-multiplatform-patterns","status":"active"},{"name":"config-gc","status":"active"},{"name":"configure-ecc","status":"active"},{"name":"context-budget","status":"active"},{"name":"continuous-learning","status":"active"},{"name":"continuous-learning-v2","status":"active"},{"name":"contract-first","status":"active"},{"name":"council","status":"active"},{"name":"council-multi-model","status":"active"},{"name":"cpp-coding-standards","status":"active"},{"name":"cpp-testing","status":"active"},{"name":"csharp-testing","status":"active"},{"name":"dart-flutter-patterns","status":"active"},{"name":"database-migrations","status":"active"},{"name":"delivery-gate","status":"active"},{"name":"design-system","status":"shadowed","by":"user","note":"shadowed by User"},{"name":"dev-team","status":"active"},{"name":"django-celery","status":"active"},{"name":"django-patterns","status":"active"},{"name":"django-tdd","status":"active"},{"name":"django-verification","status":"active"},{"name":"dotnet-patterns","status":"active"},{"name":"e2e-testing","status":"active"},{"name":"ecc-guide","status":"active"},{"name":"ecc-recipes","status":"active"},{"name":"error-handling","status":"active"},{"name":"eval-harness","status":"active"},{"name":"fastapi-patterns","status":"active"},{"name":"flutter-dart-code-review","status":"active"},{"name":"founder","status":"active"},{"name":"founder-competitor-matrix","status":"active"},{"name":"founder-email-sequence","status":"active"},{"name":"founder-fundraise-prep","status":"active"},{"name":"founder-go-to-market","status":"active"},{"name":"founder-landing-page","status":"active"},{"name":"founder-metrics-dashboard","status":"active"},{"name":"founder-mvp-scope","status":"active"},{"name":"founder-persona-gen","status":"active"},{"name":"founder-pitch-deck","status":"active"},{"name":"founder-pricing-strategy","status":"active"},{"name":"founder-product-brief","status":"active"},{"name":"founder-status","status":"active"},{"name":"founder-user-interviews","status":"active"},{"name":"founder-validate-idea","status":"active"},{"name":"frontend-a11y","status":"active"},{"name":"frontend-design-direction","status":"active"},{"name":"frontend-patterns","status":"active"},{"name":"frontend-slides","status":"active"},{"name":"fsharp-testing","status":"active"},{"name":"generating-python-installer","status":"active"},{"name":"git-workflow","status":"active"},{"name":"golang-patterns","status":"active"},{"name":"golang-testing","status":"active"},{"name":"growth-log","status":"active"},{"name":"hexagonal-architecture","status":"active"},{"name":"hookify-rules","status":"active"},{"name":"hypit","status":"shadowed","by":"user","note":"shadowed by User"},{"name":"i18n-sync","status":"active"},{"name":"inherit-legacy-style","status":"active"},{"name":"intent-driven-development","status":"active"},{"name":"iterative-retrieval","status":"active"},{"name":"java-coding-standards","status":"active"},{"name":"jpa-patterns","status":"active"},{"name":"kotlin-coroutines-flows","status":"active"},{"name":"kotlin-exposed-patterns","status":"active"},{"name":"kotlin-ktor-patterns","status":"active"},{"name":"kotlin-patterns","status":"active"},{"name":"kotlin-testing","status":"active"},{"name":"landing-page-design","status":"shadowed","by":"user","note":"shadowed by User"},{"name":"laravel-patterns","status":"active"},{"name":"laravel-plugin-discovery","status":"active"},{"name":"laravel-tdd","status":"active"},{"name":"laravel-verification","status":"active"},{"name":"living-docs-governance","status":"active"},{"name":"loop-design-check","status":"active"},{"name":"make-interfaces-feel-better","status":"active"},{"name":"mcp-server-patterns","status":"active"},{"name":"mobile-native","status":"shadowed","by":"user","note":"shadowed by User"},{"name":"motion-advanced","status":"active"},{"name":"motion-and-ux-laws","status":"active"},{"name":"motion-foundations","status":"active"},{"name":"motion-patterns","status":"active"},{"name":"mysql-patterns","status":"active"},{"name":"nestjs-patterns","status":"active"},{"name":"nextjs-turbopack","status":"active"},{"name":"nuxt4-patterns","status":"active"},{"name":"perl-patterns","status":"active"},{"name":"perl-testing","status":"active"},{"name":"pick-ui-library","status":"shadowed","by":"user","note":"shadowed by User"},{"name":"plan-canvas","status":"active"},{"name":"plankton-code-quality","status":"active"},{"name":"postgres-patterns","status":"active"},{"name":"prisma-patterns","status":"active"},{"name":"product-lens","status":"active"},{"name":"production-audit","status":"active"},{"name":"python-patterns","status":"active"},{"name":"python-testing","status":"active"},{"name":"quarkus-patterns","status":"active"},{"name":"quarkus-tdd","status":"active"},{"name":"quarkus-verification","status":"active"},{"name":"rails-patterns","status":"active"},{"name":"react-native-patterns","status":"active"},{"name":"react-patterns","status":"active"},{"name":"react-performance","status":"active"},{"name":"react-testing","status":"active"},{"name":"redis-patterns","status":"active"},{"name":"repo-scan","status":"active"},{"name":"rules-distill","status":"active"},{"name":"rust-patterns","status":"active"},{"name":"rust-testing","status":"active"},{"name":"santa-method","status":"active"},{"name":"skill-comply","status":"active"},{"name":"skill-scout","status":"active"},{"name":"skill-stocktake","status":"active"},{"name":"springboot-patterns","status":"active"},{"name":"springboot-tdd","status":"active"},{"name":"springboot-verification","status":"active"},{"name":"stack-viewer","status":"active"},{"name":"strategic-compact","status":"active"},{"name":"tdd-workflow","status":"active"},{"name":"tinystruct-patterns","status":"active"},{"name":"ui-polish-rules","status":"shadowed","by":"user","note":"shadowed by User"},{"name":"ui-to-vue","status":"active"},{"name":"unified-memory","status":"active"},{"name":"verification-loop","status":"active"},{"name":"vite-patterns","status":"active"},{"name":"vue-patterns","status":"active"},{"name":"windows-desktop-e2e","status":"active"}]},{"id":"plugin","where":"~/.gemini/config/plugins/<plugin>/skills","items":[{"name":"data-agent-kit-plugin:accidental-data-loss-prevention","status":"active"},{"name":"data-agent-kit-plugin:bigquery-data-transfer-service","status":"active"},{"name":"data-agent-kit-plugin:building-data-apps","status":"active"},{"name":"data-agent-kit-plugin:cloud-databases-onboarding","status":"active"},{"name":"data-agent-kit-plugin:dak-setup","status":"active"},{"name":"data-agent-kit-plugin:data-autocleaning","status":"active"},{"name":"data-agent-kit-plugin:dataform-bigquery","status":"active"},{"name":"data-agent-kit-plugin:dbt-bigquery","status":"active"},{"name":"data-agent-kit-plugin:discovering-gcp-data-assets","status":"active"},{"name":"data-agent-kit-plugin:enforcing-resource-attribution","status":"active"},{"name":"data-agent-kit-plugin:gcp-data-pipelines","status":"active"},{"name":"data-agent-kit-plugin:gcp-dataflow","status":"active"},{"name":"data-agent-kit-plugin:gcp-pipeline-orchestration","status":"active"},{"name":"data-agent-kit-plugin:gcp-pipeline-resource-provisioning","status":"active"},{"name":"data-agent-kit-plugin:gcp-spark","status":"active"},{"name":"data-agent-kit-plugin:gcp-spark-observability","status":"active"},{"name":"data-agent-kit-plugin:gcp-spark-troubleshooting","status":"active"},{"name":"data-agent-kit-plugin:managing-python-dependencies","status":"active"},{"name":"data-agent-kit-plugin:ml-best-practices","status":"active"},{"name":"data-agent-kit-plugin:notebook-guidance","status":"active"},{"name":"data-agent-kit-plugin:resolving-mcp-region-configs","status":"active"},{"name":"data-agent-kit-plugin:schema-mapping","status":"active"},{"name":"gdrive:gdrive","status":"active"},{"name":"notion:notion-build-my-engineering-wiki","status":"active"},{"name":"notion:notion-create-my-team-handbook","status":"active"},{"name":"notion:notion-database-designer","status":"active"},{"name":"notion:notion-knowledge-capture","status":"active"},{"name":"notion:notion-meeting-prep","status":"active"},{"name":"notion:notion-organize-my-semester","status":"active"},{"name":"notion:notion-plan-marketing-campaigns","status":"active"},{"name":"notion:notion-research-documentation","status":"active"},{"name":"notion:notion-set-up-my-project","status":"active"},{"name":"notion:notion-setup","status":"active"},{"name":"notion:notion-spec-to-implementation","status":"active"},{"name":"notion:notion-weekly-project-digest","status":"active"},{"name":"ponytail:ponytail","status":"active"},{"name":"ponytail:ponytail-audit","status":"active"},{"name":"ponytail:ponytail-debt","status":"active"},{"name":"ponytail:ponytail-gain","status":"active"},{"name":"ponytail:ponytail-help","status":"active"},{"name":"ponytail:ponytail-review","status":"active"},{"name":"superpowers:brainstorming","status":"active"},{"name":"superpowers:diagnosing-superpowers","status":"active"},{"name":"superpowers:dispatching-parallel-agents","status":"active"},{"name":"superpowers:executing-plans","status":"active"},{"name":"superpowers:finishing-a-development-branch","status":"active"},{"name":"superpowers:receiving-code-review","status":"active"},{"name":"superpowers:requesting-code-review","status":"active"},{"name":"superpowers:subagent-driven-development","status":"active"},{"name":"superpowers:systematic-debugging","status":"active"},{"name":"superpowers:test-driven-development","status":"active"},{"name":"superpowers:using-git-worktrees","status":"active"},{"name":"superpowers:using-superpowers","status":"active"},{"name":"superpowers:verification-before-completion","status":"active"},{"name":"superpowers:writing-plans","status":"active"},{"name":"superpowers:writing-skills","status":"active"},{"name":"vercel-plugin:access-protected-vercel-deployment","status":"active"},{"name":"vercel-plugin:ai-gateway","status":"active"},{"name":"vercel-plugin:ai-sdk","status":"active"},{"name":"vercel-plugin:auth","status":"active"},{"name":"vercel-plugin:build-agents","status":"active"},{"name":"vercel-plugin:cdn-caching","status":"active"},{"name":"vercel-plugin:chat-sdk","status":"active"},{"name":"vercel-plugin:create-a-backend","status":"active"},{"name":"vercel-plugin:custom-metrics","status":"active"},{"name":"vercel-plugin:daemons","status":"active"},{"name":"vercel-plugin:deployments-cicd","status":"active"},{"name":"vercel-plugin:domains","status":"active"},{"name":"vercel-plugin:env-vars","status":"active"},{"name":"vercel-plugin:eve","status":"active"},{"name":"vercel-plugin:flags-sdk","status":"active"},{"name":"vercel-plugin:is-agentic","status":"active"},{"name":"vercel-plugin:knowledge-update","status":"active"},{"name":"vercel-plugin:marketplace","status":"active"},{"name":"vercel-plugin:microfrontends","status":"active"},{"name":"vercel-plugin:offload-to-sandbox","status":"active"},{"name":"vercel-plugin:queues","status":"active"},{"name":"vercel-plugin:react-best-practices","status":"active"},{"name":"vercel-plugin:routing-middleware","status":"active"},{"name":"vercel-plugin:runtime-cache","status":"active"},{"name":"vercel-plugin:vercel-agent","status":"active"},{"name":"vercel-plugin:vercel-cli","status":"active"},{"name":"vercel-plugin:vercel-connect","status":"active"},{"name":"vercel-plugin:vercel-firewall","status":"active"},{"name":"vercel-plugin:vercel-flags","status":"active"},{"name":"vercel-plugin:vercel-functions","status":"active"},{"name":"vercel-plugin:vercel-sandbox","status":"active"},{"name":"vercel-plugin:vercel-schedules","status":"active"},{"name":"vercel-plugin:vercel-services","status":"active"},{"name":"vercel-plugin:vercel-storage","status":"active"},{"name":"vercel-plugin:vercel-tracing","status":"active"},{"name":"vercel-plugin:verification","status":"active"},{"name":"vercel-plugin:workflow","status":"active"}]},{"id":"synced","where":"enabled on claude.ai","items":[]},{"id":"mcp","where":"skills an MCP server provides","items":[]},{"id":"builtin","where":"~/.gemini/antigravity/builtin/skills","items":[{"name":"agy-customizations","status":"active"},{"name":"antigravity-guide","status":"active"},{"name":"automation","status":"active"},{"name":"generative_ui","status":"active"},{"name":"mcp-app-development","status":"active"},{"name":"migrate-agent-settings","status":"active"},{"name":"migrate-workflows","status":"active"},{"name":"permissioned-github","status":"active"},{"name":"plugin","status":"active"},{"name":"run-workflow","status":"active"},{"name":"swarm","status":"active"},{"name":"swarm_monitor","status":"active"},{"name":"swarm_narrator","status":"active"},{"name":"swarm_pane","status":"active"},{"name":"ui-plugin-navigation","status":"active"}]}]},{"kind":"agents","noun":"active","rule":"Enterprise › CLI flag › Project › User › Plugin on a name clash","scopes":[{"id":"managed","where":"managed settings","items":[]},{"id":"flag","where":"--agents JSON","items":[]},{"id":"project","where":".agents/agents · .claude/agents","items":[{"name":"a11y-architect","status":"active"},{"name":"agent-evaluator","status":"active"},{"name":"architect","status":"active"},{"name":"build-error-resolver","status":"active"},{"name":"chief-of-staff","status":"active"},{"name":"code-architect","status":"active"},{"name":"code-explorer","status":"active"},{"name":"code-reviewer","status":"active"},{"name":"code-simplifier","status":"active"},{"name":"codebase-memory","status":"active"},{"name":"codebase-memory-auditor","status":"active"},{"name":"codebase-memory-scout","status":"active"},{"name":"comment-analyzer","status":"active"},{"name":"conversation-analyzer","status":"active"},{"name":"cpp-build-resolver","status":"active"},{"name":"cpp-reviewer","status":"active"},{"name":"csharp-reviewer","status":"active"},{"name":"dart-build-resolver","status":"active"},{"name":"database-reviewer","status":"active"},{"name":"django-build-resolver","status":"active"},{"name":"django-reviewer","status":"active"},{"name":"doc-updater","status":"active"},{"name":"docs-lookup","status":"active"},{"name":"e2e-runner","status":"active"},{"name":"fastapi-reviewer","status":"active"},{"name":"flutter-reviewer","status":"active"},{"name":"fsharp-reviewer","status":"active"},{"name":"gan-evaluator","status":"active"},{"name":"gan-generator","status":"active"},{"name":"gan-planner","status":"active"},{"name":"go-build-resolver","status":"active"},{"name":"go-reviewer","status":"active"},{"name":"harmonyos-app-resolver","status":"active"},{"name":"harness-optimizer","status":"active"},{"name":"healthcare-reviewer","status":"active"},{"name":"homelab-architect","status":"active"},{"name":"java-build-resolver","status":"active"},{"name":"java-reviewer","status":"active"},{"name":"kotlin-build-resolver","status":"active"},{"name":"kotlin-reviewer","status":"active"},{"name":"loop-operator","status":"active"},{"name":"marketing-agent","status":"active"},{"name":"mle-reviewer","status":"active"},{"name":"network-architect","status":"active"},{"name":"network-config-reviewer","status":"active"},{"name":"network-troubleshooter","status":"active"},{"name":"opensource-forker","status":"active"},{"name":"opensource-packager","status":"active"},{"name":"opensource-sanitizer","status":"active"},{"name":"performance-optimizer","status":"active"},{"name":"php-reviewer","status":"active"},{"name":"planner","status":"active"},{"name":"pr-test-analyzer","status":"active"},{"name":"python-reviewer","status":"active"},{"name":"pytorch-build-resolver","status":"active"},{"name":"rag-pipeline-reviewer","status":"active"},{"name":"react-build-resolver","status":"active"},{"name":"react-reviewer","status":"active"},{"name":"refactor-cleaner","status":"active"},{"name":"rust-build-resolver","status":"active"},{"name":"rust-reviewer","status":"active"},{"name":"security-reviewer","status":"active"},{"name":"seo-specialist","status":"active"},{"name":"silent-failure-hunter","status":"active"},{"name":"spec-miner","status":"active"},{"name":"swift-build-resolver","status":"active"},{"name":"swift-reviewer","status":"active"},{"name":"tdd-guide","status":"active"},{"name":"type-design-analyzer","status":"active"},{"name":"typescript-reviewer","status":"active"},{"name":"vue-reviewer","status":"active"}]},{"id":"user","where":"~/.gemini/config/agents","items":[{"name":"codebase-memory","status":"shadowed","by":"project","note":"shadowed by Project"},{"name":"codebase-memory-auditor","status":"shadowed","by":"project","note":"shadowed by Project"},{"name":"codebase-memory-scout","status":"shadowed","by":"project","note":"shadowed by Project"},{"name":"gsd-advisor-researcher","status":"active"},{"name":"gsd-ai-researcher","status":"active"},{"name":"gsd-assumptions-analyzer","status":"active"},{"name":"gsd-code-fixer","status":"active"},{"name":"gsd-code-reviewer","status":"active"},{"name":"gsd-codebase-mapper","status":"active"},{"name":"gsd-debug-session-manager","status":"active"},{"name":"gsd-debugger","status":"active"},{"name":"gsd-doc-classifier","status":"active"},{"name":"gsd-doc-synthesizer","status":"active"},{"name":"gsd-doc-verifier","status":"active"},{"name":"gsd-doc-writer","status":"active"},{"name":"gsd-dom-verifier","status":"active"},{"name":"gsd-domain-researcher","status":"active"},{"name":"gsd-eval-auditor","status":"active"},{"name":"gsd-eval-planner","status":"active"},{"name":"gsd-executor","status":"active"},{"name":"gsd-framework-selector","status":"active"},{"name":"gsd-integration-checker","status":"active"},{"name":"gsd-intel-updater","status":"active"},{"name":"gsd-mempalace-curator","status":"active"},{"name":"gsd-nyquist-auditor","status":"active"},{"name":"gsd-pattern-mapper","status":"active"},{"name":"gsd-phase-researcher","status":"active"},{"name":"gsd-plan-checker","status":"active"},{"name":"gsd-planner","status":"active"},{"name":"gsd-project-researcher","status":"active"},{"name":"gsd-research-synthesizer","status":"active"},{"name":"gsd-roadmapper","status":"active"},{"name":"gsd-security-auditor","status":"active"},{"name":"gsd-ui-auditor","status":"active"},{"name":"gsd-ui-checker","status":"active"},{"name":"gsd-ui-researcher","status":"active"},{"name":"gsd-user-profiler","status":"active"},{"name":"gsd-verifier","status":"active"}]},{"id":"plugin","where":"~/.gemini/config/plugins/<plugin>/agents","items":[{"name":"vercel-plugin:ai-architect","status":"active"},{"name":"vercel-plugin:deployment-expert","status":"active"},{"name":"vercel-plugin:performance-optimizer","status":"active"}]},{"id":"builtin","where":"ship with Antigravity","items":[{"name":"browser","detail":"Operates built-in webview browser to interact with live web apps.","status":"active"},{"name":"image-generator","detail":"Generates or edits images from a brief.","status":"active"},{"name":"research","detail":"Read-only research subagent for exploring codebase and docs.","status":"active"},{"name":"self","detail":"Inherits parent agent's full configuration, tools, and model.","status":"active"}]}]},{"kind":"commands","noun":"active","rule":"Same names as skills: a skill wins over a command file · User › Project","scopes":[{"id":"user","where":"~/.gemini/config/commands · ~/.claude/commands","items":[]},{"id":"project","where":".agents/workflows · .claude/commands","items":[{"name":"aside","status":"off","note":"not loaded"},{"name":"auto-update","status":"off","note":"not loaded"},{"name":"build-fix","status":"off","note":"not loaded"},{"name":"checkpoint","status":"off","note":"not loaded"},{"name":"code-review","status":"off","note":"not loaded"},{"name":"competitor-matrix","status":"off","note":"not loaded"},{"name":"cost-report","status":"off","note":"not loaded"},{"name":"cpp-build","status":"off","note":"not loaded"},{"name":"cpp-review","status":"off","note":"not loaded"},{"name":"cpp-test","status":"off","note":"not loaded"},{"name":"ecc-guide","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"email-sequence","status":"off","note":"not loaded"},{"name":"epic-claim","status":"off","note":"not loaded"},{"name":"epic-decompose","status":"off","note":"not loaded"},{"name":"epic-publish","status":"off","note":"not loaded"},{"name":"epic-review","status":"off","note":"not loaded"},{"name":"epic-sync","status":"off","note":"not loaded"},{"name":"epic-unblock","status":"off","note":"not loaded"},{"name":"epic-validate","status":"off","note":"not loaded"},{"name":"evolve","status":"off","note":"not loaded"},{"name":"fastapi-review","status":"off","note":"not loaded"},{"name":"feature-dev","status":"off","note":"not loaded"},{"name":"flutter-build","status":"off","note":"not loaded"},{"name":"flutter-review","status":"off","note":"not loaded"},{"name":"flutter-test","status":"off","note":"not loaded"},{"name":"founder-competitor-matrix","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-email-sequence","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-fundraise-prep","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-go-to-market","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-landing-page","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-metrics-dashboard","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-mvp-scope","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-persona-gen","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-pitch-deck","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-pricing-strategy","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-product-brief","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-status","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-user-interviews","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"founder-validate-idea","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"fundraise-prep","status":"off","note":"not loaded"},{"name":"gan-build","status":"off","note":"not loaded"},{"name":"gan-design","status":"off","note":"not loaded"},{"name":"go-build","status":"off","note":"not loaded"},{"name":"go-review","status":"off","note":"not loaded"},{"name":"go-test","status":"off","note":"not loaded"},{"name":"go-to-market","status":"off","note":"not loaded"},{"name":"gradle-build","status":"off","note":"not loaded"},{"name":"harness-audit","status":"off","note":"not loaded"},{"name":"hookify","status":"off","note":"not loaded"},{"name":"hookify-configure","status":"off","note":"not loaded"},{"name":"hookify-help","status":"off","note":"not loaded"},{"name":"hookify-list","status":"off","note":"not loaded"},{"name":"instinct-export","status":"off","note":"not loaded"},{"name":"instinct-import","status":"off","note":"not loaded"},{"name":"instinct-status","status":"off","note":"not loaded"},{"name":"jira","status":"off","note":"not loaded"},{"name":"kotlin-build","status":"off","note":"not loaded"},{"name":"kotlin-review","status":"off","note":"not loaded"},{"name":"kotlin-test","status":"off","note":"not loaded"},{"name":"landing-page","status":"off","note":"not loaded"},{"name":"learn","status":"off","note":"not loaded"},{"name":"learn-eval","status":"off","note":"not loaded"},{"name":"loop-start","status":"off","note":"not loaded"},{"name":"loop-status","status":"off","note":"not loaded"},{"name":"marketing-campaign","status":"off","note":"not loaded"},{"name":"metrics-dashboard","status":"off","note":"not loaded"},{"name":"model-route","status":"off","note":"not loaded"},{"name":"multi-backend","status":"off","note":"not loaded"},{"name":"multi-execute","status":"off","note":"not loaded"},{"name":"multi-frontend","status":"off","note":"not loaded"},{"name":"multi-plan","status":"off","note":"not loaded"},{"name":"multi-workflow","status":"off","note":"not loaded"},{"name":"mvp-scope","status":"off","note":"not loaded"},{"name":"orch-add-feature","status":"off","note":"not loaded"},{"name":"orch-build-mvp","status":"off","note":"not loaded"},{"name":"orch-change-feature","status":"off","note":"not loaded"},{"name":"orch-fix-defect","status":"off","note":"not loaded"},{"name":"orch-refine-code","status":"off","note":"not loaded"},{"name":"orch-review","status":"off","note":"not loaded"},{"name":"persona-gen","status":"off","note":"not loaded"},{"name":"pitch-deck","status":"off","note":"not loaded"},{"name":"plan","status":"off","note":"not loaded"},{"name":"plan-canvas","status":"shadowed","by":"project","note":"a Project skill of the same name wins"},{"name":"plan-prd","status":"off","note":"not loaded"},{"name":"pm2","status":"off","note":"not loaded"},{"name":"pr","status":"off","note":"not loaded"},{"name":"pricing-strategy","status":"off","note":"not loaded"},{"name":"product-brief","status":"off","note":"not loaded"},{"name":"project-init","status":"off","note":"not loaded"},{"name":"projects","status":"off","note":"not loaded"},{"name":"promote","status":"off","note":"not loaded"},{"name":"prp-commit","status":"off","note":"not loaded"},{"name":"prp-implement","status":"off","note":"not loaded"},{"name":"prp-plan","status":"off","note":"not loaded"},{"name":"prp-pr","status":"off","note":"not loaded"},{"name":"prp-prd","status":"off","note":"not loaded"},{"name":"prune","status":"off","note":"not loaded"},{"name":"python-review","status":"off","note":"not loaded"},{"name":"quality-gate","status":"off","note":"not loaded"},{"name":"react-build","status":"off","note":"not loaded"},{"name":"react-review","status":"off","note":"not loaded"},{"name":"react-test","status":"off","note":"not loaded"},{"name":"refactor-clean","status":"off","note":"not loaded"},{"name":"resume-session","status":"off","note":"not loaded"},{"name":"review-pr","status":"off","note":"not loaded"},{"name":"rust-build","status":"off","note":"not loaded"},{"name":"rust-review","status":"off","note":"not loaded"},{"name":"rust-test","status":"off","note":"not loaded"},{"name":"santa-loop","status":"off","note":"not loaded"},{"name":"save-session","status":"off","note":"not loaded"},{"name":"security-scan","status":"off","note":"not loaded"},{"name":"sessions","status":"off","note":"not loaded"},{"name":"setup-pm","status":"off","note":"not loaded"},{"name":"skill-create","status":"off","note":"not loaded"},{"name":"skill-health","status":"off","note":"not loaded"},{"name":"status","status":"off","note":"not loaded"},{"name":"test-coverage","status":"off","note":"not loaded"},{"name":"update-codemaps","status":"off","note":"not loaded"},{"name":"update-docs","status":"off","note":"not loaded"},{"name":"user-interviews","status":"off","note":"not loaded"},{"name":"validate-idea","status":"off","note":"not loaded"},{"name":"vue-review","status":"off","note":"not loaded"}]},{"id":"plugin","where":"<plugin>/commands · registered by mods","items":[{"name":"stack-viewer:stack","status":"active"},{"name":"vercel-plugin:_conventions","status":"active"},{"name":"vercel-plugin:bootstrap","status":"active"},{"name":"vercel-plugin:deploy","status":"active"},{"name":"vercel-plugin:env","status":"active"},{"name":"vercel-plugin:status","status":"active"}]},{"id":"mcp","where":"MCP prompts","items":[]},{"id":"builtin","where":"Antigravity slash commands","items":[{"name":"boost","detail":"Deep thinking, strategic planning, and rigorous verification.","status":"active"},{"name":"browser","detail":"Web browsing and interacting with live web applications.","status":"active"},{"name":"compact","detail":"Compact or summarize conversation context.","status":"active"},{"name":"goal","detail":"Run a long-running task thoroughly until the goal is achieved.","status":"active"},{"name":"grill-me","detail":"Interactive interview to resolve design decisions.","status":"active"},{"name":"learn","detail":"Persist a learned behavior or setup for future tasks.","status":"active"},{"name":"plan","detail":"Step-by-step planning before execution.","status":"active"},{"name":"schedule","detail":"Run an instruction on a recurring schedule or timer.","status":"active"},{"name":"teamwork","detail":"Coordinate a team of autonomous agents working together.","status":"active"}]}]},{"kind":"hooks","noun":"active","rule":"Every source runs: hooks add up, none replaces another","scopes":[{"id":"managed","where":"managed-settings.json","items":[]},{"id":"flag","where":"--settings","items":[]},{"id":"local","where":"~/.gemini/antigravity/settings.json","items":[{"name":"SessionStart","detail":"* → \"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"C:/Users/JA/.•••.js\"","status":"active"},{"name":"SessionStart","detail":"* → \"C:/Program Files/Git/bin/bash.exe\" \"C:/Users/JA/.•••.sh\"","status":"active"},{"name":"SessionStart","detail":"* → \"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"C:/Users/JA/.•••.js\"","status":"active"},{"name":"AfterTool","detail":"Read → \"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"C:/Users/JA/.•••.js\"","status":"active"},{"name":"AfterTool","detail":"Bash → \"C:/Program Files/Git/bin/bash.exe\" \"C:/Users/JA/.•••.sh\"","status":"active"},{"name":"AfterTool","detail":"Write|Edit → \"C:/Program Files/Git/bin/bash.exe\" \"C:/Users/JA/.•••.sh\"","status":"active"},{"name":"BeforeTool","detail":"Write|Edit → \"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"C:/Users/JA/.•••.js\"","status":"active"},{"name":"BeforeTool","detail":"Write|Edit → \"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"C:/Users/JA/.•••.js\"","status":"active"},{"name":"BeforeTool","detail":"Bash|Edit|Write|MultiEdit → \"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"C:/Users/JA/.•••.js\"","status":"active"},{"name":"BeforeTool","detail":"Write|Edit|MultiEdit → \"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"C:/Users/JA/.•••.js\"","status":"active"},{"name":"BeforeTool","detail":"Agent|Task → \"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"C:/Users/JA/.•••.js\"","status":"active"},{"name":"BeforeTool","detail":"Write → \"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"C:/Users/JA/.•••.js\"","status":"active"},{"name":"BeforeTool","detail":"Bash → \"C:/Program Files/Git/bin/bash.exe\" \"C:/Users/JA/.•••.sh\"","status":"active"},{"name":"BeforeTool","detail":"Read|Grep|Bash → \"$(for n in \"C:/Program Files/nodejs/node.exe\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"C:/Users/JA/.•••.js\"","status":"active"}]},{"id":"project","where":".claude/settings.json","items":[]},{"id":"user","where":"~/.claude/settings.json","items":[]},{"id":"plugin","where":"hooks/hooks.json of each plugin and mod","items":[{"name":"function hooks","detail":"stack-viewer · 1 module","status":"active"},{"name":"PostToolUse","detail":"vercel-plugin · Skill → node \"${CLAUDE_PLUGIN_ROOT}/•••.mjs\"","status":"active"},{"name":"SessionEnd","detail":"vercel-plugin · * → node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-end-cleanup.mjs\"","status":"active"},{"name":"SessionStart","detail":"superpowers · startup|clear|compact → \"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start","status":"active"},{"name":"SessionStart","detail":"vercel-plugin · startup|resume|clear|compact → node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start-seen-skills.mjs\"","status":"active"},{"name":"SessionStart","detail":"vercel-plugin · startup|resume|clear|compact → node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start-profiler.mjs\"","status":"active"},{"name":"SessionStart","detail":"vercel-plugin · startup|resume|clear|compact → node \"${CLAUDE_PLUGIN_ROOT}/hooks/inject-claude-md.mjs\" --part 1/2","status":"active"},{"name":"SessionStart","detail":"vercel-plugin · startup|resume|clear|compact → node \"${CLAUDE_PLUGIN_ROOT}/hooks/inject-claude-md.mjs\" --part 2/2","status":"active"}]}]},{"kind":"mcp","noun":"connected","rule":"Enterprise › Local › Project › User › Plugin › claude.ai, the whole entry wins","scopes":[{"id":"managed","where":"managed-mcp.json · managedMcpServers","items":[]},{"id":"local","where":"~/.gemini/antigravity/mcp_config.json","items":[{"name":"codebase-memory-mcp","detail":"17 tools","status":"active"},{"name":"gsd","status":"off","note":"not connected"},{"name":"vercel","status":"off","note":"not connected"}]},{"id":"project","where":".mcp.json","items":[]},{"id":"user","where":"~/.gemini/config/mcp_config.json","items":[{"name":"codebase-memory-mcp","status":"shadowed","by":"local","note":"shadowed by Local"},{"name":"context7","detail":"2 tools","status":"active"},{"name":"firecrawl","detail":"32 tools","status":"active"},{"name":"github","detail":"26 tools","status":"active"},{"name":"greptile","detail":"21 tools","status":"active"},{"name":"mcp","detail":"25 tools","status":"active"},{"name":"vercel","status":"shadowed","by":"local","note":"shadowed by Local"}]},{"id":"plugin","where":"<plugin>/.mcp.json","items":[{"name":"data-agent-kit-plugin_dak-alloydb","detail":"17 tools","status":"active","isInferred":false},{"name":"data-agent-kit-plugin_dak-bigquery","detail":"9 tools","status":"active","isInferred":false},{"name":"data-agent-kit-plugin_dak-bigtable","detail":"14 tools","status":"active","isInferred":false},{"name":"data-agent-kit-plugin_dak-bigtable-data","detail":"1 tool","status":"active","isInferred":false},{"name":"data-agent-kit-plugin_dak-cloudsql","detail":"15 tools","status":"active","isInferred":false},{"name":"data-agent-kit-plugin_dak-data-agent-kit","detail":"1 tool","status":"active","isInferred":false},{"name":"data-agent-kit-plugin_dak-firestore","detail":"23 tools","status":"active","isInferred":false},{"name":"data-agent-kit-plugin_dak-gcs","detail":"10 tools","status":"active","isInferred":false},{"name":"data-agent-kit-plugin_dak-kc","detail":"17 tools","status":"active","isInferred":false},{"name":"data-agent-kit-plugin_dak-notebook","detail":"9 tools","status":"active","isInferred":false},{"name":"data-agent-kit-plugin_dak-spanner","detail":"16 tools","status":"active","isInferred":false},{"name":"data-agent-kit-plugin_dak-viz","detail":"1 tool","status":"active","isInferred":false},{"name":"vercel-plugin_vercel","detail":"250 tools","status":"active","isInferred":false}]},{"id":"claudeai","where":"claude.ai connectors","items":[]},{"id":"session","where":"~/.gemini/antigravity/mcp (active session)","items":[{"name":"chrome_devtools","detail":"32 tools","status":"active","isInferred":true,"note":"--mcp-config or SDK"},{"name":"data-agent-kit","detail":"5 tools","status":"active","isInferred":true,"note":"--mcp-config or SDK"},{"name":"githubcopilot","detail":"47 tools","status":"active","isInferred":true,"note":"--mcp-config or SDK"},{"name":"notebooks","detail":"11 tools","status":"active","isInferred":true,"note":"--mcp-config or SDK"},{"name":"visualization","detail":"1 tool","status":"active","isInferred":true,"note":"--mcp-config or SDK"}]}]},{"kind":"plugins","noun":"enabled","rule":"enabledPlugins: Enterprise › CLI flag › Local › Project › User, the highest that names it decides","scopes":[{"id":"managed","where":"managed enabledPlugins","items":[]},{"id":"flag","where":"--settings","items":[]},{"id":"local","where":".claude/settings.local.json","items":[]},{"id":"project","where":".claude/settings.json","items":[]},{"id":"user","where":"~/.gemini/config/config.json · plugins/","items":[{"name":"data-agent-kit-plugin@antigravity-plugins-official","detail":"v1.2.0 · 22 skills","status":"active"},{"name":"datacloud_telemetry@googlecloudtools","status":"active"},{"name":"gdrive@antigravity-plugins-official","detail":"v0.0.11 · 1 skill","status":"active"},{"name":"notion@antigravity-plugins-partners","detail":"v0.1.0-agy.287cc5f2 · 12 skills","status":"active"},{"name":"ponytail@antigravity-plugins","detail":"v4.12.0 · 6 skills","status":"active"},{"name":"superpowers@antigravity-plugins","detail":"v7.0.0 · 15 skills · hooks","status":"active"},{"name":"vercel-plugin@antigravity-plugins-partners","detail":"v0.55.1-agy.4b94cb5a · 38 skills · 3 agents · 4 cmds · hooks","status":"active"}]},{"id":"skillsdir-project","where":".claude/skills/<mod>","items":[{"name":"stack-viewer@skills-dir","detail":"v0.3.1 · 1 cmd · hooks","status":"active","note":"loads once the folder is trusted","isInferred":true}]},{"id":"skillsdir-user","where":"~/.claude/skills/<mod>","items":[]},{"id":"session","where":"--plugin-dir · SDK","items":[]}]},{"kind":"settings","noun":"in effect","rule":"Enterprise › CLI flag › Local › Project › User · a value wins, objects and lists merge","scopes":[{"id":"managed","where":"managed-settings.json","items":[]},{"id":"flag","where":"--settings","items":[]},{"id":"local","where":"~/.gemini/antigravity/settings.json","items":[{"name":"hooks","detail":"{ SessionStart, AfterTool, BeforeTool }","status":"active","note":"merged"},{"name":"permissions","detail":"{ allow }","status":"active","note":"merged"}]},{"id":"project","where":".agents/ecc-install-state.json · .claude/settings.json","items":[{"name":"eccProfile","detail":"\"installed\"","status":"active"}]},{"id":"user","where":"~/.gemini/config/config.json (userSettings)","items":[{"name":"artifactReviewMode","detail":"\"ARTIFACT_REVIEW_MODE_TURBO\"","status":"active"},{"name":"autoExecutionPolicy","detail":"\"CASCADE_COMMANDS_AUTO_EXECUTION_EAGER\"","status":"active"},{"name":"browserJsExecutionPolicy","detail":"\"BROWSER_JS_EXECUTION_POLICY_DISABLED\"","status":"active"},{"name":"conversationWidth","detail":"\"CONVERSATION_WIDTH_WIDE\"","status":"active"},{"name":"customThemeSeedsDark","detail":"{ background, foregroundOverride, primary }","status":"active","note":"merged"},{"name":"customThemeSeedsLight","detail":"{ background, foregroundOverride, primary }","status":"active","note":"merged"},{"name":"enabledPlugins","detail":"{ data-agent-kit-plugin@antigravity-plugins-official, gdrive@antigravity-plugins-official, notion@antigravity-plugins-partners, ponytail@antigravity-plugins, … }","status":"active","note":"merged"},{"name":"enableSoundsForSpecialEvents","detail":"true","status":"active"},{"name":"enableTerminalSandbox","detail":"false","status":"active"},{"name":"globalPermissionGrants","detail":"{ allow }","status":"active","note":"merged"},{"name":"nonWorkspaceFileAccessPolicy","detail":"\"AGENT_SETTING_POLICY_ALLOW\"","status":"active"},{"name":"permissionGrantsV2Migrated","detail":"true","status":"active"},{"name":"queuedMessageDeliveryStrategy","detail":"\"MESSAGE_DELIVERY_STRATEGY_NEXT_INVOCATI…\"","status":"active"},{"name":"remoteControlEnabled","detail":"true","status":"active"},{"name":"remoteControlHostname","detail":"\"ja-dark-sky\"","status":"active"},{"name":"sandboxEnabledAtV2Migration","detail":"false","status":"active"},{"name":"sidecars","detail":"{ swarm/swarm_board }","status":"active","note":"merged"},{"name":"themeMode","detail":"\"THEME_MODE_DARK\"","status":"active"},{"name":"useAiCredits","detail":"true","status":"active"}]}]},{"kind":"memory","noun":"loaded","rule":"All load together, none replaces another","scopes":[{"id":"managed","where":"managed CLAUDE.md","items":[]},{"id":"project","where":"PROJECT_CONTEXT.md · .agents/rules · .planning","items":[{"name":"./.agents/rules/angular-coding-style.md","detail":"1298 tok","status":"active"},{"name":"./.agents/rules/angular-hooks.md","detail":"211 tok","status":"active"},{"name":"./.agents/rules/angular-patterns.md","detail":"1620 tok","status":"active"},{"name":"./.agents/rules/angular-security.md","detail":"721 tok","status":"active"},{"name":"./.agents/rules/angular-testing.md","detail":"1130 tok","status":"active"},{"name":"./.agents/rules/arkts-coding-style.md","detail":"1523 tok","status":"active"},{"name":"./.agents/rules/arkts-hooks.md","detail":"630 tok","status":"active"},{"name":"./.agents/rules/arkts-patterns.md","detail":"1390 tok","status":"active"},{"name":"./.agents/rules/arkts-security.md","detail":"1165 tok","status":"active"},{"name":"./.agents/rules/arkts-testing.md","detail":"949 tok","status":"active"},{"name":"./.agents/rules/common-agents.md","detail":"724 tok","status":"active"},{"name":"./.agents/rules/common-code-review.md","detail":"923 tok","status":"active"},{"name":"./.agents/rules/common-coding-style.md","detail":"756 tok","status":"active"},{"name":"./.agents/rules/common-development-workflow.md","detail":"566 tok","status":"active"},{"name":"./.agents/rules/common-git-workflow.md","detail":"211 tok","status":"active"},{"name":"./.agents/rules/common-hooks.md","detail":"192 tok","status":"active"},{"name":"./.agents/rules/common-patterns.md","detail":"256 tok","status":"active"},{"name":"./.agents/rules/common-performance.md","detail":"412 tok","status":"active"},{"name":"./.agents/rules/common-security.md","detail":"216 tok","status":"active"},{"name":"./.agents/rules/common-testing.md","detail":"350 tok","status":"active"},{"name":"./.agents/rules/cpp-coding-style.md","detail":"306 tok","status":"active"},{"name":"./.agents/rules/cpp-hooks.md","detail":"180 tok","status":"active"},{"name":"./.agents/rules/cpp-patterns.md","detail":"332 tok","status":"active"},{"name":"./.agents/rules/cpp-security.md","detail":"295 tok","status":"active"},{"name":"./.agents/rules/cpp-testing.md","detail":"210 tok","status":"active"},{"name":"./.agents/rules/csharp-coding-style.md","detail":"507 tok","status":"active"},{"name":"./.agents/rules/csharp-hooks.md","detail":"178 tok","status":"active"},{"name":"./.agents/rules/csharp-patterns.md","detail":"347 tok","status":"active"},{"name":"./.agents/rules/csharp-security.md","detail":"429 tok","status":"active"},{"name":"./.agents/rules/csharp-testing.md","detail":"293 tok","status":"active"},{"name":"./.agents/rules/dart-coding-style.md","detail":"1130 tok","status":"active"},{"name":"./.agents/rules/dart-hooks.md","detail":"324 tok","status":"active"},{"name":"./.agents/rules/dart-patterns.md","detail":"1681 tok","status":"active"},{"name":"./.agents/rules/dart-security.md","detail":"1287 tok","status":"active"},{"name":"./.agents/rules/dart-testing.md","detail":"1329 tok","status":"active"},{"name":"./.agents/rules/fsharp-coding-style.md","detail":"719 tok","status":"active"},{"name":"./.agents/rules/fsharp-hooks.md","detail":"175 tok","status":"active"},{"name":"./.agents/rules/fsharp-patterns.md","detail":"834 tok","status":"active"},{"name":"./.agents/rules/fsharp-security.md","detail":"543 tok","status":"active"},{"name":"./.agents/rules/fsharp-testing.md","detail":"442 tok","status":"active"},{"name":"./.agents/rules/golang-coding-style.md","detail":"144 tok","status":"active"},{"name":"./.agents/rules/golang-hooks.md","detail":"101 tok","status":"active"},{"name":"./.agents/rules/golang-patterns.md","detail":"222 tok","status":"active"},{"name":"./.agents/rules/golang-security.md","detail":"139 tok","status":"active"},{"name":"./.agents/rules/golang-testing.md","detail":"114 tok","status":"active"},{"name":"./.agents/rules/java-coding-style.md","detail":"871 tok","status":"active"},{"name":"./.agents/rules/java-hooks.md","detail":"116 tok","status":"active"},{"name":"./.agents/rules/java-patterns.md","detail":"1024 tok","status":"active"},{"name":"./.agents/rules/java-security.md","detail":"879 tok","status":"active"},{"name":"./.agents/rules/java-testing.md","detail":"912 tok","status":"active"},{"name":"./.agents/rules/kotlin-coding-style.md","detail":"664 tok","status":"active"},{"name":"./.agents/rules/kotlin-hooks.md","detail":"105 tok","status":"active"},{"name":"./.agents/rules/kotlin-patterns.md","detail":"902 tok","status":"active"},{"name":"./.agents/rules/kotlin-security.md","detail":"695 tok","status":"active"},{"name":"./.agents/rules/kotlin-testing.md","detail":"833 tok","status":"active"},{"name":"./.agents/rules/nuxt-coding-style.md","detail":"532 tok","status":"active"},{"name":"./.agents/rules/nuxt-hooks.md","detail":"374 tok","status":"active"},{"name":"./.agents/rules/nuxt-patterns.md","detail":"673 tok","status":"active"},{"name":"./.agents/rules/nuxt-security.md","detail":"635 tok","status":"active"},{"name":"./.agents/rules/nuxt-testing.md","detail":"580 tok","status":"active"},{"name":"./.agents/rules/perl-coding-style.md","detail":"283 tok","status":"active"},{"name":"./.agents/rules/perl-hooks.md","detail":"120 tok","status":"active"},{"name":"./.agents/rules/perl-patterns.md","detail":"365 tok","status":"active"},{"name":"./.agents/rules/perl-security.md","detail":"366 tok","status":"active"},{"name":"./.agents/rules/perl-testing.md","detail":"232 tok","status":"active"},{"name":"./.agents/rules/php-coding-style.md","detail":"346 tok","status":"active"},{"name":"./.agents/rules/php-hooks.md","detail":"170 tok","status":"active"},{"name":"./.agents/rules/php-patterns.md","detail":"301 tok","status":"active"},{"name":"./.agents/rules/php-security.md","detail":"341 tok","status":"active"},{"name":"./.agents/rules/php-testing.md","detail":"293 tok","status":"active"},{"name":"./.agents/rules/ponytail.md","detail":"623 tok","status":"active"},{"name":"./.agents/rules/python-coding-style.md","detail":"177 tok","status":"active"},{"name":"./.agents/rules/python-fastapi.md","detail":"434 tok","status":"active"},{"name":"./.agents/rules/python-hooks.md","detail":"105 tok","status":"active"},{"name":"./.agents/rules/python-patterns.md","detail":"205 tok","status":"active"},{"name":"./.agents/rules/python-security.md","detail":"130 tok","status":"active"},{"name":"./.agents/rules/python-testing.md","detail":"145 tok","status":"active"},{"name":"./.agents/rules/react-coding-style.md","detail":"1108 tok","status":"active"},{"name":"./.agents/rules/react-hooks.md","detail":"1633 tok","status":"active"},{"name":"./.agents/rules/react-native-accessibility.md","detail":"588 tok","status":"active"},{"name":"./.agents/rules/react-native-coding-style.md","detail":"686 tok","status":"active"},{"name":"./.agents/rules/react-native-hooks.md","detail":"292 tok","status":"active"},{"name":"./.agents/rules/react-native-patterns.md","detail":"922 tok","status":"active"},{"name":"./.agents/rules/react-native-performance.md","detail":"586 tok","status":"active"},{"name":"./.agents/rules/react-native-production-readiness.md","detail":"539 tok","status":"active"},{"name":"./.agents/rules/react-native-security.md","detail":"481 tok","status":"active"},{"name":"./.agents/rules/react-native-testing.md","detail":"428 tok","status":"active"},{"name":"./.agents/rules/react-patterns.md","detail":"1802 tok","status":"active"},{"name":"./.agents/rules/react-security.md","detail":"1592 tok","status":"active"},{"name":"./.agents/rules/react-testing.md","detail":"1739 tok","status":"active"},{"name":"./.agents/rules/README.md","detail":"1384 tok","status":"active"},{"name":"./.agents/rules/ruby-coding-style.md","detail":"486 tok","status":"active"},{"name":"./.agents/rules/ruby-hooks.md","detail":"345 tok","status":"active"},{"name":"./.agents/rules/ruby-patterns.md","detail":"563 tok","status":"active"},{"name":"./.agents/rules/ruby-security.md","detail":"488 tok","status":"active"},{"name":"./.agents/rules/ruby-testing.md","detail":"430 tok","status":"active"},{"name":"./.agents/rules/rust-coding-style.md","detail":"1014 tok","status":"active"},{"name":"./.agents/rules/rust-hooks.md","detail":"101 tok","status":"active"},{"name":"./.agents/rules/rust-patterns.md","detail":"999 tok","status":"active"},{"name":"./.agents/rules/rust-security.md","detail":"1093 tok","status":"active"},{"name":"./.agents/rules/rust-testing.md","detail":"955 tok","status":"active"},{"name":"./.agents/rules/swift-coding-style.md","detail":"337 tok","status":"active"},{"name":"./.agents/rules/swift-hooks.md","detail":"126 tok","status":"active"},{"name":"./.agents/rules/swift-patterns.md","detail":"381 tok","status":"active"},{"name":"./.agents/rules/swift-security.md","detail":"253 tok","status":"active"},{"name":"./.agents/rules/swift-testing.md","detail":"250 tok","status":"active"},{"name":"./.agents/rules/typescript-coding-style.md","detail":"1072 tok","status":"active"},{"name":"./.agents/rules/typescript-hooks.md","detail":"140 tok","status":"active"},{"name":"./.agents/rules/typescript-patterns.md","detail":"257 tok","status":"active"},{"name":"./.agents/rules/typescript-security.md","detail":"133 tok","status":"active"},{"name":"./.agents/rules/typescript-testing.md","detail":"93 tok","status":"active"},{"name":"./.agents/rules/vue-coding-style.md","detail":"660 tok","status":"active"},{"name":"./.agents/rules/vue-hooks.md","detail":"371 tok","status":"active"},{"name":"./.agents/rules/vue-patterns.md","detail":"623 tok","status":"active"},{"name":"./.agents/rules/vue-security.md","detail":"493 tok","status":"active"},{"name":"./.agents/rules/vue-testing.md","detail":"511 tok","status":"active"},{"name":"./.agents/rules/web-coding-style.md","detail":"540 tok","status":"active"},{"name":"./.agents/rules/web-design-quality.md","detail":"668 tok","status":"active"},{"name":"./.agents/rules/web-hooks.md","detail":"899 tok","status":"active"},{"name":"./.agents/rules/web-patterns.md","detail":"538 tok","status":"active"},{"name":"./.agents/rules/web-performance.md","detail":"499 tok","status":"active"},{"name":"./.agents/rules/web-security.md","detail":"436 tok","status":"active"},{"name":"./.agents/rules/web-testing.md","detail":"385 tok","status":"active"},{"name":"./.planning/PROJECT.md","detail":"1084 tok","status":"active"},{"name":"./PROJECT_CONTEXT.md","detail":"2575 tok","status":"active"}]},{"id":"local","where":"CLAUDE.local.md","items":[]},{"id":"user","where":"~/.gemini/config/rules","items":[{"name":"~/.gemini/config/rules/ponytail.md","detail":"623 tok","status":"active"}]},{"id":"automem","where":".planning/STATE.md","items":[{"name":"./.planning/STATE.md","detail":"468 tok","status":"active"}]}]},{"kind":"styles","noun":"available","rule":"One style is selected; the highest settings source with outputStyle picks it","extra":"selected: Concise","scopes":[{"id":"managed","where":"managed .claude/output-styles","items":[]},{"id":"project","where":".claude/output-styles","items":[]},{"id":"user","where":"~/.claude/output-styles","items":[]},{"id":"plugin","where":"<plugin>/output-styles","items":[]},{"id":"builtin","where":"ship with Antigravity / Claude Code","items":[{"name":"Default","status":"active","isSelected":false},{"name":"Proactive","status":"active","isSelected":false},{"name":"Concise","status":"active","isSelected":true},{"name":"Explanatory","status":"active","isSelected":false},{"name":"Learning","status":"active","isSelected":false}]}]}],"kinds":[{"kind":"skills","title":"Skills"},{"kind":"agents","title":"Subagents"},{"kind":"commands","title":"Commands"},{"kind":"hooks","title":"Hooks"},{"kind":"mcp","title":"MCP servers"},{"kind":"plugins","title":"Plugins & mods"},{"kind":"settings","title":"Settings"},{"kind":"memory","title":"Memory"},{"kind":"styles","title":"Output styles"}],"scopes":{"managed":{"label":"Enterprise"},"flag":{"label":"CLI flag"},"local":{"label":"Local"},"project":{"label":"Project"},"user":{"label":"User"},"plugin":{"label":"Plugin"},"skillsdir-project":{"label":"Project skills dir"},"skillsdir-user":{"label":"User skills dir"},"session":{"label":"This session"},"claudeai":{"label":"claude.ai"},"synced":{"label":"claude.ai account"},"mcp":{"label":"MCP server"},"automem":{"label":"Auto memory"},"builtin":{"label":"Built-in"},"other":{"label":"Other"}},"generatedAt":"2026-11-24T15:58:37.958Z"};
+    let selected = 'skills';
+    const toggled = new Set();
+    let filterText = '';
+
+    function counts(section) {
+      const c = { active: 0, shadowed: 0, off: 0 };
+      for (const s of section.scopes) {
+        for (const i of s.items) c[i.status]++;
+      }
+      return c;
+    }
+
+    function isExpanded(kind, scope) {
+      const byDefault = scope.items.length > 0 && !(scope.id === 'builtin' && scope.items.length > 15);
+      const id = kind + ':' + scope.id;
+      return toggled.has(id) ? !byDefault : byDefault;
+    }
+
+    function toggleScope(kind, scopeId) {
+      const id = kind + ':' + scopeId;
+      if (toggled.has(id)) toggled.delete(id);
+      else toggled.add(id);
+      render();
+    }
+
+    function foldAll() {
+      const sec = DATA.sections.find(s => s.kind === selected);
+      if (!sec) return;
+      const anyOpen = sec.scopes.some(s => s.items.length > 0 && isExpanded(selected, s));
+      for (const s of sec.scopes) {
+        if (s.items.length === 0) continue;
+        const open = isExpanded(selected, s);
+        if (anyOpen && open) toggleScope(selected, s.id);
+        else if (!anyOpen && !open) toggleScope(selected, s.id);
+      }
+      render();
+    }
+
+    function peekNames(items) {
+      const names = items.map(i => i.name);
+      const shown = names.slice(0, 5).join(', ');
+      return names.length > 5 ? shown + ' +' + (names.length - 5) : shown;
+    }
+
+    function esc(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function render() {
+      const totals = DATA.sections.map(counts).reduce(
+        (t, c) => ({ active: t.active + c.active, shadowed: t.shadowed + c.shadowed, off: t.off + c.off }),
+        { active: 0, shadowed: 0, off: 0 }
+      );
+      const section = DATA.sections.find(s => s.kind === selected) || DATA.sections[0];
+      const meta = DATA.kinds.find(k => k.kind === section.kind);
+      const secCounts = counts(section);
+      const summary = [
+        secCounts.active + ' ' + section.noun,
+        secCounts.shadowed ? secCounts.shadowed + ' shadowed' : '',
+        secCounts.off ? secCounts.off + ' off' : ''
+      ].filter(Boolean).join(' · ');
+
+      const q = filterText.trim().toLowerCase();
+
+      const navHtml = DATA.kinds.map((k, idx) => {
+        const s = DATA.sections.find(x => x.kind === k.kind);
+        const c = counts(s);
+        const isSel = k.kind === selected;
+        return `
+          <button class="nav-btn ${isSel ? 'selected' : ''}" data-kind="${k.kind}">
+            <span class="nav-left">
+              <span class="nav-bar">${isSel ? '▌' : ''}</span>
+              <span>${idx + 1}: ${esc(k.title)}</span>
+            </span>
+            <span class="nav-count">${c.active}</span>
+          </button>
+        `;
+      }).join('');
+
+      const scopesHtml = section.scopes.map((sc, idx) => {
+        const rank = idx + 1;
+        const filteredItems = q
+          ? sc.items.filter(it =>
+              it.name.toLowerCase().includes(q) ||
+              (it.detail && it.detail.toLowerCase().includes(q)) ||
+              (it.note && it.note.toLowerCase().includes(q))
+            )
+          : sc.items;
+        const empty = filteredItems.length === 0;
+        const open = !empty && (q ? true : isExpanded(section.kind, sc));
+        const marker = empty ? ' ' : (open ? '▾' : '▸');
+        const label = DATA.scopes[sc.id]?.label || sc.id;
+
+        let bodyHtml = '';
+        if (open && !empty) {
+          const rows = filteredItems.map(it => {
+            const note = it.isInferred ? '≈ ' + (it.note || 'scope read off files') : it.note;
+            const tail = [it.detail, note].filter(Boolean).join('  ');
+            const nameCls = it.isSelected ? 'selected' : it.status;
+            const tailCls = it.status === 'shadowed' ? 'shadowed' : it.status === 'off' ? 'off' : '';
+            return `
+              <div class="item-row">
+                <span class="item-name ${nameCls}">${esc(it.name)}${it.isSelected ? ' ★' : ''}</span>
+                <span class="item-tail ${tailCls}" title="${esc(tail)}">${esc(tail)}</span>
+              </div>
+            `;
+          }).join('');
+          bodyHtml = `<div class="scope-items">${rows}</div>`;
+        } else if (!empty) {
+          bodyHtml = `
+            <div class="scope-peek" data-scope="${sc.id}">
+              <span>${esc(peekNames(filteredItems))}</span>
+              <span class="click-hint">click to open</span>
+            </div>
+          `;
+        }
+        if (sc.note && (open || empty)) {
+          bodyHtml += `<div class="scope-note">${esc(sc.note)}</div>`;
+        }
+
+        return `
+          <div class="scope-block">
+            <div class="scope-bar ${empty ? 'empty' : 'filled'}" ${empty ? '' : `data-scope="${sc.id}"`}>
+              <span class="scope-rank">${rank}</span>
+              <span class="scope-label">${marker} ${esc(label)}</span>
+              <span class="scope-count">${empty ? '—' : filteredItems.length}</span>
+              <span class="scope-where" title="${esc(sc.where)}">${esc(sc.where)}</span>
+            </div>
+            ${bodyHtml}
+          </div>
+        `;
+      }).join('');
+
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="header-box">
+          <div class="header-top">
+            <div>
+              <span class="diamond">◆ </span>
+              <span class="title">Session stack</span>
+              <span class="version">${esc(DATA.header.version)}</span>
+            </div>
+            <div class="totals">
+              <span class="active">${totals.active} active</span>
+              <span class="shadowed ${totals.shadowed ? '' : 'zero'}"> · ${totals.shadowed} shadowed</span>
+              <span class="off"> · ${totals.off} off</span>
+            </div>
+          </div>
+          <div class="header-sub">
+            <span class="where">${esc(DATA.header.where)}</span>
+            <span class="where">Antigravity + Claude Code Stack Inspector</span>
+          </div>
+        </div>
+
+        <div class="body-cols">
+          <div class="sidebar">
+            <div class="sidebar-heading">COMPONENTS</div>
+            ${navHtml}
+            <div class="legend">
+              <div class="legend-row"><span class="legend-name active">name</span><span class="legend-desc">active</span></div>
+              <div class="legend-row"><span class="legend-name shadowed">name</span><span class="legend-desc">shadowed</span></div>
+              <div class="legend-row"><span class="legend-name off">name</span><span class="legend-desc">off</span></div>
+              <div class="legend-row"><span class="legend-name inferred">≈</span><span class="legend-desc">read off files</span></div>
+            </div>
+          </div>
+
+          <div class="main">
+            <div class="sec-header">
+              <div class="sec-title-wrap">
+                <span class="sec-title">${esc(meta.title)}</span>
+                <span class="sec-summary">${esc(summary)}</span>
+              </div>
+              <input
+                type="search"
+                id="search-box"
+                class="search-input"
+                placeholder="Filter ${esc(meta.title.toLowerCase())}…"
+                value="${esc(filterText)}"
+              />
+            </div>
+            <div class="sec-rule">${esc(section.rule)}</div>
+            ${section.extra ? `<div class="sec-extra">${esc(section.extra)}</div>` : ''}
+            <div class="scopes-list">
+              ${scopesHtml}
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          <div class="toolbar">
+            <button class="btn" id="btn-refresh">[ refresh ]</button>
+            <button class="btn" id="btn-fold">[ fold / expand all ]</button>
+            <a class="btn" href="/" style="text-decoration:none">[ ← back to WhereDidItGo ]</a>
+          </div>
+          <div class="hint">1–9 or click a type · click a scope (▸ ▾) to open or fold it · / focuses filter</div>
+        </div>
+      `;
+
+      document.querySelectorAll('[data-kind]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selected = btn.getAttribute('data-kind');
+          render();
+        });
+      });
+      document.querySelectorAll('[data-scope]').forEach(el => {
+        el.addEventListener('click', () => {
+          toggleScope(selected, el.getAttribute('data-scope'));
+        });
+      });
+      document.getElementById('btn-refresh')?.addEventListener('click', () => location.reload());
+      document.getElementById('btn-fold')?.addEventListener('click', foldAll);
+      const searchBox = document.getElementById('search-box');
+      if (searchBox) {
+        searchBox.addEventListener('input', e => {
+          filterText = e.target.value;
+          const pos = e.target.selectionStart;
+          render();
+          const nextBox = document.getElementById('search-box');
+          if (nextBox) {
+            nextBox.focus();
+            nextBox.setSelectionRange(pos, pos);
+          }
+        });
+      }
+    }
+
+    window.addEventListener('keydown', e => {
+      if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+        if (e.key === 'Escape') {
+          filterText = '';
+          document.activeElement.blur();
+          render();
+        }
+        return;
+      }
+      if (e.key >= '1' && e.key <= '9') {
+        const idx = Number(e.key) - 1;
+        if (DATA.kinds[idx]) {
+          selected = DATA.kinds[idx].kind;
+          render();
+        }
+      } else if (e.key === 'r' || e.key === 'R') {
+        location.reload();
+      } else if (e.key === 'f' || e.key === 'F') {
+        foldAll();
+      } else if (e.key === '/') {
+        e.preventDefault();
+        document.getElementById('search-box')?.focus();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>

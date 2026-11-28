@@ -1,0 +1,26 @@
+<!-- Hypit Recipe Source (.svs): Design tokens & typography aligned with landing-page-design Part B -->
+<recipe id="wherediditgo-design-tokens">
+  <palette
+    canvas="#000000"
+    surface="#181818"
+    elevated="#1F1F1F"
+    card="#272727"
+    border="#313131"
+    text-primary="#FFFFFF"
+    text-secondary="#9B9B9B"
+    accent="#10B981"
+  />
+  <typography
+    primary-font="Geist"
+    mono-font="Geist Mono"
+    numeric-variant="tabular-nums"
+    italic="false"
+    max-weight="700"
+  />
+  <motion
+    base-curve="cubic-bezier(0.22, 1, 0.36, 1)"
+    layout-duration-ms="500"
+    hover-duration-ms="300"
+    press-duration-ms="120"
+  />
+</recipe>

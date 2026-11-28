@@ -1,0 +1,60 @@
+<!-- Hypit Author Source (.svml): WhereDidItGo 30s Product Launch Reel -->
+<svml version="1.0" project="wherediditgo-launch">
+  <import src="../recipes/style.svs" as="theme" />
+
+  <!-- Semantic Script with Roles, Segments, Selections, and Moments -->
+  <script id="launch-narration" lang="en" role="narrator">
+    <segment id="seg-hook" window="0.0s..6.0s">
+      Most finance apps ask for your bank password
+      <moment id="vault-lock" />
+      before you log a single coffee.
+    </segment>
+
+    <segment id="seg-speed" window="6.0s..13.5s">
+      WhereDidItGo keeps every record in your phone's local database.
+      <selection id="quick-add">
+        Tap the center button, type an expression like twelve fifty plus four, and log in three seconds.
+      </selection>
+    </segment>
+
+    <segment id="seg-runway" window="13.5s..22.0s">
+      Set your real payday cycle
+      <selection id="cycle-pacing">
+        and watch category budget runway in real time,
+      </selection>
+      or track debts and savings goals
+      <moment id="heatmap-reveal" />
+      across English, Russian, and Tajik.
+    </segment>
+
+    <segment id="seg-cta" window="22.0s..30.0s">
+      Zero mandatory signups.
+      <moment id="privacy-blur" />
+      One tap hides your balance in public. Download the fourteen megabyte Android app today.
+    </segment>
+  </script>
+
+  <!-- Prepared Screen Evidence Inputs -->
+  <media id="screen-home" src="../../../docs/screens/01-home.png" kind="image" />
+  <media id="screen-activity" src="../../../docs/screens/02-activity.png" kind="image" />
+  <media id="screen-budgets" src="../../../docs/screens/04-budgets.png" kind="image" />
+  <media id="screen-goals" src="../../../docs/screens/05-goals.png" kind="image" />
+  <media id="screen-insights" src="../../../docs/screens/06-insights.png" kind="image" />
+  <media id="screen-dark" src="../../../docs/screens/07-dark.png" kind="image" />
+
+  <!-- Coordinated Visual Track & Motion Graphics -->
+  <film id="launch-reel" duration="30.0s" canvas="1920x1080" background="#000000">
+    <visual-track id="device-stage">
+      <clip media="screen-home" window="0.0s..8.5s" anchor="moment:vault-lock" />
+      <clip media="screen-activity" window="8.5s..13.5s" anchor="selection:quick-add" />
+      <clip media="screen-budgets" window="13.5s..17.5s" anchor="selection:cycle-pacing" />
+      <clip media="screen-goals" window="17.5s..19.8s" />
+      <clip media="screen-insights" window="19.8s..22.0s" anchor="moment:heatmap-reveal" />
+      <clip media="screen-dark" window="22.0s..30.0s" anchor="moment:privacy-blur" />
+    </visual-track>
+
+    <caption-track script="launch-narration" font="Geist" style="sentence-case" />
+  </film>
+
+  <output name="launch-reel.video" from="launch-reel" />
+</svml>

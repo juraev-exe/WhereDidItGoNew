@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WhereDidItGo — Instagram 12-Post Campaign Pack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0c100f;
+      color: #f2f6f5;
+      font-family: "Outfit", system-ui, sans-serif;
+      padding: 48px 32px 96px;
+      max-width: 1360px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      padding-bottom: 36px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 48px;
+    }
+    h1 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 42px;
+      letter-spacing: -0.025em;
+    }
+    .sub { color: #9ab0ac; font-size: 18px; margin-top: 8px; }
+    h2 { font-size: 22px; font-weight: 600; margin-bottom: 18px; color: #5eead4; letter-spacing: -0.01em; }
+
+    /* 3-Column Instagram Profile Feed Simulator */
+    .ig-profile-wrap {
+      background: #050707;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 28px;
+      padding: 28px;
+      max-width: 780px;
+      margin-bottom: 64px;
+    }
+    .ig-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+    .ig-grid img {
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      display: block;
+      border-radius: 4px;
+    }
+
+    /* Full Cards + Captions */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 28px;
+    }
+    .card {
+      background: #131b19;
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 22px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .card img {
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      display: block;
+    }
+    .card-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+    .card-title {
+      font-weight: 700;
+      font-size: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-file {
+      font-size: 13px;
+      color: #5eead4;
+      font-weight: 500;
+    }
+    pre {
+      white-space: pre-wrap;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #b7c8c4;
+      background: rgba(0,0,0,0.28);
+      padding: 14px;
+      border-radius: 12px;
+      flex: 1;
+    }
+    button {
+      background: #14b8a6;
+      color: #05201d;
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 16px;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover { background: #2dd4bf; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>WhereDidItGo — Instagram Campaign Pack</h1>
+      <p class="sub">12 portrait feed &amp; carousel mockups (1080×1350 px · 4:5 aspect ratio) with alternating profile-grid checkerboard.</p>
+    </div>
+  </header>
+
+  <h2>Instagram 3-Column Profile Grid Preview (Post #12 → #01)</h2>
+  <div class="ig-profile-wrap">
+    <div class="ig-grid" id="contact-grid">
+      <img src="./12-download-cta.png" alt="Free Offline Forever — Download Now" />
+      <img src="./11-languages-currencies.png" alt="English, Русский & Тоҷикӣ + Multi-Currency" />
+      <img src="./10-privacy-blur-biometrics.png" alt="One-Tap Balance Blur & Biometrics" />
+      <img src="./09-insights-heatmap.png" alt="Actionable Insights & 365-Day Heatmap" />
+      <img src="./08-debts-and-loans.png" alt="Debts, IOUs & Snowball Payoff Planner" />
+      <img src="./07-savings-goals.png" alt="Dedicated Savings Goals" />
+      <img src="./06-monthly-budgets.png" alt="Payday-Aligned Monthly Budgets" />
+      <img src="./05-receipt-ocr-sms.png" alt="On-Device Receipt OCR & Bank SMS Parser" />
+      <img src="./04-split-transactions.png" alt="Split Supermarket Receipts Cleanly" />
+      <img src="./03-quick-add-math.png" alt="2.8-Second QuickAdd + Inline Math" />
+      <img src="./02-local-first-privacy.png" alt="Local-First Privacy Architecture" />
+      <img src="./01-hero-launch.png" alt="Know Where Every Dollar Went" />
+    </div>
+  </div>
+
+  <h2>All 12 Ready-to-Post PNGs &amp; Captions</h2>
+  <div class="cards">
+    
+    <article class="card">
+      <a href="./01-hero-launch.png" target="_blank"><img src="./01-hero-launch.png" alt="Know Where Every Dollar Went" /></a>
+      <div class="card-body">
+        <div class="card-title">
+          <span>#01 · Know Where Every Dollar Went</span>
+          <span class="card-file">01-hero-launch.png</span>
+        </div>
+        <pre id="cap-0">Where did your paycheck actually go this month? 👀
+
+Meet WhereDidItGo — the fast, local-first personal finance tracker built for people who want instant clarity without handing over bank passwords.
+
+✦ 2.8-second expense entry
+✦ 100% offline-first on-device storage
+✦ Multi-wallet balances, budgets, goals &amp; debts
+
+Try it free via the link in bio.
+
+#personalfinance #budgetingapp #moneytracker #privacyfirst #localfirst #fintechdesign #indieapp</pre>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('cap-0').innerText);this.innerText='Copied Caption ✓';setTimeout(()=>this.innerText='Copy Instagram Caption',1600)">Copy Instagram Caption</button>
+      </div>
+    </article>
+
+    <article class="card">
+      <a href="./02-local-first-privacy.png" target="_blank"><img src="./02-local-first-privacy.png" alt="Local-First Privacy Architecture" /></a>
+      <div class="card-body">
+        <div class="card-title">
+          <span>#02 · Local-First Privacy Architecture</span>
+          <span class="card-file">02-local-first-privacy.png</span>
+        </div>
+        <pre id="cap-1">Your financial life belongs on your phone — not on someone else's ad server. 🔒
+
+WhereDidItGo stores every transaction locally on your device, works in airplane mode, and never asks for bank login credentials. Want multi-device backup later? Opt into encrypted Cloud Vault sync on your own terms.
+
+#privacyfirst #offlinefirst #personalfinance #dataprivacy #localfirst #budgeting</pre>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('cap-1').innerText);this.innerText='Copied Caption ✓';setTimeout(()=>this.innerText='Copy Instagram Caption',1600)">Copy Instagram Caption</button>
+      </div>
+    </article>
+
+    <article class="card">
+      <a href="./03-quick-add-math.png" target="_blank"><img src="./03-quick-add-math.png" alt="2.8-Second QuickAdd + Inline Math" /></a>
+      <div class="card-body">
+        <div class="card-title">
+          <span>#03 · 2.8-Second QuickAdd + Inline Math</span>
+          <span class="card-file">03-quick-add-math.png</span>
+        </div>
+        <pre id="cap-2">If logging an expense takes 30 seconds, you'll stop doing it by Thursday. ⚡
+
+Open +, type "13.50 + 4.80" right inside the amount field, tap Coffee, and you're done before the receipt prints.
+
+#productivityapps #expensetracker #uidesign #mindfulspending #dailyhabits</pre>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('cap-2').innerText);this.innerText='Copied Caption ✓';setTimeout(()=>this.innerText='Copy Instagram Caption',1600)">Copy Instagram Caption</button>
+      </div>
+    </article>
+
+    <article class="card">
+      <a href="./04-split-transactions.png" target="_blank"><img src="./04-split-transactions.png" alt="Split Supermarket Receipts Cleanly" /></a>
+      <div class="card-body">
+        <div class="card-title">
+          <span>#04 · Split Supermarket Receipts Cleanly</span>
+          <span class="card-file">04-split-transactions.png</span>
+        </div>
+        <pre id="cap-3">One Target run shouldn't wreck your Grocery budget just because you bought pharmacy items and home supplies too. 🛒
+
+Split any transaction across multiple categories with live remainder math down to the cent.
+
+#budgettips #grocerybudget #splittransactions #smartmoney #wherediditgo</pre>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('cap-3').innerText);this.innerText='Copied Caption ✓';setTimeout(()=>this.innerText='Copy Instagram Caption',1600)">Copy Instagram Caption</button>
+      </div>
+    </article>
+
+    <article class="card">
+      <a href="./05-receipt-ocr-sms.png" target="_blank"><img src="./05-receipt-ocr-sms.png" alt="On-Device Receipt OCR & Bank SMS Parser" /></a>
+      <div class="card-body">
+        <div class="card-title">
+          <span>#05 · On-Device Receipt OCR & Bank SMS Parser</span>
+          <span class="card-file">05-receipt-ocr-sms.png</span>
+        </div>
+        <pre id="cap-4">Hate typing receipts? Snap a photo or paste your bank alert. 📸
+
+WhereDidItGo parses paper receipts (EN + RU OCR) and bank SMS notifications locally on your phone in milliseconds — zero server uploads.
+
+#ocr #automation #fintech #smartbudgeting #androidapps</pre>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('cap-4').innerText);this.innerText='Copied Caption ✓';setTimeout(()=>this.innerText='Copy Instagram Caption',1600)">Copy Instagram Caption</button>
+      </div>
+    </article>
+
+    <article class="card">
+      <a href="./06-monthly-budgets.png" target="_blank"><img src="./06-monthly-budgets.png" alt="Payday-Aligned Monthly Budgets" /></a>
+      <div class="card-body">
+        <div class="card-title">
+          <span>#06 · Payday-Aligned Monthly Budgets</span>
+          <span class="card-file">06-monthly-budgets.png</span>
+        </div>
+        <pre id="cap-5">Not everyone gets paid on the 1st of the month. 🗓️
+
+Shift your monthly start day to the 15th (or any day up to the 28th) and watch every category budget, pace bar, and insight align to your real paycheck cycle.
+
+#paydayroutine #monthlybudget #financialclarity #moneygoals</pre>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('cap-5').innerText);this.innerText='Copied Caption ✓';setTimeout(()=>this.innerText='Copy Instagram Caption',1600)">Copy Instagram Caption</button>
+      </div>
+    </article>
+
+    <article class="card">
+      <a href="./07-savings-goals.png" target="_blank"><img src="./07-savings-goals.png" alt="Dedicated Savings Goals" /></a>
+      <div class="card-body">
+        <div class="card-title">
+          <span>#07 · Dedicated Savings Goals</span>
+          <span class="card-file">07-savings-goals.png</span>
+        </div>
+        <pre id="cap-6">Saving for a flight to Tokyo or a 6-month emergency fund? ✈️
+
+Move money into dedicated visual goals without mixing savings transfers into your daily spending totals.
+
+#savingsgoals #emergencyfund #financialfreedom #travelbudget</pre>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('cap-6').innerText);this.innerText='Copied Caption ✓';setTimeout(()=>this.innerText='Copy Instagram Caption',1600)">Copy Instagram Caption</button>
+      </div>
+    </article>
+
+    <article class="card">
+      <a href="./08-debts-and-loans.png" target="_blank"><img src="./08-debts-and-loans.png" alt="Debts, IOUs & Snowball Payoff Planner" /></a>
+      <div class="card-body">
+        <div class="card-title">
+          <span>#08 · Debts, IOUs & Snowball Payoff Planner</span>
+          <span class="card-file">08-debts-and-loans.png</span>
+        </div>
+        <pre id="cap-7">Splitting cabin weekends or paying down a balance? 🤝
+
+Track "I Lent" and "I Borrowed" separately from expenses, record partial payments, and compare Snowball vs. Avalanche payoff timelines.
+
+#debtfreejourney #snowballmethod #moneymanagement #personalfinance</pre>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('cap-7').innerText);this.innerText='Copied Caption ✓';setTimeout(()=>this.innerText='Copy Instagram Caption',1600)">Copy Instagram Caption</button>
+      </div>
+    </article>
+
+    <article class="card">
+      <a href="./09-insights-heatmap.png" target="_blank"><img src="./09-insights-heatmap.png" alt="Actionable Insights & 365-Day Heatmap" /></a>
+      <div class="card-body">
+        <div class="card-title">
+          <span>#09 · Actionable Insights & 365-Day Heatmap</span>
+          <span class="card-file">09-insights-heatmap.png</span>
+        </div>
+        <pre id="cap-8">No cluttered wall of pie charts. 📊
+
+See immediately whether you spent less than last stretch, how much of your income you kept, and spot no-spend streaks on your 365-day activity heatmap.
+
+#datavisualization #spendinghabits #savingmoney #financialhealth</pre>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('cap-8').innerText);this.innerText='Copied Caption ✓';setTimeout(()=>this.innerText='Copy Instagram Caption',1600)">Copy Instagram Caption</button>
+      </div>
+    </article>
+
+    <article class="card">
+      <a href="./10-privacy-blur-biometrics.png" target="_blank"><img src="./10-privacy-blur-biometrics.png" alt="One-Tap Balance Blur & Biometrics" /></a>
+      <div class="card-body">
+        <div class="card-title">
+          <span>#10 · One-Tap Balance Blur & Biometrics</span>
+          <span class="card-file">10-privacy-blur-biometrics.png</span>
+        </div>
+        <pre id="cap-9">Checking your budget on a crowded train or showing a friend a category? 👁️
+
+Tap the eye icon to blur hero numbers instantly, hide app previews in the switcher, and lock everything behind Face ID, fingerprint, or a 4-digit PIN.
+
+#mobileprivacy #infosec #appdesign #biometrics</pre>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('cap-9').innerText);this.innerText='Copied Caption ✓';setTimeout(()=>this.innerText='Copy Instagram Caption',1600)">Copy Instagram Caption</button>
+      </div>
+    </article>
+
+    <article class="card">
+      <a href="./11-languages-currencies.png" target="_blank"><img src="./11-languages-currencies.png" alt="English, Русский & Тоҷикӣ + Multi-Currency" /></a>
+      <div class="card-body">
+        <div class="card-title">
+          <span>#11 · English, Русский & Тоҷикӣ + Multi-Currency</span>
+          <span class="card-file">11-languages-currencies.png</span>
+        </div>
+        <pre id="cap-10">Built for life across borders and currencies. 🌍
+
+Full native support for English, Русский, and Тоҷикӣ alongside USD, EUR, RUB, TJS, and major world currencies.
+
+#multilingual #globalfintech #tajikistan #russian #indiedev</pre>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('cap-10').innerText);this.innerText='Copied Caption ✓';setTimeout(()=>this.innerText='Copy Instagram Caption',1600)">Copy Instagram Caption</button>
+      </div>
+    </article>
+
+    <article class="card">
+      <a href="./12-download-cta.png" target="_blank"><img src="./12-download-cta.png" alt="Free Offline Forever — Download Now" /></a>
+      <div class="card-body">
+        <div class="card-title">
+          <span>#12 · Free Offline Forever — Download Now</span>
+          <span class="card-file">12-download-cta.png</span>
+        </div>
+        <pre id="cap-11">Ready to finally answer "Where did it go?" ✨
+
+Core expense tracking, budgets, goals, and local backups are 100% free offline forever — with zero ads.
+
+Download for Android or launch the instant Web Vault from the link in bio.
+
+#wherediditgo #launch #androidapp #pwa #budgettracker #personalfinance</pre>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('cap-11').innerText);this.innerText='Copied Caption ✓';setTimeout(()=>this.innerText='Copy Instagram Caption',1600)">Copy Instagram Caption</button>
+      </div>
+    </article>
+  </div>
+</body>
+</html>

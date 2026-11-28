@@ -1,0 +1,16 @@
+<!-- Hypit Run Source (.svrun): Binds main.svml to local screen evidence candidates -->
+<svrun entry="../authors/main.svml" target="launch-reel.video">
+  <file id="cand-home" path="../../../docs/screens/01-home.png" />
+  <file id="cand-activity" path="../../../docs/screens/02-activity.png" />
+  <file id="cand-budgets" path="../../../docs/screens/04-budgets.png" />
+  <file id="cand-goals" path="../../../docs/screens/05-goals.png" />
+  <file id="cand-insights" path="../../../docs/screens/06-insights.png" />
+  <file id="cand-dark" path="../../../docs/screens/07-dark.png" />
+
+  <satisfy output="screen-home" candidate="cand-home" />
+  <satisfy output="screen-activity" candidate="cand-activity" />
+  <satisfy output="screen-budgets" candidate="cand-budgets" />
+  <satisfy output="screen-goals" candidate="cand-goals" />
+  <satisfy output="screen-insights" candidate="cand-insights" />
+  <satisfy output="screen-dark" candidate="cand-dark" />
+</svrun>
